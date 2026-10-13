@@ -1032,6 +1032,7 @@ Application
               +-- LocationId
               +-- lifecycle / status
               +-- UpstreamMessagePort   node-scoped upstream semantics
+              +-- NextUpTeams            teams expected next
               +-- processing
               |     +-- TagProcessor
               +-- data
@@ -1039,7 +1040,8 @@ Application
               |     +-- StageStartTimes
               +-- timing
               |     +-- UniqueTeamRegistrations
-              |     +-- StageTiming
+              |     +-- StagePassageList
+              |     +-- StageRanking
               +-- LogBook
                     +-- 0..N TimingData
 
@@ -1261,6 +1263,7 @@ TimingSystem (1..N per Application)
     LocationId
     State
     UpstreamMessagePort       node-scoped upstream semantics
+    NextUpTeams                teams expected next
     processing
       TagProcessor
     data
@@ -1268,7 +1271,8 @@ TimingSystem (1..N per Application)
       StageStartTimes
     timing
       UniqueTeamRegistrations
-      StageTiming
+      StagePassageList
+      StageRanking
     LogBook
       0..N TimingData
     uses / produces TimingData
@@ -1332,6 +1336,19 @@ back through the same stream. The port owns no executor, worker thread or blocki
 transport I/O.
 :::
 
+:::{arch} NextUpTeams
+:id: NextUpTeams
+
+`NextUpTeams` is the TimingNode-local ready-team registry defined by
+SI01-REQ-060 / UC-005. It maintains the current teams preparing next, accepts
+controlled add/remove changes from keypad or operator input through the TimingNode
+state-change path, and keeps the required ready-team change history traceable
+separately from participant TimingData. SI01-REQ-061 consumes this current state for
+passive-display refresh/recovery. It remains separate from `TimingNodeData`
+because it is not received RACE_DATA, and separate from `TimingNodeTiming`
+because it is not elapsed-time/ranking calculation.
+:::
+
 :::{arch} TimingNode Processing
 :id: TimingNodeProcessing
 
@@ -1353,10 +1370,11 @@ from ordered upstream RACE_DATA and do not own workers.
 :id: TimingNodeTiming
 
 `TimingNodeTiming` groups derived timing information. `UniqueTeamRegistrations`
-tracks the derived active-registration set used for unique-team counts, while
-`StageTiming` exposes the current list of resolved elapsed times and ranking.
-Both are derived from committed TimingData plus current node data and do not become
-independent writers or workers.
+tracks the active registration identities used by timing views. `StagePassageList`
+maintains the current digital passage/standing state per team from active registration
+history and current race data. `StageRanking` derives the ordered ranking from that
+standing. These capabilities are derived from committed TimingData plus current node
+data and do not become independent writers or workers.
 :::
 
 :::{arch} TagProcessor  
@@ -1379,7 +1397,7 @@ current `TeamId -> TimingTimestamp` values produced by ordered RACE_DATA SET/DEL
 changes. A stage-start timestamp may contain time-of-day only, local date/time, or
 an already absolute time. The state object owns data only; it never invents a
 missing date or time zone. The TimingNode execution boundary owns mutation/order
-and StageTiming owns elapsed-time interpretation.
+and StagePassageList owns passage/elapsed-time interpretation.
 :::
 
 :::{arch} TeamAssignments
@@ -1416,24 +1434,29 @@ EventData and TimingData provider families to each other. Live race state remain
 separate TimingNode-local state populated by ordered RACE_DATA messages.
 :::
 
-:::{arch} StageTiming  
-:id: StageTiming  
+:::{arch} StagePassageList
+:id: StagePassageList
 
-`StageTiming` is the TimingNode read-side capability for current elapsed stage
-times and ranking. It resolves TeamId using stable EventData first and TimingNode
-TeamAssignments only as fallback, combines committed registrations with the current
-StageStartTimes definitions, and exposes a ranked list of resolved team times. It is
-not another writer and never changes TimingData or live race state.
+`StagePassageList` is the TimingNode read-side state for the current digital passage
+standing per team. It interprets active committed registration history together with
+current TeamId resolution and StageStartTimes. The standing retains the information
+needed to determine the currently relevant passage values when a team has multiple
+registrations and when a previously active registration is later revoked. It is not
+another writer and never rewrites TimingData or received race state.
 
-The public StageTiming model is therefore the list/ranking view itself. Per-record
-calculation details and incomplete-input handling are implementation details and shall
-not appear as separate architecture components such as a public calculator/result/error
-hierarchy.
+For a time-only start definition, StagePassageList uses the configured event/race time
+zone and the established rollover rule: resolve the most recent valid occurrence not
+after the registration. When an explicit start date is present, that date is
+authoritative.
+:::
 
-For a time-only start definition, StageTiming uses the configured event/race
-time zone and the established rollover rule: resolve the most recent valid
-occurrence not after the registration. When an explicit start date is present,
-that date is authoritative.
+:::{arch} StageRanking
+:id: StageRanking
+
+`StageRanking` derives the ordered stage ranking from `StagePassageList`. It owns
+ranking/order interpretation, not registration lifecycle reconstruction. A change to
+the standing may invalidate and rebuild the ranking view without changing committed
+TimingData or received race state.
 :::
 
 `LogBook` is passive state contained by one TimingNode and keeps that node's
@@ -2169,6 +2192,7 @@ Application
               +-- LocationId
               +-- lifecycle / status
               +-- UpstreamMessagePort   node-scoped upstream semantics
+              +-- NextUpTeams            teams expected next
               +-- processing
               |     +-- TagProcessor
               +-- data
@@ -2176,7 +2200,8 @@ Application
               |     +-- StageStartTimes
               +-- timing
               |     +-- UniqueTeamRegistrations
-              |     +-- StageTiming
+              |     +-- StagePassageList
+              |     +-- StageRanking
               +-- LogBook
                     +-- 0..N TimingData
 

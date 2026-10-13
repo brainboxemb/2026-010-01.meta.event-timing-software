@@ -63,7 +63,7 @@ groups:
     - NodeId
     - LocationId
     - State
-  properties_width: 240
+  properties_width: 220
   kind: model
   notation: component
   layout: {x: 390, y: 606, w: 720, h: 320}
@@ -216,7 +216,16 @@ nodes:
   subtitle: "UpstreamStream • node serial lane"
   kind: service
   notation: component
-  layout: {x: 800, y: 857, w: 280, h: 50}
+  layout: {x: 815, y: 857, w: 280, h: 50}
+
+- id: next-up-teams
+  object_id: NextUpTeams
+  group: timing-node-aggregate
+  label: "NextUpTeams"
+  subtitle: "teams expected next"
+  kind: service
+  notation: component
+  layout: {x: 640, y: 657, w: 220, h: 50}
 
 - id: node-processing
   object_id: TimingNodeProcessing
@@ -251,8 +260,10 @@ nodes:
   items:
     - label: UniqueTeamRegistrations
       object_id: UniqueTeamRegistrations
-    - label: "StageTiming — elapsed + ranking"
-      object_id: StageTiming
+    - label: StagePassageList
+      object_id: StagePassageList
+    - label: StageRanking
+      object_id: StageRanking
   kind: service
   notation: packaging-component
   layout: {x: 875, y: 722, w: 220, h: 120}
@@ -264,7 +275,7 @@ nodes:
   subtitle: "committed TimingData • node-local"
   kind: service
   notation: component
-  layout: {x: 500, y: 857, w: 220, h: 50}
+  layout: {x: 405, y: 857, w: 280, h: 50}
 
 - id: event-data-domain
   object_id: EventData
@@ -583,45 +594,9 @@ edges:
     - {x: 20, y: 1018}
     - {x: 176, y: 1018}
 
-- from: messaging-io
-  to: upstream-message-port
-  from_anchor: {side: top, position: 0.50}
-  to_anchor: {side: bottom, position: 0.50}
-  route:
-    - {x: 665, y: 1048}
-    - {x: 862, y: 1048}
-    - {x: 862, y: 928}
-    - {x: 940, y: 928}
-
 - from: timing-node-proxy
   to: timing-node-aggregate
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.50}
 
 
-- from: node-processing
-  to: event-data-domain
-  label: resolves
-  dashed: true
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.50}
-  route:
-    - {x: 515, y: 932}
-    - {x: 155, y: 932}
-
-- from: timing-node-aggregate
-  to: timing-data-domain
-  label: uses / produces
-  dashed: true
-  from_anchor: {side: bottom, position: 0.50}
-  to_anchor: {side: top, position: 0.50}
-  route:
-    - {x: 830, y: 936}
-    - {x: 735, y: 936}
-
-- from: upstream-data-domain
-  to: timing-data-domain
-  label: carries
-  dashed: true
-  from_anchor: {side: right, position: 0.50}
-  to_anchor: {side: left, position: 0.50}
