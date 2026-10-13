@@ -273,10 +273,10 @@ domain/
     TimingNodeLogic.java                package-private mutable node logic
     upstream/
       UpstreamMessagePort.java          dispatch + TimingNode-lane admission
-      UpstreamMessageTask.java          one bounded upstream turn on node serial lane
+      UpstreamMessageTask.java          one upstream turn on node serial lane
       UpstreamHeartbeat.java            PING/heartbeat protocol state
       UpstreamDataSync.java             RACE_DATA sequence/ACK/REQ/SYNC ownership
-      LogBookSync.java                  TIMING_DATA head/SYNC/REQ/replay ownership
+      LogBookSync.java                  TIMING_DATA head/SYNC/REQ/batch synchronization
     data/
       TeamAssignments.java              received RegistrationId -> TeamId assignments
       StageStartTimes.java              received TeamId -> TimingTimestamp starts
@@ -937,11 +937,11 @@ and validation/codec services realise the system-owned IF-05 contract. Concrete
 storage, Web and messaging adapters may carry that record or its encoded form
 without redefining field semantics.
 
-`UpstreamData` is a shared semantic capability built partly on the existing shared `TimingData` contract. It adds ordered `RACE_DATA` plus `SYNC`, `ACK`, `REQ`, PING and status/control families without creating another TimingData identity/order model. `UpstreamGateway` owns the external transport boundary and uses 1..N concrete connectors. A connector such as `RabbitMqConnector` or `EngineeringApiConnector` owns transport/session mechanics and any demultiplexing needed when one physical connection carries several NodeIds. Messaging exposes one node-scoped `UpstreamStream` per TimingNode; the Java contract therefore lives under `io.messaging`, not under Domain. `TimingNode.UpstreamMessagePort` consumes that stream but owns only semantic-family dispatch and admission to the existing TimingNode serial lane. Cohesive protocol state is delegated to `UpstreamHeartbeat` (PING/heartbeat), `UpstreamDataSync` (Central `RACE_DATA` sequence/ACK/REQ/SYNC) and `LogBookSync` (`TIMING_DATA` head/SYNC/REQ/bounded replay). `UpstreamMessageTask` executes one bounded upstream turn at a time on the existing TimingNode serial lane; none of these helpers owns another worker or executor. No Application router and no `TimingSystem.UpstreamMessagePort` is part of the current design. `SystemId` remains an internal composition/simulation identity and is not required on the wire.
+`UpstreamData` is a shared semantic capability built partly on the existing shared `TimingData` contract. It adds ordered `RACE_DATA` plus `SYNC`, `ACK`, `REQ`, PING and status/control families without creating another TimingData identity/order model. `UpstreamGateway` owns the external transport boundary and uses 1..N concrete connectors. A connector such as `RabbitMqConnector` or `EngineeringApiConnector` owns transport/session mechanics and any demultiplexing needed when one physical connection carries several NodeIds. Messaging exposes one node-scoped `UpstreamStream` per TimingNode; the Java contract therefore lives under `io.messaging`, not under Domain. `TimingNode.UpstreamMessagePort` consumes that stream but owns only semantic-family dispatch and admission to the existing TimingNode serial lane. Cohesive protocol state is delegated to `UpstreamHeartbeat` (PING/heartbeat), `UpstreamDataSync` (Central `RACE_DATA` sequence/ACK/REQ/SYNC) and `LogBookSync` (`TIMING_DATA` head/SYNC/REQ and synchronization in batches of at most 256 records). `UpstreamMessageTask` executes one upstream turn at a time on the existing TimingNode serial lane; none of these helpers owns another worker or executor. No Application router and no `TimingSystem.UpstreamMessagePort` is part of the current design. `SystemId` remains an internal composition/simulation identity and is not required on the wire.
 
 The `domain.node.upstream` package is deliberately a Domain helper package rather than a transport package. Its classes interpret semantic `UpstreamData` and mutate/read TimingNode-owned state while the node serial lane is current. The `io.messaging` package owns the non-blocking mailbox/transport boundary. This split prevents RabbitMQ/API/session concerns from leaking into the TimingNode while also keeping protocol-state helpers out of the generic `domain.node` package.
 
-Non-obvious ownership and sequencing invariants in these helpers shall be documented close to the code in accordance with DR-10. In particular, comments/Javadoc shall make the TimingNode-lane ownership, contiguous RACE_DATA sequence state, fixed replay-head rule and heartbeat scheduling ownership discoverable without reverse-engineering the complete port.
+Non-obvious ownership and sequencing invariants in these helpers shall be documented close to the code in accordance with DR-10. In particular, comments/Javadoc shall make the TimingNode-lane ownership, contiguous RACE_DATA sequence state, fixed synchronization-head rule and heartbeat scheduling ownership discoverable without reverse-engineering the complete port.
 
 If the TimingNode capability grows into several cohesive areas, deeper
 packages such as `timing/registration` or `timing/stage` may become useful.

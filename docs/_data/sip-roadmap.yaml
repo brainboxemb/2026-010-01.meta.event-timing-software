@@ -179,9 +179,9 @@ steps:
     remaining_estimate_project_days: 8.5
     workstream: backoffice
     docs:
-      requirements: {level: working, scope: "IF-06 UpstreamData, reference/timing flows and multi-node behaviour"}
+      requirements: {level: working, scope: "IF-06 UpstreamData, reference/timing flows, StagePassageList/StageRanking and multi-node behaviour"}
       idd: {level: working, scope: "public/reference UpstreamData JSON plus reference-data and transport contracts"}
-      design: {level: working, scope: "multi-node routing, StageTiming and transport/recovery behaviour"}
+      design: {level: working, scope: "node-scoped UpstreamStream, multi-node isolation, StagePassageList/StageRanking and transport/recovery behaviour"}
       verification: {level: working, scope: "multi-node integration, outage/reconnect and reconciliation tests"}
     documents:
       - {name: 30-UC, title: System use cases, maturity: review, completeness: 90}
