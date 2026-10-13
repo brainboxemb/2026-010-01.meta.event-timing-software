@@ -569,10 +569,11 @@ cause a RACE_DATA request from the first missing sequence.
 :id: IF06-REQ-015  
 :status: D  
 
-RACE_DATA shall be able to carry incremental reserve-tag-map changes as
+RACE_DATA shall be able to carry incremental TeamAssignments changes as
 RegistrationId-to-TeamId assignments that are not stable EventData profile identity.
+The semantic contract is generic and does not classify an assignment by tag type.
 It shall not redefine a stable RegistrationId-to-TeamId mapping supplied by EventData.
-Physical reserve TagIds remain resolved to their reserve RegistrationId by EventData.
+Physical TagIds remain resolved to their RegistrationId by EventData.
 :::
 
 :::{ifreq} Define StageStartTimes reference semantics  
