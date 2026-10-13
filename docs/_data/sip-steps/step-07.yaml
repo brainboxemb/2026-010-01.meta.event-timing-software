@@ -3,6 +3,15 @@ step: 7
 planning_changes:
   - date: '2026-10-13'
     change: >-
+      Refine the integration topology: host the deterministic local Backend Simulator
+      inside SI-02 as an engineering fixture, but keep all SI-01 interaction on the real
+      backend transport/interface boundary. Use that for ST-2 reference-data,
+      acknowledgement and reconnect scenarios. Follow with an actual external RabbitMQ
+      ST-3 run using CloudAMQP or an equivalent hosted broker; keep broker credentials
+      outside source control and do not make hosted service availability a mandatory
+      fast-CI dependency.
+  - date: '2026-10-13'
+    change: >-
       Activate Step 7 after Step 6 closes on running-system SI-02 acceptance. D01 is now
       next: promote IF-06 backend semantic responsibilities before reference-data,
       reconciliation or transport implementation proceeds.
@@ -52,9 +61,12 @@ activities:
     state: planned
     depends_on: [D01, D03]
     note: >-
-      Align 43-01-SDD-03 with the promoted IF-06 contract and fix the integration
-      verification order: lightweight socket/network ST-2 first, then RabbitMQ ST-3.
-      Keep connector/session mechanics below the semantic upstream boundary.
+      Align 43-01-SDD-03 with the promoted IF-06 contract and define the engineering
+      integration topology: SI-02 hosts a local Backend Simulator for deterministic
+      ST-2 scenarios, while all communication with SI-01 still crosses the real backend
+      transport/interface boundary. ST-3 then qualifies RabbitMQ against an external
+      hosted broker such as CloudAMQP. Keep connector/session mechanics below the
+      semantic upstream boundary.
 
   - id: A01
     lane: application
@@ -111,9 +123,11 @@ activities:
     state: planned
     depends_on: [D04, A02, A04]
     note: >-
-      Implement the lightweight real network/socket backoffice adapter used by ST-2
-      to exercise semantic routing, inbound/outbound flow and reconnect without a
-      production broker dependency.
+      Add a Backend Simulator to SI-02. It shall edit/send synthetic RaceData and
+      StageStartTimes, display received outbound TimingData/synchronisation state,
+      control acknowledgement and deliberately trigger disconnect/reconnect/failure.
+      Its SI-01 communication must use the real backend transport/interface boundary;
+      direct calls into SI-01 internals or IF-03 shortcuts are not allowed.
 
   - id: V02
     lane: verification
@@ -121,9 +135,10 @@ activities:
     state: planned
     depends_on: [A03, A05]
     note: >-
-      Verify node-scoped reference-data application, TeamID/StageTiming results,
-      source routing and local continuity across socket disconnect/reconnect, including
-      pending outbound reconciliation after recovery.
+      Use the SI-02 Backend Simulator to verify node-scoped reference-data application,
+      TeamID/StageTiming results, outbound visibility, acknowledgement handling and
+      local continuity across deliberate disconnect/reconnect, including pending-work
+      reconciliation after recovery.
 
   - id: A06
     lane: application
@@ -132,8 +147,10 @@ activities:
     depends_on: [D04, V02]
     note: >-
       Implement or qualify the RabbitMQ connector beneath the same semantic upstream
-      contract using synthetic/public broker topology. Production credentials, queue
-      names and proprietary codecs remain external/private.
+      contract and add an external hosted-broker test profile. CloudAMQP is the initial
+      candidate. URI/user/password/vhost and other credentials are supplied via secrets
+      or external configuration; production credentials, private queue names and
+      proprietary codecs remain outside the public repository.
 
   - id: V03
     lane: verification
@@ -141,6 +158,8 @@ activities:
     state: planned
     depends_on: [A06]
     note: >-
-      Run ST-3 against a disposable RabbitMQ broker and verify source-specific
-      inbound/outbound routing, connection/consumer recovery and resumed pending
-      delivery after broker interruption without changing application semantics.
+      Run ST-3 against a real hosted RabbitMQ instance, initially CloudAMQP or an
+      equivalent service, and verify source-specific inbound/outbound routing,
+      TLS/connection setup where applicable, connection/consumer recovery and resumed
+      pending delivery. This external test is integration evidence, not a mandatory
+      dependency for every fast CI run.
