@@ -77,7 +77,7 @@ nodes:
     layout: {x: 825, y: 620, w: 365, h: 120}
 
   - id: domain-worker
-    label: "Runtime-owned shared ExecutorService\nbacks Data + Task SerialExecutor lanes"
+    label: "Runtime-owned shared ExecutorService\nbacks Data + Task SerialLane lanes"
     kind: service
     group: runtime
     layout: {x: 1350, y: 260, w: 315, h: 100}
@@ -104,7 +104,7 @@ edges:
   - {from: data-processor, to: task-processor, label: "recovered / committed TimingData facts", dashed: true}
   - {from: data-processor, to: node-data, label: "sole LogBook / persistence mutation"}
   - {from: task-processor, to: task-state, label: "sole RaceData / derived-state mutation"}
-  - {from: data-processor, to: domain-worker, label: "Data SerialExecutor", dashed: true}
-  - {from: task-processor, to: domain-worker, label: "Task SerialExecutor", dashed: true}
+  - {from: data-processor, to: domain-worker, label: "Data SerialLane", dashed: true}
+  - {from: task-processor, to: domain-worker, label: "Task SerialLane", dashed: true}
   - {from: upstream-handler, to: upstream-stream, label: "send / read mailbox"}
   - {from: node-data, to: storage, label: "TimingData persistence"}
