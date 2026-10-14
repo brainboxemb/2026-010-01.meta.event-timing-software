@@ -765,7 +765,7 @@ RegistrationId-to-TeamId overrides where EventData has no stable TeamId.
 `TimingNode` remains the visible Domain component boundary used by higher layers,
 but it is a composition/lifecycle facade rather than a serial-execution owner.
 It composes `LogBook`, `NodeTasks` and its node-local
-`TagProcessor`. `LogBook` owns Data Lane submission, command/query
+`TagProcessor`. `LogBook` owns Data Lane queueing, command/query
 execution, persisted TimingData startup loading, lifecycle/location state,
 durable TimingData commit and post-commit event publication.
 `NodeTasks` owns Task Lane lifecycle, bounded Task Lane queueing and
@@ -795,7 +795,7 @@ LogBook queries expose two explicit consistency modes:
 
 ```text
 CURRENT
-  latest safely published completed snapshot; no lane submission/wait/timeout
+  latest safely published completed snapshot; no lane queue/wait/timeout
 
 ORDERED
   execute on the Data Lane after earlier queued LogBook work
@@ -2244,7 +2244,7 @@ public EventSource<TagObservation> tagObservedEvent() {
 ```
 
 Provider callbacks perform only bounded observation ingress. EventData resolution,
-duplicate suppression, passage filtering, diagnostics and TimingNode admission run
+duplicate suppression, passage filtering, diagnostics and TimingNode queueing run
 on the TagProcessor serial scheduled lane.
 
 ### Optional raw-observation persistence
@@ -2284,7 +2284,7 @@ Required behaviour:
 - stored records preserve the immutable observation values exactly enough for diagnostics;
 - queue-full/drop count is observable;
 - storage/write failures are observable;
-- diagnostic logging failure does not change TagProcessor admission or TimingData commit;
+- diagnostic logging failure does not change TagProcessor queueing or TimingData commit;
 - shutdown performs a bounded drain according to the configured diagnostic-retention
   policy and then closes the store;
 - raw observation files are explicitly non-authoritative and may be rotated/retained
@@ -2310,7 +2310,7 @@ TagProcessor
 ```
 
 `TagProcessor.onTagObserved(...)` is the Antenna EventSource callback. It only
-attempts bounded admission of the immutable observation and returns. Mapping,
+tries to place the immutable observation in its bounded queue and returns. Mapping,
 filtering and diagnostics do not run on the provider callback thread.
 
 On the TagProcessor lane, EventData first resolves the semantic `TagId` to a
@@ -2375,7 +2375,7 @@ another rule.
 The selected observation's original TimingTimestamp becomes the automatic
 registration effective time.
 
-#### Duplicate suppression and admission
+#### Duplicate suppression and queueing
 
 The filtering order is:
 
@@ -2617,7 +2617,7 @@ tag-processing counts are not TimingNode queue counts.
 
 The component that performs the work owns the hot-path counter update:
 
-- `SerialExecutorMetrics` owns lane-local queue admission, queue depth/high-water,
+- `SerialExecutorMetrics` owns low-level lane queue-result, queue depth/high-water,
   queue wait and execution duration; callers read those values through an immutable
   `SerialExecutorMetrics.Snapshot`. `SerialExecutor` records the execution facts but
   does not embed the diagnostics model in the executor class. Because every physical worker
@@ -2626,7 +2626,7 @@ The component that performs the work owns the hot-path counter update:
 - the TimingNode commit path owns TimingData append/commit and post-commit event-delivery
   counters;
 - `TagProcessingMetrics` owns observation, burst, mapping, duplicate and
-  TimingNode-admission counters for `domain.node.processing` and exposes them through an
+  TimingNode-queueing counters for `domain.node.processing` and exposes them through an
   immutable `TagProcessingMetrics.Snapshot`;
 - `SerialScheduledExecutorMetrics` owns lane-local measurements such as accepted
   immediate work, scheduled registrations/cancellations, executed work, runtime failures
@@ -2710,7 +2710,7 @@ lifetime maximum for that component instance.
 
 Unsupported JVM measurements use an explicit unavailable value in the engineering
 snapshot. Measurement unavailability or snapshot creation failure must not change
-registration admission or TimingData commit behaviour.
+registration queueing or TimingData commit behaviour.
 
 No continuous measurement thread is introduced. Timer/scheduler work used for
 TagProcessor burst expiry is unrelated to runtime measurement.
@@ -2905,12 +2905,12 @@ open(locationId) / close / consistency-sensitive query
     -> caller receives processed domain result
 
 device/callback ingress that is explicitly offer-only
-    -> bounded queue admission result
+    -> bounded queue result
     -> callback may continue immediately
     -> later processing has no synchronous caller waiting for its domain result
 ```
 
-A queue-admission result is never used as a substitute for the domain result of
+A queue result is never used as a substitute for the domain result of
 a state-dependent command.
 
 The Future used to connect the queued work with a waiting caller is an internal
@@ -2935,7 +2935,7 @@ OpenResult
   ALREADY_OPEN
   NO_LOCATION
 
-submission/execution failure
+queueing/execution failure
   queue full
   node stopping/unavailable
   unexpected internal failure
@@ -2961,7 +2961,7 @@ TimingNode uses a small operation/execution exception model rather than leaking
 `java.util.concurrent` through the domain API.
 Keep that family small and add distinct exception types only where callers need
 different recovery behaviour. Timeout is a useful distinct case because its
-outcome semantics differ from definite submission rejection.
+outcome semantics differ from a definite not-queued result.
 
 ### SerialExecutor design
 
@@ -3046,11 +3046,11 @@ The required behaviour remains:
 - different node lanes share the role worker and make progress at task boundaries;
 - state-dependent validation happens on the ordered node-local lane;
 - result-bearing work has an internal Future;
-- offer-only ingress observes definite queue admission without waiting;
+- fire-and-forget ingress observes only whether work was queued, without waiting;
 - one ordinary work-item failure does not terminate the lane;
 - an unexpected fatal lane failure is observable and does not shut down sibling lanes or the
   shared role worker;
-- closing one lane stops new admission and drains its accepted work without closing the
+- closing one lane stops new queueing and drains work already queued without closing the
   externally owned role executor;
 - a fatal lane failure likewise never shuts down that executor;
 - Runtime shuts down the shared role executor only after component lanes have stopped.
@@ -3106,7 +3106,7 @@ The execution types intentionally differ because their workloads differ:
 TimingNode
   -> SerialExecutor
        bounded command work queue
-       result-bearing and admission-only commands
+       result-bearing commands and fire-and-forget queued commands
 
 TagProcessor
   -> bounded TagObservation input queue
@@ -3242,7 +3242,7 @@ add one thread per state object and do not introduce an unbounded background
 queue.
 
 For the registration path, synchronous persistence on the node lane remains the baseline:
-producer callbacks return after command admission, while the shared Domain worker
+producer callbacks return after the command is queued, while the shared Domain worker
 performs the durable append before LogBook/event visibility. Because that physical worker is
 shared, a long `FileChannel.force(true)` can temporarily delay other Data Lanes as
 well. That is an explicit trade-off for the resource-constrained baseline, not an assumption
