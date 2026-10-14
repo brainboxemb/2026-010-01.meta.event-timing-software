@@ -347,17 +347,26 @@ again.
 Queue work once and handle the returned queue result. Do not first inspect executor
 state and then try to queue the work.
 
-Use different vocabulary at different abstraction levels:
+Follow the established Java execution model at a serial-lane boundary:
 
-- inside a generic queue/lane primitive, technical names such as `offer()`,
-  `AdmissionResult`, `ACCEPTED`, `FULL` and `NOT_RUNNING` are acceptable;
-- at a Domain/Application boundary, translate that immediately to ordinary words
-  such as `queue(...)`, `tryQueueOnTaskLane(...)`, `CommandQueueResult`,
-  `QUEUED`, `QUEUE_FULL` and `NOT_RUNNING`.
+- `SerialLane.execute(Runnable)` queues fire-and-forget work and returns without
+  waiting for the later operation result;
+- `SerialLane.submit(Callable<R>)` queues result-bearing work and returns a
+  standard `Future<R>`;
+- when the bounded lane cannot accept work, use the standard
+  `RejectedExecutionException` contract;
+- queue-container vocabulary such as `offer()`, `poll()` and direct
+  `ArrayBlockingQueue` handling belongs **inside the SerialLane implementation**,
+  not in LogBook, NodeService, TagProcessor or other lane users.
 
-A non-blocking Domain queue result describes **queueing only**. `QUEUED` means the
-work is waiting for later execution; it does not mean that the operation has already
-run or succeeded.
+Do not create project-specific admission/result types merely to rename Java's existing
+execute/submit/rejection model. A deviation needs a concrete semantic requirement that the
+JDK contract cannot express. Extra vocabulary without such a requirement adds review noise.
+
+Domain components may still use domain words where they add real meaning. For example,
+`LogBook.queue(command)` says that a LogBook command is fire-and-forget. Its implementation
+may delegate to `SerialLane.execute(...)`; it does not need a separate
+`CommandQueueResult` merely to say that lane admission succeeded.
 
 **Why**
 
@@ -374,45 +383,28 @@ whether it can accept the work.
 
 **Examples**
 
-Low-level lane code may use its technical contract:
+A lane user should read like ordinary Java concurrency code:
 
 ```java
-SerialLane.AdmissionResult laneResult = lane.offer(work);
+lane.execute(this::processNext);
+Future<Result> future = lane.submit(this::calculateResult);
+```
 
-switch (laneResult) {
-    case ACCEPTED:
-        break;
-    case FULL:
-        LOG.warn("...");
-        break;
-    case NOT_RUNNING:
-        LOG.debug("...");
-        break;
-    default:
-        throw new IllegalStateException(
-                "Unsupported lane result " + laneResult);
+The bounded queue remains an implementation detail inside `SerialLane`:
+
+```java
+private boolean enqueueTaskLocked(TrackedTask task) {
+    return queue.offer(task);
+}
+
+private TrackedTask nextQueuedTaskLocked() {
+    return queue.poll();
 }
 ```
 
-Domain code should translate that contract:
-
-```java
-CommandQueueResult queueResult = logBook.queue(command);
-
-switch (queueResult) {
-    case QUEUED:
-        break;
-    case QUEUE_FULL:
-        LOG.warn("...");
-        break;
-    case NOT_RUNNING:
-        LOG.debug("...");
-        break;
-    default:
-        throw new IllegalStateException(
-                "Unsupported command queue result " + queueResult);
-}
-```
+A Domain boundary may translate a standard rejection only when that boundary owns a
+different failure policy, for example a synchronous device callback that must log/drop a
+fire-and-forget event instead of propagating the rejection.
 
 **Avoid**
 
@@ -683,12 +675,18 @@ current state, a metric store or a substitute for durable domain persistence.
 Write comments and Javadoc for **ownership, lifecycle, threading, invariants and reasons**.
 Do not use comments merely to translate Java syntax into English.
 
-Public component boundaries should normally explain:
+Every constructor and method should have a short Javadoc or immediately adjacent
+comment that states its purpose. Private helpers are included. The comment may be one line
+when the purpose is simple, but an undocumented method should be treated as a review issue.
 
-1. what the component is responsible for;
-2. what it is deliberately not responsible for;
+Comments must still add meaning rather than translate syntax. For component boundaries,
+threading/lifecycle helpers or non-obvious code, explain:
+
+1. what the component or method is responsible for;
+2. what it is deliberately not responsible for when that matters;
 3. important lifecycle/call-order rules;
-4. important threading or serial-lane assumptions.
+4. important threading or serial-lane assumptions;
+5. the reason for a non-obvious implementation choice.
 
 Names should carry ordinary control-flow meaning where possible. Do not make a reader
 learn low-level queue/executor jargon to understand Domain code.
