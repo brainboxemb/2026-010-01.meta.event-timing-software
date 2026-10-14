@@ -386,12 +386,12 @@ A conforming client can:
 
 1. obtain a complete current status snapshot;
 2. query LogBook metadata/ranges for missed committed records;
-3. combine the recovered baseline with later live events;
+3. combine the retrieved baseline with later live events;
 4. deduplicate overlapping committed records by stable TimingData record identity;
 5. mark its view live only after that reconciliation is complete.
 
 No durable replay of every transient live event is required while a client is disconnected.
-Committed TimingData is recovered through the LogBook.
+Committed TimingData is retrieved through the LogBook.
 
 ## Failure semantics
 
