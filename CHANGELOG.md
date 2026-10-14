@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Standardize result-bearing LogBook command naming on `execute(command)`; keep `queue(command)` for fire-and-forget work and reserve `executeOn...AndWait` for internal lane helpers where waiting is an implementation concern.
+
 - Align TimingNode component names with responsibility: active `LogBook`, passive `LogBookData`, Task Lane service `NodeService`, and plain `queue/QUEUED/QUEUE_FULL` Domain terminology while retaining technical `SerialLane` names only in the platform layer.
 
 - Use `NodeService` as the Java naming-guide example for the node-local Task Lane service; keep `Runner` reserved for execution mechanisms.
