@@ -2151,14 +2151,32 @@ inputs.
 :id: TimingNode  
 :realizes: SI01-REQ-003, SI01-REQ-020, SI01-REQ-021, SI01-REQ-024  
 
-A `TimingNode` is the independently addressed
-operational/domain aggregate at one timing location. It
-belongs to exactly one `TimingSystem` and is the active
-serialization boundary for that node's mutable state.
-Its contained state objects are passive; the upstream and
-TimingData contracts remain centred on `NodeId`.
+A `TimingNode` is the independently addressed operational/domain
+component at one timing location. It belongs to exactly one `TimingSystem`
+and owns composition and lifecycle of its children. It exposes the public
+command/query/event facade but does not itself execute serial data or protocol
+tasks. The upstream and TimingData contracts remain centred on `NodeId`.
 :::
 
+:::{arch} NodeDataProcessor
+:id: NodeDataProcessor
+
+One `NodeDataProcessor` belongs to each TimingNode. It owns the bounded,
+ordered **Data Lane**, recovery, commands, ORDERED queries and mutable
+node-owned data, including committed LogBook history and received RaceData.
+It publishes immutable CURRENT read models. Its LogBook and persistence
+collaborators have no separate worker or lane.
+:::
+
+:::{arch} NodeTaskProcessor
+:id: NodeTaskProcessor
+
+One `NodeTaskProcessor` belongs to each TimingNode. It owns the bounded
+**Task Lane** for coordination, heartbeat and upstream protocol progress.
+Its semantic upstream handler uses non-blocking, asynchronous handoffs for
+Data Lane operations; it must not synchronously wait on a Data Lane future
+because both logical lanes may share one Runtime-owned physical executor.
+:::
 
 :::{arch} LogBook  
 :id: LogBook  
