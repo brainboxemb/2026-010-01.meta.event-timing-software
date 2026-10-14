@@ -66,7 +66,7 @@ groups:
   properties_width: 220
   kind: model
   notation: component
-  layout: {x: 390, y: 606, w: 720, h: 320}
+  layout: {x: 300, y: 606, w: 810, h: 320}
 - id: io-layer
   label: "I/O (per TimingSystem)"
   kind: layer-infrastructure
@@ -192,10 +192,10 @@ nodes:
   object_id: SystemConductor
   group: timing-system-aggregate
   label: "Conductor"
-  subtitle: "TimingNode lifecycle • system coordination"
+  subtitle: "system coordinator"
   kind: service
   notation: component
-  layout: {x: 75, y: 667, w: 280, h: 50}
+  layout: {x: 75, y: 667, w: 200, h: 50}
 
 - id: system-status-domain
   object_id: SystemStatus
@@ -204,7 +204,7 @@ nodes:
   subtitle: "current system overview"
   kind: service
   notation: component
-  layout: {x: 75, y: 732, w: 280, h: 50}
+  layout: {x: 75, y: 732, w: 200, h: 50}
 
 # SI01-01 is the logical (4+1) component/responsibility view, not a
 # threading/execution model. NodeDataProcessor, NodeTaskProcessor and the
@@ -218,7 +218,7 @@ nodes:
   subtitle: "teams expected next"
   kind: service
   notation: component
-  layout: {x: 640, y: 657, w: 220, h: 50}
+  layout: {x: 565, y: 657, w: 235, h: 50}
 
 - id: node-processing
   object_id: TimingNodeProcessing
@@ -231,11 +231,11 @@ nodes:
     - label: RegistrationDuplicateFilter
   kind: service
   notation: packaging-component
-  layout: {x: 405, y: 722, w: 220, h: 120}
+  layout: {x: 315, y: 722, w: 235, h: 105}
 
 # Live race/reference data sits on the first row beside NextUpTeams.
-- id: node-data
-  object_id: TimingNodeData
+- id: node-racedata
+  object_id: TimingNodeRaceData
   group: timing-node-aggregate
   label: "RaceData"
   items:
@@ -245,7 +245,7 @@ nodes:
       object_id: StageStartTimes
   kind: service
   notation: packaging-component
-  layout: {x: 875, y: 657, w: 220, h: 80}
+  layout: {x: 815, y: 657, w: 280, h: 80}
 
 # Timing is placed immediately left of Upstream on the second row.
 - id: node-timing
@@ -261,16 +261,21 @@ nodes:
       object_id: StageRanking
   kind: service
   notation: packaging-component
-  layout: {x: 640, y: 722, w: 220, h: 120}
+  layout: {x: 565, y: 722, w: 235, h: 120}
 
-- id: logbook-domain
-  object_id: LogBook
+# Node-owned committed history is a functional Data subcomponent; persistence
+# is its domain boundary, not a separate execution lane.
+- id: node-data
+  object_id: TimingNodeData
   group: timing-node-aggregate
-  label: "LogBook"
-  subtitle: "committed TimingData • persistence"
+  label: "Data"
+  items:
+    - label: LogBook
+      object_id: LogBook
+    - label: "Persistence"
   kind: service
-  notation: component
-  layout: {x: 405, y: 857, w: 455, h: 50}
+  notation: packaging-component
+  layout: {x: 315, y: 839, w: 235, h: 68}
 
 # Expose semantic upstream responsibilities here, not the execution lanes.
 # I/O transport (UpstreamStream) remains outside this Domain component.
@@ -287,7 +292,7 @@ nodes:
   kind: service
   notation: packaging-component
   # Begins beneath the first-row RaceData block and ends with LogBook.
-  layout: {x: 875, y: 752, w: 220, h: 155}
+  layout: {x: 815, y: 752, w: 280, h: 155}
 
 - id: event-data-domain
   object_id: EventData
