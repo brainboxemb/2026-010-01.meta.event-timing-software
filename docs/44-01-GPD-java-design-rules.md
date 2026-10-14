@@ -700,6 +700,7 @@ architecture, without first knowing the implementation mechanism.
 
 | Intent | Prefer | Avoid at Domain/Application level |
 | --- | --- | --- |
+| Execute a command and return its domain result | `execute(command)` | `invoke(command)`, public `executeAndWait(command)` |
 | Queue work and return immediately | `queue(command)`, `tryQueueOnTaskLane(work)` | `offer(...)`, `submit(...)` |
 | Result of queueing | `CommandQueueResult`, `queueResult` | `AdmissionResult`, `admission`, `submissionResult` |
 | Work is waiting to run | `QUEUED` | `ACCEPTED` |
@@ -1399,10 +1400,10 @@ wrong boundary.
 Prefer test composition that retains the owned child directly:
 
 ```java
-NodeTaskProcessor tasks = new NodeTaskProcessor(...);
-TimingNode node = new TimingNode(logBook, tasks, tags);
+NodeService nodeService = new NodeService(...);
+TimingNode node = new TimingNode(logBook, nodeService, tags);
 
-UpstreamHandler handler = tasks.upstreamHandler();
+UpstreamHandler handler = nodeService.upstreamHandler();
 ```
 
 When production callers intentionally need LogBook operations, expose one narrow boundary:
@@ -1416,13 +1417,13 @@ Status status = logBook.query(LogBookQueries.status(), ReadConsistency.CURRENT);
 
 ```java
 public UpstreamHandler upstreamHandler() {
-    return taskProcessor.upstreamHandler();
+    return nodeService.upstreamHandler();
 }
 ```
 
 when no production caller uses that method and it exists only so a test can reach the child.
 
-Also avoid growing a parent facade with repeated one-line `invoke`, `offer`, `query`
+Also avoid growing a parent facade with repeated one-line `execute`, `queue`, `query`
 and event pass-throughs that simply mirror the same child component.
 
 ---
