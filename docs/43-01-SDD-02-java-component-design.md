@@ -890,7 +890,7 @@ node.applyAutomaticRegistration(
         registrationId,
         time);
 node.statusChangedEvent().subscribe(statusListener);
-node.newDataEvent().subscribe(timingDataListener);
+node.newDataEntryEvent().subscribe(timingDataListener);
 ```
 
 `invoke(command)` is the result-bearing path: presentation/application callers may
@@ -1133,7 +1133,7 @@ RACE_DATA ACK follows that successful Task Lane application; no Data Lane hop
 is required for RaceData. Data Lane recovery/commit instead publishes immutable TimingData facts so
 Task Lane-owned `UniqueTeamRegistrations` and timing views can rebuild/update
 without receiving the mutable LogBook. The normal post-commit publication is
-`NodeDataProcessor.newDataEvent()`; recovery has a separate recovered-data
+`NodeDataProcessor.newDataEntryEvent()`; recovery has a separate recovered-data
 publication because loading an existing LogBook record is not new data.
 
 `LogBook` remains passive and owns no event. This is deliberate: only
