@@ -321,8 +321,10 @@ Those files are not automatically the runtime source after reboot. For example,
 StageStartTimes can be sent again when the node is opened. Keeping its historical
 file is still valuable for later analysis.
 
-All state changes are ordered by the TimingNode serial lane. Small/infrequent
-analysis-store writes may execute during a turn on that lane. If measurements
+State-changing data operations are ordered by the TimingNode Data Lane.
+The separate Task Lane coordinates protocol work but must not mutate Data
+Lane-owned state directly. Small/infrequent analysis-store writes may execute
+during a turn on the Data Lane. If measurements
 show that such a write delays registration unacceptably, the immutable snapshot
 may instead be handed to a bounded persistence executor.
 That optimization must not change TimingNode state ordering and must not
@@ -332,7 +334,7 @@ introduce an unbounded hidden queue.
 
 Consumers do not read mutable TimingNode-owned objects directly.
 
-An ORDERED query enters the TimingNode serial lane and reads/captures state at a
+An ORDERED query enters the TimingNode Data Lane and reads/captures state at a
 defined point in the same ordering as state changes. If that read requires expensive
 calculation, only the short ordered capture/traversal step runs on the lane; longer
 calculation continues outside it.
@@ -349,7 +351,7 @@ CURRENT query
   -> published immutable completed state
 
 ORDERED query
-  -> TimingNode serial lane
+  -> TimingNode Data Lane
        -> read/capture state after earlier accepted work
        -> return view/result
   -> optional long calculation outside lane
@@ -369,7 +371,7 @@ state globally readable.
 
 ![TimingNode asynchronous ownership and query isolation](../../../raw/prod/docs/assets/architecture/timingdata-async-ownership.svg)
 
-*Figure SDD01-TD02 — TimingNode refinement: one serial execution boundary owns mutable state; short reads return immutable views and `timingDataCommittedEvent` provides post-fact notification without exposing mutable state.*
+*Figure SDD01-TD02 — Process/execution refinement of TimingNode: the Data Lane owns mutable state and ordered queries; the Task Lane owns protocol coordination; both may share a physical worker. This is not the logical component diagram (SI01-01).*
 
 ### Runtime flows
 
