@@ -340,35 +340,46 @@ again.
 
 ---
 
-### DR-05 — Let the admission operation decide whether work was accepted
+### DR-05 — Let the queue operation decide whether work was queued
 
 **Rule**
 
-Call `offer()`, `execute()` or `submit()` once and handle its result.
+Queue work once and handle the returned queue result. Do not first inspect executor
+state and then try to queue the work.
 
-Do not first inspect executor state and then perform admission.
+Use different vocabulary at different abstraction levels:
+
+- inside a generic queue/lane primitive, technical names such as `offer()`,
+  `AdmissionResult`, `ACCEPTED`, `FULL` and `NOT_RUNNING` are acceptable;
+- at a Domain/Application boundary, translate that immediately to ordinary words
+  such as `queue(...)`, `tryQueueOnTaskLane(...)`, `CommandQueueResult`,
+  `QUEUED`, `QUEUE_FULL` and `NOT_RUNNING`.
+
+A non-blocking Domain queue result describes **queueing only**. `QUEUED` means the
+work is waiting for later execution; it does not mean that the operation has already
+run or succeeded.
 
 **Why**
 
 This pattern is both redundant and race-prone:
 
 ```java
-if (executor.state() == RUNNING) {
-    executor.offer(work);
+if (lane.state() == RUNNING) {
+    lane.offer(work);
 }
 ```
 
-The executor can change state between the two calls. The admission operation already knows
+The lane can change state between the two calls. The queue operation already knows
 whether it can accept the work.
 
-**Example**
+**Examples**
 
-Good:
+Low-level lane code may use its technical contract:
 
 ```java
-AdmissionResult result = executor.offer(work);
+SerialLane.AdmissionResult laneResult = lane.offer(work);
 
-switch (result) {
+switch (laneResult) {
     case ACCEPTED:
         break;
     case FULL:
@@ -379,16 +390,36 @@ switch (result) {
         break;
     default:
         throw new IllegalStateException(
-                "Unsupported admission result " + result);
+                "Unsupported lane result " + laneResult);
+}
+```
+
+Domain code should translate that contract:
+
+```java
+CommandQueueResult queueResult = logBook.queue(command);
+
+switch (queueResult) {
+    case QUEUED:
+        break;
+    case QUEUE_FULL:
+        LOG.warn("...");
+        break;
+    case NOT_RUNNING:
+        LOG.debug("...");
+        break;
+    default:
+        throw new IllegalStateException(
+                "Unsupported command queue result " + queueResult);
 }
 ```
 
 **Avoid**
 
-A separate `state()` check immediately before `offer()`.
+A separate `state()` check immediately before queueing.
 
-Also do not silently ignore `FULL` or a meaningful `NOT_RUNNING`. See DR-09 for
-observability.
+Also do not silently ignore a full queue or a meaningful not-running result. See DR-09
+for observability.
 
 ---
 
@@ -480,7 +511,7 @@ later control run rereads CURRENT TimingNode status before deriving behaviour.
 
 Current immutable snapshots and ordered mutable reads are different consistency choices on
 the same typed query boundary. Use CURRENT when the query supports a safely published
-completed snapshot; use ORDERED when the read must be sequenced after earlier accepted node
+completed snapshot; use ORDERED when the read must be sequenced after earlier queued node
 work. Mutable LogBook traversal remains ORDERED. A result-bearing ORDERED call made
 reentrantly from that same lane must fail immediately rather than queueing behind itself and
 appearing later as a timeout.
@@ -658,6 +689,40 @@ Public component boundaries should normally explain:
 2. what it is deliberately not responsible for;
 3. important lifecycle/call-order rules;
 4. important threading or serial-lane assumptions.
+
+Names should carry ordinary control-flow meaning where possible. Do not make a reader
+learn low-level queue/executor jargon to understand Domain code.
+
+**Naming guideline**
+
+Prefer names that tell a reader what the object or operation means in the current
+architecture, without first knowing the implementation mechanism.
+
+| Intent | Prefer | Avoid at Domain/Application level |
+| --- | --- | --- |
+| Queue work and return immediately | `queue(command)`, `tryQueueOnTaskLane(work)` | `offer(...)`, `submit(...)` |
+| Result of queueing | `CommandQueueResult`, `queueResult` | `AdmissionResult`, `admission`, `submissionResult` |
+| Work is waiting to run | `QUEUED` | `ACCEPTED` |
+| Queue cannot accept more work | `QUEUE_FULL` | bare `FULL` outside the queue primitive |
+| Execute serially and return the result | `executeOnDataLaneAndWait(...)` | generic `run(...)` when waiting is important |
+| Active component that owns LogBook behaviour | `LogBook` | `LogBookProcessor` when it is more than a processor |
+| Passive committed history | `LogBookData` | another active-sounding `LogBook` |
+| Node Task Lane component | `NodeTasks` | `NodeTaskRunner` when it owns domain state as well |
+| Actual input-processing component | `TagProcessor` | renaming merely for suffix consistency |
+| Registration being matched for revoke | `activeRegistration` | `candidate` |
+| Team ID read from static EventData | `configuredTeamId` | `fixed` |
+
+Use `Runner` for an execution mechanism that runs work, such as
+`SerialTaskRunner` or `YieldingTaskRunner`. Do not use `Runner` for a component
+that also owns domain state, protocol state or business decisions.
+
+Use `Processor` when processing input is the actual responsibility, as with
+`TagProcessor`. Do not add `Processor`, `Manager`, `Controller` or `Service`
+merely because a class is active. Prefer the responsibility itself when that produces
+a clear noun.
+
+Technical names may still exist inside the implementation that owns the technical
+contract. The important rule is to translate them at the next architectural boundary.
 
 **Why**
 
@@ -1082,11 +1147,16 @@ logic, not in a programming-contract assertion.
 
 **Rule**
 
-Do not hide event delivery, queue admission or thread/lane transfer inside nested lambda
+Do not hide event delivery, queueing or thread/lane transfer inside nested lambda
 expressions.
 
-At an asynchronous boundary, prefer a named method reference and move the admission step
+At an asynchronous boundary, prefer a named method reference and move the queueing step
 into that method. The call site should read as the architecture reads.
+
+The boundary method must make wait semantics visible. A fire-and-forget method should
+say that it queues work and returns immediately; a result-bearing method should say that
+it waits for ordered execution. Avoid exposing generic `offer`, `admission`, `submit` or
+`submission` vocabulary from Domain/Application APIs when ordinary queueing words are clearer.
 
 A lambda that executes **synchronously**, such as an atomic
 `AntennaSettings.update(edit -> edit.inventoryEnabled(enabled))`, is different.
@@ -1364,7 +1434,7 @@ For Java component changes, a reviewer can use this short check:
 1. **Responsibility** — Is the decision made by the component that owns it?
 2. **Lifecycle** — Are side effects explicit and are lifecycle words clear?
 3. **Event callback** — Does a synchronous callback return quickly?
-4. **Queue admission** — Is admission handled once, without a state-check race?
+4. **Queueing** — Is work queued once, without a state-check race, and is `QUEUED` clearly distinguished from completed?
 5. **Current state** — Are stale snapshots being replayed when only current state matters?
 6. **Failure direction** — Can a downstream operational problem leak into its producer?
 7. **Async ownership** — Does lifecycle sequencing remain with its real owner?
