@@ -412,10 +412,10 @@ nodes:
   group: platform-layer
   label: "Execution"
   items:
-    - label: SerialExecutor
-      object_id: SerialExecutor
-    - label: SerialScheduledExecutor
-      object_id: SerialScheduledExecutor
+    - label: SerialLane
+      object_id: SerialLane
+    - label: SerialScheduledLane
+      object_id: SerialScheduledLane
     - label: SerialTaskRunner
       object_id: SerialTaskRunner
     - label: ScheduledTaskRunner
