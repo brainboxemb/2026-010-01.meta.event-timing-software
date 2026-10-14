@@ -2828,7 +2828,7 @@ JVM/OS combinations.
 
 :::{design} TimingNode execution, LogBook and local events
 :id: DD-TimingNodeExecution
-:elaborates: PlatformEvents, Event, EventSource, TimingNode, LogBook, NodeService, LogBookData
+:elaborates: PlatformEvents, Event, EventSource, TimingNode, LogBook
 
 Detailed design for TimingNode ordered execution, durable TimingData commit,
 passive LogBookData reads and the local Event/EventSource publication boundary.
