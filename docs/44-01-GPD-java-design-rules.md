@@ -340,13 +340,19 @@ again.
 
 ---
 
-### DR-05 — Let the admission operation decide whether work was accepted
+### DR-05 — Let the submission operation decide whether work was accepted
 
 **Rule**
 
-Call `offer()`, `execute()` or `submit()` once and handle its result.
+Call the submission operation once and handle its result. At a low-level queue/lane
+primitive this may be named `offer()`; at a Domain/Application boundary prefer a
+semantic name such as `submit(...)` or `trySubmitToTaskLane(...)`.
 
-Do not first inspect executor state and then perform admission.
+Do not first inspect executor state and then perform submission.
+
+A non-blocking submission result describes **queue acceptance only**. `ACCEPTED`
+means the work was queued for later execution; it does not mean that the operation
+has already run or succeeded.
 
 **Why**
 
@@ -366,9 +372,9 @@ whether it can accept the work.
 Good:
 
 ```java
-AdmissionResult result = executor.offer(work);
+AdmissionResult submissionResult = executor.offer(work);
 
-switch (result) {
+switch (submissionResult) {
     case ACCEPTED:
         break;
     case FULL:
@@ -379,7 +385,7 @@ switch (result) {
         break;
     default:
         throw new IllegalStateException(
-                "Unsupported admission result " + result);
+                "Unsupported submission result " + submissionResult);
 }
 ```
 
@@ -658,6 +664,12 @@ Public component boundaries should normally explain:
 2. what it is deliberately not responsible for;
 3. important lifecycle/call-order rules;
 4. important threading or serial-lane assumptions.
+
+Names should carry ordinary control-flow meaning where possible. Do not make a reader
+learn low-level queue jargon to understand Domain code. For example, `admission` or
+`offer` may be appropriate inside the generic lane implementation, while Domain code
+should normally say `submit command`, `submission result`, `queue full`, or
+`not running`.
 
 **Why**
 
@@ -1085,8 +1097,13 @@ logic, not in a programming-contract assertion.
 Do not hide event delivery, queue admission or thread/lane transfer inside nested lambda
 expressions.
 
-At an asynchronous boundary, prefer a named method reference and move the admission step
+At an asynchronous boundary, prefer a named method reference and move the submission step
 into that method. The call site should read as the architecture reads.
+
+The boundary method must make wait semantics visible. A fire-and-forget method should
+say that it submits/queues work and returns immediately; a result-bearing method should
+say that it waits for ordered execution. Avoid exposing generic `offer` / `admission`
+vocabulary from Domain/Application APIs when a semantic submission name is clearer.
 
 A lambda that executes **synchronously**, such as an atomic
 `AntennaSettings.update(edit -> edit.inventoryEnabled(enabled))`, is different.
@@ -1364,7 +1381,7 @@ For Java component changes, a reviewer can use this short check:
 1. **Responsibility** — Is the decision made by the component that owns it?
 2. **Lifecycle** — Are side effects explicit and are lifecycle words clear?
 3. **Event callback** — Does a synchronous callback return quickly?
-4. **Queue admission** — Is admission handled once, without a state-check race?
+4. **Queue submission** — Is submission handled once, without a state-check race, and is acceptance clearly distinguished from completion?
 5. **Current state** — Are stale snapshots being replayed when only current state matters?
 6. **Failure direction** — Can a downstream operational problem leak into its producer?
 7. **Async ownership** — Does lifecycle sequencing remain with its real owner?
