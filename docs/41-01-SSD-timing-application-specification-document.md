@@ -1031,11 +1031,11 @@ Application
               +-- NodeId        functional upstream/timing-data identity
               +-- LocationId
               +-- lifecycle / status
-              +-- UpstreamMessagePort   node-scoped upstream semantics
+              +-- Upstream                 node-scoped protocol handling
               +-- NextUpTeams            teams expected next
               +-- processing
               |     +-- TagProcessor
-              +-- data
+              +-- racedata
               |     +-- TeamAssignments
               |     +-- StageStartTimes
               +-- timing
@@ -1056,6 +1056,12 @@ Shared Domain contracts:
 *Figure SI01-01 — SI-01 layered architecture.*
 
 The source for this view is `docs/_diagrams/layered-architecture.yaml`.
+
+Figure SI01-01 is the **logical view** of the 4+1 architecture:
+its contained blocks name functional responsibilities (Processing, RaceData,
+Timing, LogBook, Upstream and NextUpTeams), not execution lanes.
+The Data Lane, Task Lane, scheduled ingress and physical workers belong to the
+**process view**, with implementation detail in SDD-02.
 
 In Figure SI01-01, `TimingSystem` and `TimingNode` are shown as UML-style
 component/aggregate containers. They are the architecture identities themselves,
@@ -2158,26 +2164,6 @@ command/query/event facade but does not itself execute serial data or protocol
 tasks. The upstream and TimingData contracts remain centred on `NodeId`.
 :::
 
-:::{arch} NodeDataProcessor
-:id: NodeDataProcessor
-
-One `NodeDataProcessor` belongs to each TimingNode. It owns the bounded,
-ordered **Data Lane**, recovery, commands, ORDERED queries and mutable
-node-owned data, including committed LogBook history and received RaceData.
-It publishes immutable CURRENT read models. Its LogBook and persistence
-collaborators have no separate worker or lane.
-:::
-
-:::{arch} NodeTaskProcessor
-:id: NodeTaskProcessor
-
-One `NodeTaskProcessor` belongs to each TimingNode. It owns the bounded
-**Task Lane** for coordination, heartbeat and upstream protocol progress.
-Its semantic upstream handler uses non-blocking, asynchronous handoffs for
-Data Lane operations; it must not synchronously wait on a Data Lane future
-because both logical lanes may share one Runtime-owned physical executor.
-:::
-
 :::{arch} LogBook  
 :id: LogBook  
 
@@ -2225,11 +2211,11 @@ Application
               +-- NodeId        functional upstream/timing-data identity
               +-- LocationId
               +-- lifecycle / status
-              +-- UpstreamMessagePort   node-scoped upstream semantics
+              +-- Upstream                 node-scoped protocol handling
               +-- NextUpTeams            teams expected next
               +-- processing
               |     +-- TagProcessor
-              +-- data
+              +-- racedata
               |     +-- TeamAssignments
               |     +-- StageStartTimes
               +-- timing
@@ -2386,6 +2372,31 @@ already occurred; it does not transfer ownership of TimingNode state.
 SI-01 receives work from several places at once: operator interfaces, devices,
 timers and upstream connections. State changes for one `TimingNode` still have
 to happen in a clear order.
+
+The process view refines the logical TimingNode component into execution
+ownership. These processors are intentionally **not separate functional
+subsystems in Figure SI01-01**; they define how its responsibilities execute.
+The specific `SerialExecutor` implementation belongs to Java SDD-02.
+
+:::{arch} NodeDataProcessor
+:id: NodeDataProcessor
+
+One `NodeDataProcessor` belongs to each TimingNode. It owns the bounded,
+ordered **Data Lane**, recovery, commands, ORDERED queries and mutable
+node-owned data, including committed LogBook history and received RaceData.
+It publishes immutable CURRENT read models. Its LogBook and persistence
+collaborators have no separate worker or lane.
+:::
+
+:::{arch} NodeTaskProcessor
+:id: NodeTaskProcessor
+
+One `NodeTaskProcessor` belongs to each TimingNode. It owns the bounded
+**Task Lane** for coordination, heartbeat and upstream protocol progress.
+Its semantic upstream handler uses non-blocking, asynchronous handoffs for
+Data Lane operations; it must not synchronously wait on a Data Lane future
+because both logical lanes may share one Runtime-owned physical executor.
+:::
 
 Architecture rules:
 
