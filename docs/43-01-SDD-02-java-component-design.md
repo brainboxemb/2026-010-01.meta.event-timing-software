@@ -2779,7 +2779,7 @@ Threads owned by the JDK or external libraries keep their own names.
 The execution design isolates latency-sensitive TagProcessor work from the
 shared Domain/application workers. Each configured node has independent
 logical Data and Task lanes; the physical worker count is a separate capacity
-decision. Initial TimingData recovery runs first on the Data Lane.
+decision. The persisted TimingData load runs first on the Data Lane.
 
 ```text
 shared TagProcessor role worker
@@ -2844,14 +2844,14 @@ TimingNode
 
 The **Data Lane** is the sole writer for the append-only TimingData source:
 lifecycle/location state, sequence allocation, persistence and LogBook
-visibility. INITIAL recovery runs as its first task. A successful recovery
-publishes an immutable recovered-history fact; each later successful commit
+visibility. The persisted TimingData load runs as its first task. A successful load
+publishes an immutable initial-history fact; each later successful commit
 publishes an immutable committed-TimingData fact.
 
 The **Task Lane** is the sole writer for live RaceData and its derived timing
 state. It owns `RaceDataState`, `TeamAssignments`, `StageStartTimes`,
 `UniqueTeamRegistrations` and Task Lane-owned `StageTiming` queries.
-Recovered/committed TimingData facts rebuild or incrementally update that
+Initial-loaded/committed TimingData facts rebuild or incrementally update that
 derived state.
 
 RACE_DATA therefore does **not** cross to the Data Lane: sequence validation,
@@ -3190,9 +3190,9 @@ The important guarantees are:
   state changes;
 - no external consumer retains a mutable collection owned by TimingNode;
 - normal runtime blocking I/O is not introduced casually on the Data Lane;
-- initial persistence recovery is the explicit exception: it is the first ordered
-  node task because it rebuilds TimingNode-owned state before later commands;
-- Runtime may still serialize those logical node recoveries on one shared physical
+- initial persisted-data loading is the explicit exception: it is the first ordered
+  Data Lane task because it rebuilds LogBook-owned state before later Data Lane commands;
+- Runtime may still serialize those logical node loads on one shared physical
   Data Lane worker rather than creating parallel filesystem workers;
 - read strategy is selected from measured CPU, allocation/GC and lane-occupancy
   behaviour rather than convenience alone.
@@ -3200,7 +3200,7 @@ The important guarantees are:
 TimingNode Status supports an explicit CURRENT query backed by a safely published immutable
 snapshot because it is current state, not a mutable LogBook traversal. The same status query
 also supports ORDERED when a caller deliberately needs a read after earlier accepted node
-work. The first publication occurs when the asynchronous initial recovery task completes;
+work. The first publication occurs when the asynchronous persisted-data load completes;
 later publications occur after completed command transitions. In both cases the snapshot is
 published before the corresponding status event. This read model does not permit direct access to
 LogBookProcessor-owned or LogBook mutable state.
@@ -3290,9 +3290,9 @@ Data Lane
               -> update UniqueTeamRegistrations
               -> update Task Lane timing history/view
 
-Data Lane recovery
+Data Lane startup load
   -> rebuild LogBook
-  -> emit immutable recovered TimingData snapshot
+  -> emit immutable initial TimingData snapshot
        |
        +-- bounded Task Lane handoff
               -> rebuild UniqueTeamRegistrations + timing view
