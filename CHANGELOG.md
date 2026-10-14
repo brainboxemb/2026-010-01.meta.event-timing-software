@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Use `LogBookAccessor` as the single LogBook contract for internal and external consumers; remove the separate LogBookReader concept and express TIMING_DATA head/range reads as LogBook queries.
+
 - Standardize result-bearing LogBook command naming on `execute(command)`; keep `queue(command)` for fire-and-forget work and reserve `executeOn...AndWait` for internal lane helpers where waiting is an implementation concern.
 
 - Clarify Task Lane dependency ownership: `NodeService` is the active service/composition owner, `NodeServiceState` owns passive Task Lane state and implements `UpstreamTaskState`, and RACE_DATA remains entirely Task Lane-owned.
