@@ -80,7 +80,7 @@ matching representation/codec. The default/reference JSON + JSON Lines represent
 
 The same immutable `TimingData` object can therefore be:
 
-- appended by `TimingDataStore`;
+- appended by `TimingDataPersistence`;
 - added to `LogBook` after that append is durable;
 - read by runtime consumers;
 - offered to downstream/upstream delivery.
@@ -136,32 +136,34 @@ providers may define different TagId, RegistrationId and TeamId semantics. The
 generic IF-05 RegistrationId therefore remains opaque outside the selected
 profile.
 
-## TimingNode serial execution and timing-data commit
+## TimingNode lane ownership and timing-data commit
 
-### Active-object boundary
+### Data Lane and Task Lane boundaries
 
-A `TimingNode` is the active serialization boundary for all mutable state that
-belongs to one timing point. The contained state objects stay passive:
+A `TimingNode` is the top-level component boundary for one timing point.
+Mutable responsibilities are split over two bounded serial lanes; contained data
+objects remain passive:
 
 ```text
-TimingNode  <<active object>>
-  +-- bounded serial work queue
-  +-- one serial worker
+TimingNode
+  +-- NodeDataProcessor / Data Lane
+  |     +-- lifecycle/location
+  |     +-- TimingData sequence + durable commit
+  |     +-- LogBook
+  |     +-- TimingDataPersistence
   |
-  +-- LogBook           passive, committed TimingData history
-  +-- NextUpTeams       passive
-  +-- StageStartTimes   passive
-  +-- RaceData          passive
-  +-- lifecycle/location state
-  |
-  +-- TimingDataStore
-  +-- NextUpTeamsStore
-  +-- StageStartTimesStore
-  +-- RaceDataStore
+  +-- NodeTaskProcessor / Task Lane
+        +-- RaceDataState
+        |     +-- TeamAssignments
+        |     +-- StageStartTimes
+        +-- UniqueTeamRegistrations
+        +-- StageTiming
+        +-- UpstreamHandler / protocol state
 ```
 
-The Active Object wording describes the behaviour, not a required Java base
-class. SDD-02 uses composition for this execution boundary.
+The Active Object pattern is implemented by composition; neither processor
+requires an inheritance hierarchy or a dedicated physical thread. The two
+logical lanes may use the same Runtime-owned worker.
 
 Public/application calls stay ordinary methods. The TimingNode hides the
 asynchronous hand-off used by its Active Object implementation.
@@ -180,11 +182,11 @@ continue immediately. In that case `ACCEPTED` means only accepted for later
 processing.
 
 The contained state objects are passive but not globally readable. Lifecycle,
-location, LogBook, NextUpTeams, StageStartTimes and RaceData are accessed through
-the TimingNode ownership boundary. The single TimingNode worker gives one clear
-order across registrations, reference-data updates and lifecycle changes. No
-producer lock is required around sequence allocation because only this worker
-performs the commit step.
+location and LogBook mutations occur only on the Data Lane. RaceData and derived
+timing mutations occur only on the Task Lane. TimingData sequence allocation
+therefore needs no producer lock because only the Data Lane performs the commit
+step. Cross-lane information is immutable and bounded: recovery/commit facts
+flow Data -> Task; LogBook replay requests/results flow Task -> Data.
 
 ### TimingData commit and sequence
 
@@ -291,7 +293,7 @@ The important ordering is:
 TimingNode worker
   -> choose next sequence
   -> build typed immutable registration TimingData through configured factory
-  -> TimingDataStore.append(record)
+  -> TimingDataPersistence.append(record)
   -> durable
   -> LogBook.add(record)            <-- committed domain state
   -> timingDataCommittedEvent.emit(record)
@@ -308,7 +310,7 @@ There is no direct producer-to-store path and no second TimingNode serial worker
 
 Not every state type has the same durability semantics.
 
-`TimingDataStore` is special: successful durable append is part of the timing
+`TimingDataPersistence` is special: successful durable append is part of the timing
 record commit. The LogBook is rebuilt from committed TimingData after restart.
 
 `NextUpTeamsStore`, `StageStartTimesStore` and `RaceDataStore` serve a
@@ -321,22 +323,23 @@ Those files are not automatically the runtime source after reboot. For example,
 StageStartTimes can be sent again when the node is opened. Keeping its historical
 file is still valuable for later analysis.
 
-State-changing data operations are ordered by the TimingNode Data Lane.
-The separate Task Lane coordinates protocol work but must not mutate Data
-Lane-owned state directly. Small/infrequent analysis-store writes may execute
-during a turn on the Data Lane. If measurements
-show that such a write delays registration unacceptably, the immutable snapshot
-may instead be handed to a bounded persistence executor.
-That optimization must not change TimingNode state ordering and must not
-introduce an unbounded hidden queue.
+State-changing operations execute on the lane that owns the state. TimingData,
+LogBook and lifecycle/location changes are ordered by the Data Lane. RaceData,
+TeamAssignments, StageStartTimes, UniqueTeamRegistrations and derived timing
+changes are ordered by the Task Lane. Small/infrequent analysis-store writes
+may execute during the owning lane turn only when measured latency permits it;
+otherwise an immutable snapshot may be handed to a bounded persistence executor.
+That optimization must not change lane ownership or introduce an unbounded
+hidden queue.
 
 ### Query/consumer visibility
 
 Consumers do not read mutable TimingNode-owned objects directly.
 
-An ORDERED query enters the TimingNode Data Lane and reads/captures state at a
-defined point in the same ordering as state changes. If that read requires expensive
-calculation, only the short ordered capture/traversal step runs on the lane; longer
+An ORDERED query enters the lane that owns the queried mutable state. LogBook
+history and lifecycle/status ordering use the Data Lane; RaceData and derived
+StageTiming queries use the Task Lane. If a read requires expensive calculation,
+only the short ordered capture/traversal step runs on the owning lane; longer
 calculation continues outside it.
 
 A CURRENT query may instead read a safely published immutable representation of
@@ -351,9 +354,9 @@ CURRENT query
   -> published immutable completed state
 
 ORDERED query
-  -> TimingNode Data Lane
-       -> read/capture state after earlier accepted work
-       -> return view/result
+  -> owning TimingNode lane (Data or Task)
+       -> read/capture state after earlier accepted work on that lane
+       -> return immutable view/result
   -> optional long calculation outside lane
 ```
 
@@ -371,7 +374,7 @@ state globally readable.
 
 ![TimingNode asynchronous ownership and query isolation](../../../raw/prod/docs/assets/architecture/timingdata-async-ownership.svg)
 
-*Figure SDD01-TD02 — Process/execution refinement of TimingNode: the Data Lane owns mutable state and ordered queries; the Task Lane owns protocol coordination; both may share a physical worker. This is not the logical component diagram (SI01-01).*
+*Figure SDD01-TD02 — Process/execution refinement of TimingNode: the Data Lane owns TimingData/LogBook/persistence; the Task Lane owns RaceData, derived timing and protocol state. Both may share one physical worker. This is not the logical component diagram (SI01-01).*
 
 ### Runtime flows
 
@@ -428,14 +431,15 @@ Java queue, Future and worker mechanism.
 | --- | --- | --- |
 | presentation caller waiting for a state-dependent result | bounded TimingNode operation wait | read/mutate TimingNode-owned state directly |
 | device/callback ingress | short validation + bounded submission | wait for durable commit, run long domain work, read node state directly |
-| TimingNode serial-lane turn | ordered domain operation; required local persistence; short ordered read/capture | client rendering, slow network retry, long ranking calculation |
-| query caller/worker | long calculation on returned immutable view | retain a mutable internal buffer or bypass TimingNode ownership |
-| signalling/upstream worker | its own delivery/retry policy | mutate TimingNode state directly or block TimingNode commit |
+| Data Lane turn | TimingData/lifecycle operation; required local persistence; short LogBook read/capture | mutate Task Lane RaceData/derived state, client rendering, slow network retry |
+| Task Lane turn | RaceData/protocol/derived-state operation; short task-owned query | mutate LogBook/persistence, synchronously wait for Data Lane work |
+| query caller/worker | bounded wait for its owning lane; long calculation on immutable view | retain a mutable internal buffer or bypass TimingNode ownership |
+| signalling/upstream worker | its own delivery/retry policy | mutate lane-owned state directly or block TimingData commit |
 
-One logical serial lane per TimingNode is the current execution design. Physical
-worker threads may be shared across TimingNode lanes; the current Java baseline
-does so by default. Each node must still process at most one lane item at a time,
-preserve its FIFO ordering and retain the same caller-visible operation semantics.
+Each TimingNode has two bounded logical serial lanes. Physical worker threads may
+be shared across both lanes and across nodes. FIFO/one-at-a-time ordering is
+guaranteed within each lane; cross-lane ordering is expressed only through the
+explicit immutable handoffs defined above.
 
 ## TimingData persistence and recovery
 
@@ -569,14 +573,14 @@ load configuration / compose components
    v
 TimingNode.activate()
    |
-   +--> start node serial lane
-   +--> admit recovery as first ordered node task
-   +--> start owned child lane(s)
+   +--> start Data Lane
+   +--> admit TimingData recovery as first Data Lane task
+   +--> start Task Lane
    +--> return; other components may continue activation
    |
    +------------------------------+
                                   |
-TimingNode serial lane            | other application startup may continue
+Data Lane                         | other application startup may continue
    |                              |
    v                              v
 read and validate complete    other nodes / interfaces / devices activate
@@ -590,13 +594,17 @@ IF-05 records
 nextSequence = last committed sequence + 1
    |
    v
-rebuild LogBook / recovered node state
+rebuild LogBook
+   |
+   +--> immutable recovered TimingData snapshot
+              |
+              v
+          Task Lane
+              |
+              +--> rebuild UniqueTeamRegistrations / derived timing history
    |
    v
 publish first CURRENT Status
-   |
-   v
-wake current-state consumers
 ```
 
 The recovery task is ordered before later TimingNode commands. Presentation or
@@ -843,7 +851,7 @@ RFID / manual / lifecycle / start / penalty logic
           v
     TimingData
           |
-          +--> TimingDataStore (durable)
+          +--> TimingDataPersistence (durable)
           +--> LogBook (visible after durable append)
           +--> StageTiming / ranking inputs
           +--> downstream integration
@@ -873,13 +881,14 @@ needed around that interface:
 
 ### TimingNode state and record pipeline
 
-- **CAND-PIPE-001** — Each TimingNode shall provide one bounded serial execution
-  boundary for its mutable per-node state. Contained state objects such as
-  LogBook, NextUpTeams, StageStartTimes and RaceData shall remain passive.
+- **CAND-PIPE-001** — Each TimingNode shall provide two bounded logical serial
+  execution boundaries: Data Lane for TimingData/LogBook/persistence and Task
+  Lane for RaceData/derived timing/protocol state. Contained state objects such
+  as LogBook, TeamAssignments and StageStartTimes remain passive.
 - **CAND-PIPE-002** — Registration sequence shall be selected by the TimingNode
   worker immediately before commit, not when ingress work is queued.
 - **CAND-PIPE-003** — A TimingData record shall become visible in LogBook only
-  after `TimingDataStore` reports the complete append durable.
+  after `TimingDataPersistence` reports the complete append durable.
 - **CAND-PIPE-004** — The LogBook shall hold the same canonical
   immutable `TimingData` values used by the TimingData persistence/interchange
   boundary; no second logbook-specific timing-record type is required.
@@ -906,7 +915,7 @@ needed around that interface:
 - **CAND-DATA-001** — The initial implementation shall maintain committed
   LogBook state, next-up state and reference state in typed in-memory objects
   without requiring an external database engine.
-- **CAND-DATA-002** — `TimingDataStore` shall be the durable/recovery source
+- **CAND-DATA-002** — `TimingDataPersistence` shall be the durable/recovery source
   for committed TimingData.
 - **CAND-DATA-003** — NextUpTeams, StageStartTimes and RaceData shall each use a
   type-specific store when their accepted state/snapshots are preserved for
