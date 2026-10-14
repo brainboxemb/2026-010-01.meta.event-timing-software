@@ -207,7 +207,7 @@ nodes:
   layout: {x: 75, y: 732, w: 200, h: 50}
 
 # SI01-01 is the logical (4+1) component/responsibility view, not a
-# threading/execution model. NodeDataProcessor, NodeTaskProcessor and the
+# threading/execution model. LogBookProcessor, NodeTaskProcessor and the
 # logical lanes are explained in the process view / Java detailed design.
 # Keep functional node responsibilities visible and preserve enough vertical
 # space for the packaging-component renderer's header and item text.
