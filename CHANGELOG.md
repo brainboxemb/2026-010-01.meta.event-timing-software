@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Clarify Task Lane dependency ownership: `NodeService` is the active service/composition owner, `NodeServiceState` owns passive Task Lane state and implements `UpstreamTaskState`, and RACE_DATA remains entirely Task Lane-owned.
+
 - Align TimingNode component names with responsibility: active `LogBook`, passive `LogBookData`, Task Lane service `NodeService`, and plain `queue/QUEUED/QUEUE_FULL` Domain terminology while retaining technical `SerialLane` names only in the platform layer.
 
 - Use `NodeService` as the Java naming-guide example for the node-local Task Lane service; keep `Runner` reserved for execution mechanisms.
