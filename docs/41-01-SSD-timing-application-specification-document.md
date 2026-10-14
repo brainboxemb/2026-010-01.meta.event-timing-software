@@ -1270,7 +1270,7 @@ TimingSystem (1..N per Application)
     NodeId                    functional protocol/data identity
     LocationId
     State
-    UpstreamMessagePort       node-scoped upstream semantics
+    UpstreamHandler       node-scoped upstream semantics
     NextUpTeams                teams expected next
     processing
       TagProcessor
@@ -1345,10 +1345,10 @@ LogBook visibility and related derived-state update remain one ordered Data Lane
 transaction, with recovery/failure semantics that prevent a later commit from
 overtaking a failed one.
 
-:::{arch} TimingNode UpstreamMessagePort  
-:id: TimingNodeUpstreamMessagePort  
+:::{arch} TimingNode UpstreamHandler  
+:id: TimingNodeUpstreamHandler  
 
-The TimingNode-level `UpstreamMessagePort` owns node-scoped upstream semantics,
+The TimingNode-level `UpstreamHandler` owns node-scoped upstream semantics,
 consuming the non-blocking node-scoped `UpstreamStream` provided by Messaging.
 Incoming semantic messages and heartbeat/synchronization coordination are
 admitted to the node's **Task Lane**. The port does not create a physical worker
@@ -2338,7 +2338,7 @@ routing key may participate in NodeId demultiplexing, but it does not replace th
 stable functional `NodeId`. Internal `SystemId` is local composition context
 rather than a new upstream routing identity. One gateway may use multiple
 connectors; each TimingNode consumes its own semantic stream through
-`TimingNode.UpstreamMessagePort`. `RabbitMqConnector` represents the production-shaped transport;
+`TimingNode.UpstreamHandler`. `RabbitMqConnector` represents the production-shaped transport;
 `EngineeringApiConnector` provides the engineering transport used by SI-02 while
 preserving the same UpstreamData/gateway boundary.
 
@@ -2839,7 +2839,7 @@ synchronization and status messages. TimingData identity/order remains owned by 
 encoded UpstreamData representation and own transport/session resources; they do not
 become owners of TimingData fields or UpstreamData semantics. The gateway presents
 one node-scoped `UpstreamStream` per TimingNode. The node's
-`UpstreamMessagePort` reads/writes that stream and coordinates semantic messages
+`UpstreamHandler` reads/writes that stream and coordinates semantic messages
 on the node Task Lane. State-changing requests and committed data reads are
 handed to the Data Lane through bounded asynchronous operations.
 
@@ -2856,9 +2856,9 @@ external upstream / SI-02 backend peer
                                              |
                                              v
                                        TimingNode
-                                  UpstreamMessagePort
+                                  UpstreamHandler
                                              |
-                                  UpstreamMessageTask
+                                  UpstreamHandlerTask
                                              |
                                        Task Lane
                                        │

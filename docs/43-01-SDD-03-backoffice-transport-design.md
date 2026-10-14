@@ -48,7 +48,7 @@ Package/artifact placement follows `43-01-SDD-02-java-component-design.md`: a tr
 Backoffice target routing and transport are separate responsibilities:
 
 ```text
-TimingNode.UpstreamMessagePort
+TimingNode.UpstreamHandler
                ^
                |
       UpstreamMessageRouter
@@ -76,7 +76,7 @@ implementations preserve the same semantic addressing and feed the same
 application router; neither connector owns TimingNode target resolution.
 Current v1 messages that operate on node state are addressed by `NodeId`.
 `UpstreamMessageRouter` resolves only that target and delegates the complete
-semantic message to `TimingNode.UpstreamMessagePort`. The node port is
+semantic message to `TimingNode.UpstreamHandler`. The node port is
 bidirectional and owns message semantics. No current IF-06 message requires a
 TimingSystem-scoped target, so no system-level upstream message port is defined.
 
@@ -343,7 +343,7 @@ transport-neutral upstream message
 UpstreamMessageRouter resolves NodeId
       |
       v
-TimingNode.UpstreamMessagePort
+TimingNode.UpstreamHandler
 ```
 
 Each consumer must have controlled channel ownership. Arbitrary domain threads must not publish directly on shared RabbitMQ channels.

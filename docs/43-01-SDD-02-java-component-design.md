@@ -430,8 +430,8 @@ I/O messaging
       | node-scoped semantic messages / non-blocking send
       v
 TimingNode Task Lane
-  UpstreamMessagePort
-    ├── UpstreamMessageTask     one bounded upstream turn
+  UpstreamHandler
+    ├── UpstreamHandlerTask     one bounded upstream turn
     ├── UpstreamHeartbeat       PING request/answer and heartbeat state
     ├── UpstreamDataSync        RACE_DATA sequencing, ACK/REQ/SYNC protocol state
     └── LogBookSync             TIMING_DATA replay/sync cursor and batching
@@ -447,7 +447,7 @@ TimingNode Data Lane
 
 The ownership rule is responsibility-based:
 
-- `UpstreamMessagePort` and `UpstreamMessageTask` dispatch node-scoped upstream
+- `UpstreamHandler` and `UpstreamHandlerTask` dispatch node-scoped upstream
   work on the Task Lane; they do not own transport workers or mutable TimingData.
 - `UpstreamHeartbeat` is Task Lane-owned protocol state and does not require a
   Data Lane round-trip for ordinary PING request/answer handling.
@@ -972,7 +972,7 @@ mirror the hardware name.
 
 :::{design} Domain data, upstream and system-status composition
 :id: DD-DomainIntegration
-:elaborates: TimingNodeUpstreamMessagePort, UpstreamStream, UpstreamGateway, TimingSystem, SystemStatus, UpstreamData
+:elaborates: TimingNodeUpstreamHandler, UpstreamStream, UpstreamGateway, TimingSystem, SystemStatus, UpstreamData
 
 Detailed Domain composition for LogBook/TimingData ownership, shared UpstreamData
 semantics, routing boundaries and SystemStatus aggregation.
@@ -991,7 +991,7 @@ without redefining field semantics.
 `UpstreamData` carries semantic RACE_DATA, TIMING_DATA, SYNC, ACK, REQ
 and PING messages. I/O connectors and UpstreamGateway own transport/session
 mechanics and NodeId routing. Messaging supplies a node-scoped non-blocking
-`UpstreamStream`; `UpstreamMessagePort` processes semantic messages on
+`UpstreamStream`; `UpstreamHandler` processes semantic messages on
 the **Task Lane**. `UpstreamHeartbeat`, `UpstreamDataSync` and `LogBookSync`
 own their corresponding protocol cursors/state there, but no extra worker.
 
@@ -3204,7 +3204,7 @@ For example, an ordered RACE_DATA message containing a StageStartTimes
 change follows a **non-blocking two-lane handoff**:
 
 ```text
-Task Lane / UpstreamMessagePort
+Task Lane / UpstreamHandler
   -> validate sequence, mark update in-flight
   -> offer bounded immutable change to Data Lane
   -> return without waiting

@@ -280,7 +280,7 @@ nodes:
 # Expose semantic upstream responsibilities here, not the execution lanes.
 # I/O transport (UpstreamStream) remains outside this Domain component.
 - id: upstream-message-port
-  object_id: TimingNodeUpstreamMessagePort
+  object_id: TimingNodeUpstreamHandler
   group: timing-node-aggregate
   label: "Upstream"
   items:
