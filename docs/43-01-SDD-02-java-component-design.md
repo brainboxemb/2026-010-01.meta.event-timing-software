@@ -759,14 +759,15 @@ Its incremental changes are applied on the Data Lane to passive state such as
 TagId/RegistrationId/TeamId profile semantics; TeamAssignments owns only live
 RegistrationId-to-TeamId overrides where EventData has no stable TeamId.
 
-`TimingNode` remains the visible Domain component boundary used by higher layers. It owns
-serialized access through the injected `SerialExecutor`, operation admission/timeout
-mapping and post-commit event publication. It also creates and owns its node-local
-`TagProcessor` child from injected EventData/configuration and the Runtime-supplied
-`SerialScheduledExecutor`. Package-private `NodeDataProcessor` contains the mutable node
-state and domain decisions: lifecycle, current `LocationId`, LogBook interaction and
-TimingData commit behaviour. `NodeDataProcessor` is an implementation detail of the
-TimingNode component, not a second architecture component.
+`TimingNode` remains the visible Domain component boundary used by higher layers,
+but it is a composition/lifecycle facade rather than a serial-execution owner.
+It composes `NodeDataProcessor`, `NodeTaskProcessor` and its node-local
+`TagProcessor`. `NodeDataProcessor` owns Data Lane admission, command/query
+execution, recovery, mutable node state and post-commit event publication.
+`NodeTaskProcessor` owns Task Lane lifecycle, bounded task admission and
+semantic upstream composition. Both logical serial lanes are supplied by Runtime
+and may share one physical worker. The TagProcessor uses its separately supplied
+scheduled executor.
 
 A production `TimingNode` is always constructed as a complete capability.
 `TimingDataPersistence`, `TimingDataFactory`, the injected absolute-time supplier,
@@ -775,16 +776,14 @@ lifecycle-only or partially configured production node. The only non-public cons
 seam exists for deterministic TimingNode execution-boundary tests and is documented as
 test-only in code.
 
-TimingNode publishes one immutable current `Status` snapshot as an explicit read model.
-The snapshot is unavailable while initial recovery is still pending. `activate()` clears
-the previous published snapshot, starts the node execution lane, admits recovery as the
-first ordered TimingNode task, starts its owned child lane(s) and returns without waiting
-for persistence I/O. The recovery task performs TimingData load, LogBook rebuild and
-contained recovery-failure handling on the Data Lane, then publishes the first
-immutable Status snapshot with safe cross-thread visibility. That first publication also
-emits the existing status event so externally composed current-state consumers can wake
-and reread CURRENT. Deactivation makes CURRENT status unavailable; reactivation queues a
-fresh recovery task and later publishes a fresh snapshot.
+`NodeDataProcessor` publishes one immutable current `Status` snapshot as an
+explicit read model. The snapshot is unavailable while initial recovery is
+pending. TimingNode activation starts the Data Lane and admits recovery first,
+then starts the Task Lane and TagProcessor. The call does not wait for persistence
+I/O. Recovery loads TimingData and rebuilds LogBook on the Data Lane, then
+publishes the first immutable status with safe cross-thread visibility and emits
+the status event. Deactivation makes CURRENT status unavailable; reactivation
+queues a fresh recovery task and later publishes a fresh snapshot.
 
 One typed query boundary exposes two explicit consistency modes:
 
@@ -801,7 +800,7 @@ when the query definition supports it. Status supports CURRENT and ORDERED; Timi
 count and bounded LogBook range/latest reads remain ORDERED only.
 
 State-changing commands still execute on the Data Lane. After a command
-completes its domain mutation, TimingNode builds and publishes the immutable after-Status
+completes its domain mutation, NodeDataProcessor builds and publishes the immutable after-Status
 before emitting `statusChangedEvent(after)` when the effective status changed. A CURRENT
 status reader therefore observes only completed published transitions.
 
@@ -2775,7 +2774,7 @@ JVM/OS combinations.
 
 :::{design} TimingNode execution, LogBook and local events
 :id: DD-TimingNodeExecution
-:elaborates: PlatformEvents, Event, EventSource, TimingNode, LogBook
+:elaborates: PlatformEvents, Event, EventSource, TimingNode, NodeDataProcessor, NodeTaskProcessor, LogBook
 
 Detailed design for TimingNode ordered execution, durable TimingData commit,
 passive LogBook reads and the local Event/EventSource publication boundary.
@@ -2788,8 +2787,8 @@ TimingNode
   ├── Data Lane  -> NodeDataProcessor, LogBook, persistence,
   │                lifecycle/location, TeamAssignments, StageStartTimes,
   │                UniqueTeamRegistrations
-  └── Task Lane  -> UpstreamMessagePort, heartbeat, protocol cursors,
-                   synchronization/replay coordination
+  └── Task Lane  -> NodeTaskProcessor, upstream coordination,
+                   heartbeat and synchronization protocol progress
 ```
 
 The **Data Lane** is the sole writer for mutually consistent node data.
@@ -2818,35 +2817,29 @@ separately:
 
 ```java
 final class TimingNode {
-    private final NodeDataProcessor logic;
-    private final SerialExecutor dataLane;
-    private final SerialExecutor taskLane;
+    private final NodeDataProcessor dataProcessor;
+    private final NodeTaskProcessor taskProcessor;
 
     <R> R invoke(TimingNodeCommand<R> command) {
-        // admit + wait for the processed result
+        return dataProcessor.invoke(command);
     }
 
     CommandAdmission offer(TimingNodeCommand<?> command) {
-        // bounded admission only; producer returns immediately
+        return dataProcessor.offer(command);
     }
 
     <R> R query(TimingNodeQuery<R> query) {
-        // ordered consistency-sensitive read
+        return dataProcessor.query(query);
     }
 }
 
-final class NodeDataProcessor {
-    private State state = State.CLOSED;
-    private LocationId locationId;
-    private final LogBook logBook;
-
-    OpenResult open(LocationId locationId) {
-        // apply requested location + OPEN as one domain operation
-    }
-}
+// NodeDataProcessor owns the Data Lane and the ordered domain state.
+// NodeTaskProcessor owns the Task Lane and upstream coordination.
 ```
 
-The visible `TimingNode` keeps execution mechanics around the component boundary, while `NodeDataProcessor` keeps the stateful domain behaviour readable. Queue admission and the processed domain result remain separate; moving the mutable logic out of the boundary does not make `NodeDataProcessor` externally addressable.
+The visible `TimingNode` delegates execution mechanics to its processors.
+Queue admission and the processed domain result remain separate; callers use
+the TimingNode facade rather than reaching into either processor.
 
 The public methods above are illustrative signatures, not a requirement to use
 those exact result class names. The important split is:
