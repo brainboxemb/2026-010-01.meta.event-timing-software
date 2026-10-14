@@ -1583,15 +1583,15 @@ The intended topology is:
 
 ```text
 shared Domain/application ExecutorService
-  ├─ TimingNode A / Data Lane  (SerialExecutor)
-  ├─ TimingNode A / Task Lane  (SerialExecutor)
-  ├─ TimingNode B / Data Lane  (SerialExecutor)
-  ├─ TimingNode B / Task Lane  (SerialExecutor)
-  └─ TimingSystem Conductor lanes (SerialExecutor + optional SerialTaskRunner)
+  ├─ TimingNode A / Data Lane  (SerialLane)
+  ├─ TimingNode A / Task Lane  (SerialLane)
+  ├─ TimingNode B / Data Lane  (SerialLane)
+  ├─ TimingNode B / Task Lane  (SerialLane)
+  └─ TimingSystem Conductor lanes (SerialLane + optional SerialTaskRunner)
 
 shared TagProcessor ScheduledExecutorService
-  ├─ TagProcessor A (SerialScheduledExecutor)
-  └─ TagProcessor B (SerialScheduledExecutor)
+  ├─ TagProcessor A (SerialScheduledLane)
+  └─ TagProcessor B (SerialScheduledLane)
 
 shared I/O ScheduledExecutorService
   └─ AntennaManager / other bounded I/O lanes
@@ -1673,7 +1673,7 @@ JVM priority for all Runtime-owned workers; priority tuning requires measurement
 evidence and target-platform requalification.
 
 The concrete Java realization of these rules belongs in SDD-02. That design may
-use types such as `SerialExecutor`, `SerialScheduledExecutor`,
+use types such as `SerialLane`, `SerialScheduledLane`,
 `ThreadPoolExecutor` and `ScheduledThreadPoolExecutor`, but those Java types
 are implementation mechanisms rather than the architecture identity of the
 execution model.
@@ -1940,7 +1940,7 @@ responsibilities. It contains JDK-only reusable primitives and low-level
 execution-environment abstractions:
 
 ```text
-bounded serial execution (SerialExecutor / SerialScheduledExecutor)
+bounded serial execution (SerialLane / SerialScheduledLane)
 cooperative task execution (SerialTaskRunner / ScheduledTaskRunner)
 coalesced component-task wake control (CooperativeTaskController)
 local typed events (Event<T> / EventSource<T>)
@@ -1949,8 +1949,8 @@ elapsed-time source (MonotonicClock)
 normalized platform family (OperatingSystem)
 ```
 
-A component may compose Platform execution primitives such as `SerialExecutor`,
-`SerialScheduledExecutor`, `SerialTaskRunner`, `ScheduledTaskRunner` or
+A component may compose Platform execution primitives such as `SerialLane`,
+`SerialScheduledLane`, `SerialTaskRunner`, `ScheduledTaskRunner` or
 `CooperativeTaskController`, or local-event primitives such as `Event<T>`.
 The primitives themselves remain unaware of TimingNode, TimingData, presentation
 or external I/O semantics.
@@ -1960,7 +1960,7 @@ The layered view groups Platform into three small technical responsibilities:
 :::{arch} PlatformExecution  
 :id: PlatformExecution  
 `PlatformExecution` owns the reusable bounded serial execution primitives
-`SerialExecutor` and `SerialScheduledExecutor`. Cooperative tasks may run on an
+`SerialLane` and `SerialScheduledLane`. Cooperative tasks may run on an
 existing ordinary serial lane through `SerialTaskRunner` or on a scheduled serial
 lane through `ScheduledTaskRunner` when delayed continuation is required.
 `CooperativeTaskController` provides generic wake/coalescing control for a component
@@ -1968,17 +1968,17 @@ control task without owning that component's application/domain/device state.
 These mechanisms own no TimingNode state or domain policy.
 :::
 
-:::{arch} SerialExecutor  
-:id: SerialExecutor  
+:::{arch} SerialLane  
+:id: SerialLane  
 
-`SerialExecutor` is one bounded logical serial lane on an ordinary Runtime-owned
+`SerialLane` is one bounded logical serial lane on an ordinary Runtime-owned
 worker. It provides ordered admission/execution without owning component semantics.
 :::
 
-:::{arch} SerialScheduledExecutor  
-:id: SerialScheduledExecutor  
+:::{arch} SerialScheduledLane  
+:id: SerialScheduledLane  
 
-`SerialScheduledExecutor` is the scheduled counterpart of `SerialExecutor`.
+`SerialScheduledLane` is the scheduled counterpart of `SerialLane`.
 It preserves one serial logical lane while allowing delayed admission without sleeping
 the physical worker.
 :::
@@ -1986,7 +1986,7 @@ the physical worker.
 :::{arch} SerialTaskRunner  
 :id: SerialTaskRunner  
 
-`SerialTaskRunner` runs cooperative task turns on an existing `SerialExecutor`.
+`SerialTaskRunner` runs cooperative task turns on an existing `SerialLane`.
 It supports yield/re-admission through `AGAIN` and completion through `DONE`,
 without adding elapsed-time scheduling.
 :::
@@ -1995,7 +1995,7 @@ without adding elapsed-time scheduling.
 :id: ScheduledTaskRunner  
 
 `ScheduledTaskRunner` runs cooperative task turns on an existing
-`SerialScheduledExecutor`, including delayed `AFTER` continuation and bounded
+`SerialScheduledLane`, including delayed `AFTER` continuation and bounded
 task completion waiting/cancellation.
 :::
 
@@ -2393,7 +2393,7 @@ to happen in a clear order.
 The process view refines the logical TimingNode component into execution
 ownership. These processors are intentionally **not separate functional
 subsystems in Figure SI01-01**; they define how its responsibilities execute.
-The specific `SerialExecutor` implementation belongs to Java SDD-02.
+The specific `SerialLane` implementation belongs to Java SDD-02.
 
 :::{arch} LogBookProcessor
 :id: LogBookProcessor
