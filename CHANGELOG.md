@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Use `NodeService` as the Java naming-guide example for the node-local Task Lane service; keep `Runner` reserved for execution mechanisms.
+
 - Clarify Java naming/readability: Domain/Application code uses plain queue/queued terminology, distinguishes queued work from completed work, documents wait/no-wait boundaries, and includes concrete Prefer/Avoid examples for component and local-variable names.
 
 - Clarify Java lifecycle design: data readiness does not by itself create a sibling lifecycle dependency; activation order reflects real execution/ingress dependencies and remains owned by `ComponentLifecycleManager`.
