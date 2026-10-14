@@ -155,6 +155,12 @@ consumer lane before enabling a producer that may immediately emit work to it. T
 `ComponentLifecycleManager` owns that order, rollback and reverse deactivation; sibling
 components do not coordinate each other's internal lifecycle state.
 
+If components deliberately do not implement one shared lifecycle interface, do not recreate
+that interface dynamically with reflection. Register lifecycle actions explicitly with
+compile-time method references so renamed or missing lifecycle methods fail during compilation.
+Deriving a diagnostic component name from the registered instance is fine; discovering
+`activate()` or `deactivate()` by method-name lookup is not.
+
 **Why**
 
 Object composition remains predictable. Creating an object should not unexpectedly start a
