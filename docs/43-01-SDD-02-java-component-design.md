@@ -279,12 +279,14 @@ domain/
     task/
       NodeTaskProcessor.java            Task Lane owner + node task coordination
     upstream/
-      UpstreamHandler.java              semantic upstream dispatch (rename tracked by #520)
+      UpstreamHandler.java              node-scoped semantic upstream dispatch
       UpstreamHandlerTask.java          bounded Task Lane upstream turn
       UpstreamHeartbeat.java            PING/heartbeat protocol state
       UpstreamDataSync.java             RACE_DATA sequence/ACK/REQ/SYNC ownership
       LogBookSync.java                  TIMING_DATA head/SYNC/REQ/batch synchronization
+      UpstreamNodeData.java             typed access to Data Lane-owned state
     racedata/
+      RaceDataState.java               transactional validation/apply of RACE_DATA
       TeamAssignments.java              received RegistrationId -> TeamId assignments
       StageStartTimes.java              received TeamId -> TimingTimestamp starts
     processing/
@@ -1096,6 +1098,14 @@ NodeDataProcessor
        -> AppendOnlyRecordStore
             <- FileAppendOnlyRecordStore selected by Runtime
 ```
+
+The typed `UpstreamNodeData` boundary permits protocol processing to
+request transactional RACE_DATA changes and immutable/bounded LogBook history
+without receiving mutable `TeamAssignments`, `StageStartTimes`, `LogBook`
+or `UniqueTeamRegistrations` references. `RaceDataState` validates changes
+on copies and installs both race/reference data sets atomically; the upstream
+protocol sends an ACK only after successful application on the Data Lane.
+Data Lane operations must not be called synchronously from Task Lane work.
 
 `AppendOnlyRecordStore` contains only opaque-record storage semantics.
 `DefaultTimingDataPersistence` owns TimingData codec, TimingNodeId and sequence
