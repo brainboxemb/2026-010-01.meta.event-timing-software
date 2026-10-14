@@ -2395,10 +2395,10 @@ ownership. These processors are intentionally **not separate functional
 subsystems in Figure SI01-01**; they define how its responsibilities execute.
 The specific `SerialExecutor` implementation belongs to Java SDD-02.
 
-:::{arch} NodeDataProcessor
-:id: NodeDataProcessor
+:::{arch} LogBookProcessor
+:id: LogBookProcessor
 
-One `NodeDataProcessor` belongs to each TimingNode. It owns the bounded,
+One `LogBookProcessor` belongs to each TimingNode. It owns the bounded,
 ordered **Data Lane**, TimingData recovery/commit, lifecycle/location state,
 the committed LogBook and Data Lane-owned ORDERED queries. It publishes
 immutable CURRENT read models plus recovered/committed TimingData facts for
