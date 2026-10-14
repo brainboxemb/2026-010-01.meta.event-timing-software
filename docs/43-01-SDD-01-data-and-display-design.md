@@ -7,7 +7,7 @@ Software item: **SI-01 — Timing Point Application**
 ## Purpose
 
 This SDD explains **how the data flows inside SI-01**: how LogBook entries are
-recorded, when a TimingData record is committed, how restart/recovery works, and
+recorded, when a TimingData record is committed, how persisted TimingData is loaded after restart, how an interrupted final write is repaired, and
 how queries, prepare-team data and display data use that state.
 
 ## Terms and abbreviations
@@ -185,7 +185,7 @@ The contained state objects are passive but not globally readable. Lifecycle,
 location and LogBook mutations occur only on the Data Lane. RaceData and derived
 timing mutations occur only on the Task Lane. TimingData sequence allocation
 therefore needs no producer lock because only the Data Lane performs the commit
-step. Cross-lane information is immutable and bounded: recovery/commit facts
+step. Cross-lane information is immutable and bounded: initial-load/commit facts
 flow Data -> Task; LogBook replay requests/results flow Task -> Data.
 
 ### TimingData commit and sequence
@@ -441,13 +441,13 @@ be shared across both lanes and across nodes. FIFO/one-at-a-time ordering is
 guaranteed within each lane; cross-lane ordering is expressed only through the
 explicit immutable handoffs defined above.
 
-## TimingData persistence and recovery
+## TimingData persistence and startup loading
 
 This design implements `SI01-REQ-045..048` together with the applicable IF-05
 semantics and the reference representation in
 `33-05-IDD-timingdata-interchange.md`.
 
-### Recovering the next sequence
+### Loading persisted TimingData and determining the next sequence
 
 No separate sequence-counter file is required.
 The TimingData file already tells us the last committed sequence:
@@ -457,8 +457,10 @@ no committed records       -> nextSequence = 1
 last committed sequence N  -> nextSequence = N + 1
 ```
 
-At startup, each TimingNode performs this recovery as its **first ordered
-TimingNode-lane task**, after `activate()` has started the lane and returned:
+At startup, `LogBookProcessor` queues this load as the **first ordered Data Lane task**.
+`NodeTaskProcessor` has an independent lifecycle: its Task Lane may already be running
+while the persisted TimingData is being read. The initial loaded-data snapshot is input
+to Task-owned derived timing state; it is not a precondition for Task Lane activation:
 
 - read complete IF-05 records in order;
 - check that the file belongs to one TimingNode;
@@ -471,11 +473,12 @@ The lane ownership is about ordering and single-writer semantics, not physical
 parallelism. Multiple TimingNode lanes may share one physical TimingNode worker,
 so startup file reads may intentionally execute one at a time.
 
-A half-written **last** record after power loss is recoverable: truncate back to
-the last complete record and continue from there.
+A half-written **last** record after power loss can be repaired: truncate back to
+the last complete record and continue from there. This tail repair is recovery behaviour;
+the normal act of reading existing complete records is not.
 
 A corrupt **complete** record, duplicate sequence or gap is different. Do not
-silently skip or renumber it. Stop recovery for that TimingNode and report the
+silently skip or renumber it. Stop the startup load for that TimingNode and report the
 problem so support/operator tooling can see it.
 
 If a cached sequence-counter file is introduced for faster startup, it is only a
@@ -522,7 +525,7 @@ We do not need a database just to solve these cases.
 ### Operational TimingData and LogBook logging
 
 TimingData/LogBook logging is part of this detailed design because the useful
-level depends on the domain commit and recovery semantics above. The generic
+level depends on the domain commit and startup-load semantics above. The generic
 level meanings remain defined by Java design rule DR-09.
 
 The normal INFO stream is intended to reconstruct meaningful timing operation
@@ -531,16 +534,16 @@ logged only after both persistence append and LogBook visibility have succeeded.
 
 | Event/fact | Level | Design intent |
 | --- | --- | --- |
-| TimingData recovery starts | INFO | show node startup/recovery progress |
-| TimingData recovery completes | INFO | include TimingNodeId, recovered record count and tail-repair flag |
-| incomplete final record tail repaired | WARN | recovery succeeded, but evidence of an interrupted previous write deserves attention |
+| TimingData load starts | INFO | show node startup loading progress |
+| TimingData load completes | INFO | include TimingNodeId, loaded record count and tail-repair flag |
+| incomplete final record tail repaired | WARN | startup load succeeded after repairing evidence of an interrupted previous write |
 | one tag passage/semantic automatic-registration candidate selected | INFO | include RegistrationId plus selected TagId/RSSI/time; this is one passage decision, not every raw observation |
 | successful TimingData commit | INFO | emit only after durable append + LogBook add; include node, sequence, type and relevant registration/location/time provenance |
 | raw TagObservation | TRACE | potentially high rate; never normal INFO |
 | unmapped TagId / duplicate suppression / filter decision | DEBUG | useful for diagnosis without polluting normal operation logs |
 | ordinary LogBook range/latest/count query | no INFO | query traffic is not an operational state transition; DEBUG only when diagnosis specifically needs it |
 | recoverable queue/admission or automatic-repair anomaly | WARN | operation is degraded/rejected but component may continue |
-| TimingData recovery or persistence failure that makes the node unreliable | ERROR | node cannot safely continue its TimingData role |
+| TimingData load/validation or persistence failure that makes the node unreliable | ERROR | node cannot safely continue its TimingData role |
 
 Two distinct INFO facts may therefore appear for the automatic RFID path:
 
@@ -558,19 +561,19 @@ commit/LogBook visibility boundary. They must not be collapsed into one prematur
 "written" message.
 
 The LogBook and TimingData file remain authoritative. Logs are a human-readable
-operational narrative and must not be replayed as recovery state.
+operational narrative and must not be used to rebuild runtime state.
 
 The same commit boundary owns the generic `newDataEntryEvent`. It is emitted by
 `LogBookProcessor` only after durable persistence and LogBook visibility have
 succeeded. `LogBook` itself remains passive and emits no event: `LogBook.add`
-is also used while rebuilding existing history during recovery, which must not
+is also used while rebuilding existing history during the initial load, which must not
 be mistaken for new data. Upstream delivery, post-processing and presentation
 are optional consumers that subscribe to this event; the Data component has no
 dependency on those consumers.
 
 ### Startup flow
 
-Lifecycle activation and recovery are deliberately separate:
+Lifecycle activation and persisted-data loading are deliberately separate:
 
 ```text
 start process
@@ -581,9 +584,14 @@ load configuration / compose components
    v
 TimingNode.activate()
    |
-   +--> start Data Lane
-   +--> admit TimingData recovery as first Data Lane task
-   +--> start Task Lane
+   +--> ComponentLifecycleManager activates NodeTaskProcessor
+   |       +--> start Task Lane
+   |
+   +--> activate LogBookProcessor
+   |       +--> start Data Lane
+   |       +--> admit persisted-TimingData load as first Data Lane task
+   |
+   +--> activate TagProcessor
    +--> return; other components may continue activation
    |
    +------------------------------+
@@ -594,9 +602,9 @@ Data Lane                         | other application startup may continue
 read and validate complete    other nodes / interfaces / devices activate
 IF-05 records
    |
-   +--> half-written final line: truncate to last complete record + report
+   +--> half-written final line: truncate to last complete record + report repair
    |
-   +--> corrupt complete record / duplicate / gap: recovery error state
+   +--> corrupt complete record / duplicate / gap: load/validation error state
    |
    v
 nextSequence = last committed sequence + 1
@@ -604,7 +612,7 @@ nextSequence = last committed sequence + 1
    v
 rebuild LogBook
    |
-   +--> immutable recovered TimingData snapshot
+   +--> immutable initial TimingData snapshot
               |
               v
           Task Lane
@@ -615,8 +623,8 @@ rebuild LogBook
 publish first CURRENT Status
 ```
 
-The recovery task is ordered before later TimingNode commands. Presentation or
-coordination components may already be active while recovery is running; until
+The persisted-data load is ordered before later LogBook/Data Lane commands. Presentation or
+coordination components may already be active while the initial load is running; until
 the first Status is published they must represent the node as not ready rather
 than guessing CLOSED.
    |
@@ -923,13 +931,13 @@ needed around that interface:
 - **CAND-DATA-001** — The initial implementation shall maintain committed
   LogBook state, next-up state and reference state in typed in-memory objects
   without requiring an external database engine.
-- **CAND-DATA-002** — `TimingDataPersistence` shall be the durable/recovery source
+- **CAND-DATA-002** — `TimingDataPersistence` shall be the durable source used to rebuild LogBook after restart
   for committed TimingData.
 - **CAND-DATA-003** — NextUpTeams, StageStartTimes and RaceData shall each use a
   type-specific store when their accepted state/snapshots are preserved for
   analysis; these stores shall not be treated as runtime recovery authority
   unless a requirement explicitly says so.
-- **CAND-DATA-004** — TimingData recovery faults and analysis-store failures
+- **CAND-DATA-004** — TimingData startup-load/validation faults and analysis-store failures
   shall be visible in system status/diagnostics.
 - **CAND-DATA-005** — The system shall track enough reference-data
   synchronisation metadata to determine whether local data is current/stale

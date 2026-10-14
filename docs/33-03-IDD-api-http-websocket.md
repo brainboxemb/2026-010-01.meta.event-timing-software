@@ -148,7 +148,7 @@ Problem entries use:
 `nodeId` is present for a TimingNode-scoped problem and omitted for an
 application-wide problem.
 
-A contained TimingData recovery failure is represented for example as:
+A contained persisted TimingData load/validation failure is represented for example as:
 
 ```json
 {
@@ -161,10 +161,10 @@ A contained TimingData recovery failure is represented for example as:
   ],
   "problems": [
     {
-      "code": "TIMING_DATA_RECOVERY_FAILED",
+      "code": "TIMING_DATA_LOAD_FAILED",
       "severity": "ERROR",
       "nodeId": "TN-01",
-      "message": "TimingData recovery failed for TN-01"
+      "message": "Persisted TimingData load failed for TN-01"
     }
   ]
 }

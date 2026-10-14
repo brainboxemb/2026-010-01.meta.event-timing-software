@@ -18,9 +18,9 @@ The repository is currently in its planning and research phase.
 
 - Define bounded asynchronous logging execution: default console/file sinks run on one Infrastructure writer thread, publishers use non-blocking queue admission, retained files flush in batches, and logging overload drops/diagnoses records instead of blocking timing lanes.
 
-- Define the logging strategy in two layers: DR-09 owns generic TRACE/DEBUG/INFO/WARN/ERROR semantics and owner/commit-boundary rules, while SDD-01 defines the concrete TimingData/LogBook recovery, tag-passage, commit, query and failure logging matrix.
+- Define the logging strategy in two layers: DR-09 owns generic TRACE/DEBUG/INFO/WARN/ERROR semantics and owner/commit-boundary rules, while SDD-01 defines the concrete TimingData/LogBook startup-load, tail-repair, tag-passage, commit, query and failure logging matrix.
 
-- Clarify TimingNode lifecycle versus startup recovery: activate starts execution context and queues recovery on the node lane; CURRENT readiness and Conductor reconciliation occur after the first recovery task, without requiring parallel filesystem workers.
+- Separate TimingNode child lifecycle from persisted TimingData startup loading: Task Lane activation is independent of LogBook state, LogBookProcessor queues the persisted-data load as the first Data Lane task, CURRENT readiness follows that load, only interrupted-tail repair is described as recovery behaviour, and IF-03 reports load/validation failure as `TIMING_DATA_LOAD_FAILED`.
 
 - Document shared transactional Settings as an Infrastructure/cross-cutting concept alongside Configuration, with SI-01 architecture diagram and Java component/design-rule alignment.
 

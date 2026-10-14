@@ -96,18 +96,18 @@ The current status model exposes 1..N TimingNodes. For each node it provides:
 
 `ERROR` means the TimingNode is not available for normal operational commands because
 a contained node-local failure prevented safe operation. The first such case is startup
-TimingData recovery failure.
+persisted TimingData load/validation failure.
 
 Status can also expose machine-readable problem entries. A problem has a stable code,
 severity and human-readable explanation. A TimingNode-scoped problem identifies the
 affected TimingNode. Clients shall make decisions from the machine-readable state/code,
 not by parsing human-readable problem text.
 
-For the current recovery-containment baseline, a TimingData startup-recovery failure
-uses problem code `TIMING_DATA_RECOVERY_FAILED` with severity `ERROR`.
+For the current containment baseline, a persisted TimingData load/validation failure
+uses problem code `TIMING_DATA_LOAD_FAILED` with severity `ERROR`.
 
 A restarted TimingNode begins `CLOSED` with no current operational LocationId unless a
-later requirement explicitly defines another recovery rule. Historical TimingData does
+later requirement explicitly defines another restart-state rule. Historical TimingData does
 not by itself recreate live operational state.
 
 ## Operation identifiers
@@ -386,12 +386,12 @@ A conforming client can:
 
 1. obtain a complete current status snapshot;
 2. query LogBook metadata/ranges for missed committed records;
-3. combine the recovered baseline with later live events;
+3. combine the retrieved baseline with later live events;
 4. deduplicate overlapping committed records by stable TimingData record identity;
 5. mark its view live only after that reconciliation is complete.
 
 No durable replay of every transient live event is required while a client is disconnected.
-Committed TimingData is recovered through the LogBook.
+Committed TimingData is retrieved through the LogBook.
 
 ## Failure semantics
 
@@ -720,8 +720,8 @@ IF03-OP-002 and the complete status snapshot from IF03-OP-003 shall represent a
 contained TimingNode startup failure using node state `ERROR` and a machine-readable
 problem associated with the affected TimingNodeId.
 
-A TimingData startup-recovery failure shall use problem code
-`TIMING_DATA_RECOVERY_FAILED` with severity `ERROR`. Normal state-changing or
+A persisted TimingData load/validation failure shall use problem code
+`TIMING_DATA_LOAD_FAILED` with severity `ERROR`. Normal state-changing or
 registration operations addressed to a TimingNode in `ERROR` shall return an explicit
 failure outcome rather than being accepted as normal operation.
 :::
