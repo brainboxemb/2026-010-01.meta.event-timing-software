@@ -757,7 +757,7 @@ registration, every TagId resolving to that RegistrationId is suppressed by the
 same duplicate window.
 
 `RACE_DATA` is the ordered upstream message stream, not a mutable domain object.
-Its incremental changes are applied on the Data Lane to passive state such as
+Its incremental changes are applied on the Task Lane to passive state such as
 `TeamAssignments` and `StageStartTimes`. EventData remains the owner of stable
 TagId/RegistrationId/TeamId profile semantics; TeamAssignments owns only live
 RegistrationId-to-TeamId overrides where EventData has no stable TeamId.
@@ -765,8 +765,9 @@ RegistrationId-to-TeamId overrides where EventData has no stable TeamId.
 `TimingNode` remains the visible Domain component boundary used by higher layers,
 but it is a composition/lifecycle facade rather than a serial-execution owner.
 It composes `LogBookProcessor`, `NodeTaskProcessor` and its node-local
-`TagProcessor`. `LogBookProcessor` owns Data Lane admission, command/query
-execution, recovery, mutable node state and post-commit event publication.
+`TagProcessor`. `LogBookProcessor` owns Data Lane admission, LogBook command/query
+execution, recovery, lifecycle/location state, durable TimingData commit and
+post-commit event publication.
 `NodeTaskProcessor` owns Task Lane lifecycle, bounded task admission and
 semantic upstream composition. Both logical serial lanes are supplied by Runtime
 and may share one physical worker. The TagProcessor uses its separately supplied
@@ -788,19 +789,20 @@ publishes the first immutable status with safe cross-thread visibility and emits
 the status event. Deactivation makes CURRENT status unavailable; reactivation
 queues a fresh recovery task and later publishes a fresh snapshot.
 
-One typed query boundary exposes two explicit consistency modes:
+LogBook queries expose two explicit consistency modes:
 
 ```text
 CURRENT
   latest safely published completed snapshot; no lane admission/wait/timeout
 
 ORDERED
-  execute on the Data Lane after earlier accepted node work
+  execute on the Data Lane after earlier accepted LogBook work
 ```
 
-The existing one-argument `query(query)` remains ORDERED. A caller chooses CURRENT only
-when the query definition supports it. Status supports CURRENT and ORDERED; TimingData
-count and bounded LogBook range/latest reads remain ORDERED only.
+The one-argument LogBook query remains ORDERED. A caller chooses CURRENT only
+when that LogBookQuery explicitly supports it. Status and the published LogBook
+head support CURRENT; count and record/range reads remain ORDERED. Task-owned
+queries such as StageTiming are separate and execute on NodeTaskProcessor.
 
 State-changing commands still execute on the Data Lane. After a command
 completes its domain mutation, LogBookProcessor builds and publishes the immutable after-Status
@@ -2869,21 +2871,23 @@ separately:
 
 ```java
 final class TimingNode {
-    private final LogBookProcessor dataProcessor;
+    private final LogBookProcessor logBookProcessor;
     private final NodeTaskProcessor taskProcessor;
 
-    <R> R invoke(TimingNodeCommand<R> command) {
-        return dataProcessor.invoke(command);
+    <R> R invoke(LogBookCommand<R> command) {
+        return logBookProcessor.invoke(command);
     }
 
-    CommandAdmission offer(TimingNodeCommand<?> command) {
-        return dataProcessor.offer(command);
+    CommandAdmission offer(LogBookCommand<?> command) {
+        return logBookProcessor.offer(command);
     }
 
-    <R> R query(TimingNodeQuery<R> query) {
-        return query.isTaskOwned()
-                ? taskProcessor.query(query)
-                : dataProcessor.query(query);
+    <R> R query(LogBookQuery<R> query) {
+        return logBookProcessor.query(query);
+    }
+
+    List<StageTime> stageTiming(ZoneId zone) {
+        return taskProcessor.stageTiming(zone);
     }
 }
 
