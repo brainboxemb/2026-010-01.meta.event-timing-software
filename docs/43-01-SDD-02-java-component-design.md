@@ -284,9 +284,10 @@ domain/
       UpstreamHeartbeat.java            PING/heartbeat protocol state
       UpstreamDataSync.java             RACE_DATA sequence/ACK/REQ/SYNC ownership
       LogBookSync.java                  TIMING_DATA head/SYNC/REQ/batch synchronization
-      UpstreamNodeData.java             typed access to Data Lane-owned state
+      UpstreamNodeData.java             typed Data Lane LogBook/head access
+      UpstreamTaskState.java            typed Task Lane RaceData/derived-state access
     racedata/
-      RaceDataState.java               transactional validation/apply of RACE_DATA
+      RaceDataState.java                Task Lane-owned transactional RACE_DATA state
       TeamAssignments.java              received RegistrationId -> TeamId assignments
       StageStartTimes.java              received TeamId -> TimingTimestamp starts
     processing/
@@ -1099,13 +1100,23 @@ NodeDataProcessor
             <- FileAppendOnlyRecordStore selected by Runtime
 ```
 
-The typed `UpstreamNodeData` boundary permits protocol processing to
-request transactional RACE_DATA changes and immutable/bounded LogBook history
-without receiving mutable `TeamAssignments`, `StageStartTimes`, `LogBook`
-or `UniqueTeamRegistrations` references. `RaceDataState` validates changes
-on copies and installs both race/reference data sets atomically; the upstream
-protocol sends an ACK only after successful application on the Data Lane.
-Data Lane operations must not be called synchronously from Task Lane work.
+The typed upstream boundaries mirror lane ownership rather than exposing
+mutable collaborators:
+
+- `UpstreamNodeData` exposes only Data Lane-owned TIMING_DATA/LogBook
+  capabilities: a safely published source head and bounded immutable history
+  batches.
+- `UpstreamTaskState` exposes Task Lane-owned RaceData and derived current
+  state: transactional RACE_DATA application, TeamId/start-time resolution and
+  the unique-team count.
+
+`RaceDataState` validates a RACE_DATA change set against copies and installs
+`TeamAssignments` and `StageStartTimes` atomically on the Task Lane. The
+RACE_DATA ACK follows that successful Task Lane application; no Data Lane hop
+is required for RaceData. Data Lane recovery/commit instead publishes immutable
+TimingData facts so Task Lane-owned `UniqueTeamRegistrations` and timing views
+can rebuild/update without receiving the mutable LogBook. Neither lane
+synchronously waits for work queued on the other lane.
 
 `AppendOnlyRecordStore` contains only opaque-record storage semantics.
 `DefaultTimingDataPersistence` owns TimingData codec, TimingNodeId and sequence
@@ -2795,24 +2806,31 @@ hierarchy. One TimingNode owns two logically independent bounded serial lanes:
 ```text
 TimingNode
   ├── Data Lane  -> NodeDataProcessor, LogBook, persistence,
-  │                lifecycle/location, TeamAssignments, StageStartTimes,
-  │                UniqueTeamRegistrations
-  └── Task Lane  -> NodeTaskProcessor, upstream coordination,
-                   heartbeat and synchronization protocol progress
+  │                lifecycle/location, TimingData sequence + commit
+  └── Task Lane  -> NodeTaskProcessor, RaceDataState,
+                   TeamAssignments, StageStartTimes,
+                   UniqueTeamRegistrations, StageTiming,
+                   upstream coordination + heartbeat
 ```
 
-The **Data Lane** is the sole writer for mutually consistent node data.
-A durable append and the resulting LogBook/derived-state publication remain
-one ordered transaction. INITIAL recovery runs as the first Data Lane task.
-The Task Lane cannot bypass that recovery to consume uninitialized data.
-Status CURRENT reads use a published immutable snapshot. ORDERED data
-queries and mutations enter the Data Lane, not the Task Lane.
+The **Data Lane** is the sole writer for the append-only TimingData source:
+lifecycle/location state, sequence allocation, persistence and LogBook
+visibility. INITIAL recovery runs as its first task. A successful recovery
+publishes an immutable recovered-history fact; each later successful commit
+publishes an immutable committed-TimingData fact.
 
-RACE_DATA and TIMING_DATA synchronization cross the boundary via bounded
-asynchronous commands and immutable results. No lane blocks on a Future
-belonging to the other lane while they may share one physical worker.
-Activation and shutdown must account for pending cross-lane replies before
-either lane is closed; no reply may ACK uncommitted data.
+The **Task Lane** is the sole writer for live RaceData and its derived timing
+state. It owns `RaceDataState`, `TeamAssignments`, `StageStartTimes`,
+`UniqueTeamRegistrations` and Task Lane-owned `StageTiming` queries.
+Recovered/committed TimingData facts rebuild or incrementally update that
+derived state.
+
+RACE_DATA therefore does **not** cross to the Data Lane: sequence validation,
+transactional live-state mutation and ACK happen on the Task Lane. TIMING_DATA
+REQ/replay is different because its source is the Data Lane-owned LogBook; that
+path uses bounded asynchronous handoff and immutable history batches. No lane
+blocks on a Future belonging to the other lane while they may share one
+physical worker.
 
 ### Why composition instead of an ActiveObject base class
 
@@ -2839,12 +2857,14 @@ final class TimingNode {
     }
 
     <R> R query(TimingNodeQuery<R> query) {
-        return dataProcessor.query(query);
+        return query.isTaskOwned()
+                ? taskProcessor.query(query)
+                : dataProcessor.query(query);
     }
 }
 
-// NodeDataProcessor owns the Data Lane and the ordered domain state.
-// NodeTaskProcessor owns the Task Lane and upstream coordination.
+// NodeDataProcessor owns TimingData/LogBook/lifecycle state.
+// NodeTaskProcessor owns RaceData/derived timing/protocol state.
 ```
 
 The visible `TimingNode` delegates execution mechanics to its processors.
@@ -3211,31 +3231,44 @@ stalls the role worker, the next design step is a bounded durability mechanism t
 commit-before-LogBook/event ordering; it is not to multiply the stress target per node.
 
 For example, an ordered RACE_DATA message containing a StageStartTimes
-change follows a **non-blocking two-lane handoff**:
+change remains entirely on its owning Task Lane:
 
 ```text
 Task Lane / UpstreamHandler
-  -> validate sequence, mark update in-flight
-  -> offer bounded immutable change to Data Lane
-  -> return without waiting
-
-Data Lane
-  -> validate change against current node state
-  -> atomically apply TeamAssignments/StageStartTimes SET/DEL
-  -> report committed result to Task Lane (bounded asynchronous handoff)
-
-Task Lane
-  -> advance lastAppliedRaceSeq only for the committed result
+  -> validate NodeId + sequence
+  -> RaceDataState validates changes against copies
+  -> atomically replace TeamAssignments + StageStartTimes
+  -> advance lastAppliedRaceSeq
   -> enqueue ACK(stream=RACE_DATA, seq=lastAppliedRaceSeq)
-  -> admit next ordered update
 ```
 
-When a sequence gap is observed, no data mutation is admitted and the
-Task Lane requests the first missing sequence. Failed Data Lane admission,
-commit failure or shutdown must not advance the upstream cursor or ACK.
-If received RACE_DATA is not persisted over reboot, the node restarts at
-sequence 0 and requests the retained stream from 1. Optional analysis
-history does not change this ordering contract.
+A sequence gap requests the first missing sequence without mutating live state.
+An invalid change does not advance or ACK the sequence. If received RACE_DATA is
+not persisted over reboot, the node restarts at sequence 0 and requests the
+retained stream from 1.
+
+The cross-lane direction is instead driven by durable TimingData facts:
+
+```text
+Data Lane
+  -> persist TimingData
+  -> publish LogBook visibility
+  -> emit immutable committed TimingData fact
+       |
+       +-- bounded Task Lane handoff
+              -> update UniqueTeamRegistrations
+              -> update Task Lane timing history/view
+
+Data Lane recovery
+  -> rebuild LogBook
+  -> emit immutable recovered TimingData snapshot
+       |
+       +-- bounded Task Lane handoff
+              -> rebuild UniqueTeamRegistrations + timing view
+```
+
+A full Task Lane handoff must be visible as overload/unavailable derived state;
+it must never silently produce a stale unique-team count.
 
 ### Simple typed events
 
