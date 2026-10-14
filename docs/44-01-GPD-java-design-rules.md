@@ -707,7 +707,7 @@ architecture, without first knowing the implementation mechanism.
 | Execute serially and return the result | `executeOnDataLaneAndWait(...)` | generic `run(...)` when waiting is important |
 | Active component that owns LogBook behaviour | `LogBook` | `LogBookProcessor` when it is more than a processor |
 | Passive committed history | `LogBookData` | another active-sounding `LogBook` |
-| Node Task Lane component | `NodeTasks` | `NodeTaskRunner` when it owns domain state as well |
+| Node Task Lane service | `NodeService` | `NodeTaskRunner` when it owns domain state as well |
 | Actual input-processing component | `TagProcessor` | renaming merely for suffix consistency |
 | Registration being matched for revoke | `activeRegistration` | `candidate` |
 | Team ID read from static EventData | `configuredTeamId` | `fixed` |
