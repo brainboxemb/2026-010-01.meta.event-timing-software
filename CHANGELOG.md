@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Clarify Java lifecycle design: data readiness does not by itself create a sibling lifecycle dependency; activation order reflects real execution/ingress dependencies and remains owned by `ComponentLifecycleManager`.
+
 - Define explicit BentoFX tab affordance for SI-02: the strip has its own surface, every tab has a raised fill and quiet separator, selected tabs use #dbeaf9, and only the active/focused leaf adds the restrained accent.
 
 - Document SI-02 NetBeans Run/Debug as a separate Java 21-capable child JVM via Maven `exec:exec`, with runtime classpath, Windows long-classpath handling and NetBeans JDWP child-process debugging; Maven/JGit/ForkJoin threads remain outside the Engineering Client runtime.
