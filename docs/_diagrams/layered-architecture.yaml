@@ -206,60 +206,24 @@ nodes:
   notation: component
   layout: {x: 75, y: 732, w: 280, h: 50}
 
-# TimingNode is the top-level node component and composition/lifecycle boundary.
-# Mutable work is owned by explicit processors; the aggregate itself does not own
-# queue/Future execution mechanics.
-- id: node-data-processor
-  object_id: NodeDataProcessor
+# SI01-01 is the logical (4+1) component/responsibility view, not a
+# threading/execution model. NodeDataProcessor, NodeTaskProcessor and the
+# logical lanes are explained in the process view / Java detailed design.
+# Keep functional node responsibilities visible and preserve enough vertical
+# space for the packaging-component renderer's header and item text.
+- id: next-up-teams
+  object_id: NextUpTeams
   group: timing-node-aggregate
-  label: "NodeDataProcessor"
-  subtitle: "Data Lane • commands • ordered queries"
-  items:
-    - label: "Node data"
-      object_id: TimingNodeData
-      items:
-        - label: LogBook
-          object_id: LogBook
-        - label: "Persistence"
-          items:
-            - label: TimingDataPersistence
-            - label: DefaultTimingDataPersistence
-    - label: "RaceData"
-      items:
-        - label: TeamAssignments
-          object_id: TeamAssignments
-        - label: StageStartTimes
-          object_id: StageStartTimes
-    - label: "Timing"
-      object_id: TimingNodeTiming
-      items:
-        - label: UniqueTeamRegistrations
-          object_id: UniqueTeamRegistrations
-        - label: StageTiming
+  label: "NextUpTeams"
+  subtitle: "teams expected next"
   kind: service
-  notation: packaging-component
-  layout: {x: 405, y: 662, w: 330, h: 238}
-
-- id: node-task-processor
-  object_id: NodeTaskProcessor
-  group: timing-node-aggregate
-  label: "NodeTaskProcessor"
-  subtitle: "Task Lane • coordination • protocol"
-  items:
-    - label: "UpstreamHandler"
-      items:
-        - label: UpstreamHeartbeat
-        - label: UpstreamDataSync
-        - label: LogBookSync
-  kind: service
-  notation: packaging-component
-  layout: {x: 755, y: 662, w: 340, h: 238}
+  notation: component
+  layout: {x: 640, y: 657, w: 220, h: 50}
 
 - id: node-processing
   object_id: TimingNodeProcessing
   group: timing-node-aggregate
-  label: "Tag processing"
-  subtitle: "independent scheduled lane"
+  label: "Processing"
   items:
     - label: TagProcessor
       object_id: TagProcessor
@@ -267,7 +231,53 @@ nodes:
     - label: RegistrationDuplicateFilter
   kind: service
   notation: packaging-component
-  layout: {x: 405, y: 606, w: 690, h: 48}
+  layout: {x: 405, y: 722, w: 220, h: 120}
+
+- id: node-data
+  object_id: TimingNodeData
+  group: timing-node-aggregate
+  label: "RaceData"
+  items:
+    - label: TeamAssignments
+      object_id: TeamAssignments
+    - label: StageStartTimes
+      object_id: StageStartTimes
+  kind: service
+  notation: packaging-component
+  layout: {x: 640, y: 722, w: 220, h: 120}
+
+- id: node-timing
+  object_id: TimingNodeTiming
+  group: timing-node-aggregate
+  label: "Timing"
+  items:
+    - label: UniqueTeamRegistrations
+      object_id: UniqueTeamRegistrations
+    - label: StagePassageList
+      object_id: StagePassageList
+    - label: StageRanking
+      object_id: StageRanking
+  kind: service
+  notation: packaging-component
+  layout: {x: 875, y: 722, w: 220, h: 120}
+
+- id: logbook-domain
+  object_id: LogBook
+  group: timing-node-aggregate
+  label: "LogBook"
+  subtitle: "committed TimingData • persistence"
+  kind: service
+  notation: component
+  layout: {x: 405, y: 857, w: 280, h: 50}
+
+- id: upstream-message-port
+  object_id: TimingNodeUpstreamMessagePort
+  group: timing-node-aggregate
+  label: "Upstream"
+  subtitle: "node-scoped protocol handling"
+  kind: service
+  notation: component
+  layout: {x: 815, y: 857, w: 280, h: 50}
 
 - id: event-data-domain
   object_id: EventData
@@ -590,13 +600,4 @@ edges:
   to: timing-node-aggregate
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.50}
-
-# TimingNode is a composition/facade boundary. Its two processors own execution;
-# TagProcessor retains its independent scheduled lane.
-- from: node-task-processor
-  to: node-data-processor
-  dashed: true
-- from: node-processing
-  to: node-data-processor
-  dashed: true
 
