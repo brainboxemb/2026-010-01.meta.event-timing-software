@@ -271,14 +271,14 @@ domain/
   node/
     TimingNode.java                     top-level facade / composition / lifecycle
     logbook/
-      LogBookProcessor.java            Data Lane owner + command/query execution
-      LogBook.java                      passive committed TimingData history
+      LogBook.java                      Data Lane component + command/query/event boundary
+      LogBookData.java                  passive committed TimingData history
       LogBookReader.java              read-only committed LogBook port
       persistence/
         TimingDataPersistence.java      TimingData load/append domain port
         DefaultTimingDataPersistence.java codec/node/sequence mapping to I/O storage
     task/
-      NodeTaskProcessor.java            Task Lane owner + node task coordination
+      NodeService.java            Task Lane owner + node task coordination
     upstream/
       UpstreamHandler.java              node-scoped semantic upstream dispatch
       UpstreamHandlerTask.java          bounded Task Lane upstream turn
@@ -764,11 +764,11 @@ RegistrationId-to-TeamId overrides where EventData has no stable TeamId.
 
 `TimingNode` remains the visible Domain component boundary used by higher layers,
 but it is a composition/lifecycle facade rather than a serial-execution owner.
-It composes `LogBookProcessor`, `NodeTaskProcessor` and its node-local
-`TagProcessor`. `LogBookProcessor` owns Data Lane admission, LogBook command/query
+It composes `LogBook`, `NodeService` and its node-local
+`TagProcessor`. `LogBook` owns Data Lane queueing, command/query
 execution, persisted TimingData startup loading, lifecycle/location state,
 durable TimingData commit and post-commit event publication.
-`NodeTaskProcessor` owns Task Lane lifecycle, bounded task admission and
+`NodeService` owns Task Lane lifecycle, bounded Task Lane queueing and
 semantic upstream composition. Both logical serial lanes are supplied by Runtime
 and may share one physical worker. The TagProcessor uses its separately supplied
 scheduled executor.
@@ -780,13 +780,13 @@ lifecycle-only or partially configured production node. The only non-public cons
 seam exists for deterministic TimingNode execution-boundary tests and is documented as
 test-only in code.
 
-`LogBookProcessor` publishes one immutable current `Status` snapshot as an
+`LogBook` publishes one immutable current `Status` snapshot as an
 explicit read model. The snapshot is unavailable while the initial persisted-data load is pending.
 TimingNode activation uses `ComponentLifecycleManager`: it starts the Task Lane,
-then activates LogBookProcessor so the Data Lane can queue persisted TimingData
+then activates LogBook so the Data Lane can queue persisted TimingData
 loading as its first ordered task, and finally starts TagProcessor ingress. Task
 Lane activation does not depend on LogBook state. The call does not wait for file
-I/O. The Data Lane loads TimingData and rebuilds LogBook, then publishes the first
+I/O. The Data Lane loads TimingData and rebuilds LogBookData/state, then publishes the first
 immutable status with safe cross-thread visibility and emits the status event.
 Deactivation makes CURRENT status unavailable; reactivation performs a fresh
 persisted-data load and later publishes a fresh snapshot.
@@ -795,23 +795,23 @@ LogBook queries expose two explicit consistency modes:
 
 ```text
 CURRENT
-  latest safely published completed snapshot; no lane admission/wait/timeout
+  latest safely published completed snapshot; no lane queue/wait/timeout
 
 ORDERED
-  execute on the Data Lane after earlier accepted LogBook work
+  execute on the Data Lane after earlier queued LogBook work
 ```
 
 The one-argument LogBook query remains ORDERED. A caller chooses CURRENT only
 when that LogBookQuery explicitly supports it. Status and the published LogBook
 head support CURRENT; count and record/range reads remain ORDERED. Task-owned
-queries such as StageTiming are separate and execute on NodeTaskProcessor.
+queries such as StageTiming are separate and execute on NodeService.
 
 State-changing commands still execute on the Data Lane. After a command
-completes its domain mutation, LogBookProcessor builds and publishes the immutable after-Status
+completes its domain mutation, LogBook builds and publishes the immutable after-Status
 before emitting `statusChangedEvent(after)` when the effective status changed. A CURRENT
 status reader therefore observes only completed published transitions.
 
-The LogBook remains mutable TimingNode-owned state and does not become directly readable.
+The active LogBook owns mutable TimingNode state and does not expose `LogBookData` directly.
 A result-bearing ORDERED `invoke(...)` or `query(...)` from inside the same TimingNode
 serial lane must fail immediately as reentrant instead of queueing work behind itself and
 later timing out. CURRENT reads do not enter the lane. This protects synchronous LogBook
@@ -859,27 +859,29 @@ that fact to the node-scoped Application-layer `TimingNodeStatus`; it does not p
 outside the ordered boundary.
 
 The visible Domain component boundary uses typed commands and queries rather than
-mirroring every `LogBookProcessor` method:
+mirroring every `LogBook` method:
 
 ```java
-TimingNodeTypes.OpenResult opened =
-        node.invoke(TimingNodeCommands.open(locationId));
+LogBookAccessor logBook = node.logBook();
 
-TimingNodeTypes.CommandAdmission admitted =
-        node.offer(
-                TimingNodeCommands.addAutomaticRegistration(
+TimingNodeTypes.OpenResult opened =
+        logBook.invoke(LogBookCommands.open(locationId));
+
+TimingNodeTypes.CommandQueueResult queueResult =
+        logBook.queue(
+                LogBookCommands.addAutomaticRegistration(
                         registrationId,
                         time));
 
 TimingNodeTypes.Status currentStatus =
-        node.query(
-                TimingNodeQueries.status(),
-                TimingNodeQuery.ReadConsistency.CURRENT);
+        logBook.query(
+                LogBookQueries.status(),
+                LogBookQuery.ReadConsistency.CURRENT);
 
 TimingNodeTypes.Status orderedStatus =
-        node.query(
-                TimingNodeQueries.status(),
-                TimingNodeQuery.ReadConsistency.ORDERED);
+        logBook.query(
+                LogBookQueries.status(),
+                LogBookQuery.ReadConsistency.ORDERED);
 ```
 
 Presentation adapters use the node-scoped Application boundary:
@@ -898,15 +900,15 @@ node.newDataEntryEvent().subscribe(timingDataListener);
 ```
 
 `invoke(command)` is the result-bearing path: presentation/application callers may
-wait for the processed domain result. `offer(command)` is the producer path: it
-returns only immediate bounded-queue admission and deliberately does not wait for
+wait for the processed domain result. `queue(command)` is the fire-and-forget path:
+it returns only whether the command was queued and deliberately does not wait for
 the later domain result. RFID/TagProcessor-style ingress uses this form so a device
 callback cannot be held up by persistence, LogBook work or another queued TimingNode
 operation.
 
 `query(query, consistency)` makes the read contract explicit. CURRENT returns a safely
 published immutable read model without entering the node lane; ORDERED executes after
-earlier accepted node work on that lane. The one-argument `query(query)` preserves ORDERED
+earlier queued node work on that lane. The one-argument `query(query)` preserves ORDERED
 semantics. Query definitions declare supported consistency modes, so mutable LogBook reads
 cannot accidentally be requested as CURRENT. Result-bearing same-lane ORDERED reentrancy is
 invalid and fails immediately rather than waiting for its own lane. Typed command/query
@@ -984,8 +986,9 @@ mirror the hardware name.
 Detailed Domain composition for LogBook/TimingData ownership, shared UpstreamData
 semantics, routing boundaries and SystemStatus aggregation.
 
-`TimingNode` contains its passive `LogBook` as part of the TimingNode
-aggregate. LogBook keeps 0..N committed `TimingData` values. The current
+`TimingNode` contains the active `LogBook` component and its passive
+`LogBookData` history as part of the TimingNode aggregate. `LogBookData` keeps
+0..N committed `TimingData` values. The current
 design deliberately avoids a second logbook-specific record type because there
 is no different domain shape that needs one.
 
@@ -1098,7 +1101,7 @@ domain behaviour requires it. In the current design,
 For example:
 
 ```text
-LogBookProcessor
+LogBook
   -> TimingDataPersistence
        -> AppendOnlyRecordStore
             <- FileAppendOnlyRecordStore selected by Runtime
@@ -1110,14 +1113,14 @@ Dependency direction is intentionally one-way:
 upstream / presentation / post-processing
           |
           v
-LogBookReader + LogBookProcessor events
+LogBookReader + LogBook events
           ^
           |
-LogBookProcessor -> LogBook + TimingDataPersistence
+LogBook -> LogBookState + LogBookData + TimingDataPersistence
 ```
 
 `domain.node.logbook` must not import `domain.node.upstream`. A deployment that
-only commits/persists LogBook data therefore does not require an upstream
+only commits/persists LogBookData therefore does not require an upstream
 component.
 
 The typed upstream boundaries mirror lane ownership rather than exposing
@@ -1125,7 +1128,7 @@ mutable collaborators:
 
 - `LogBookReader` lives in `domain.node.logbook` and exposes only
   consumer-neutral committed-history capabilities: a safely published source
-  head and bounded immutable LogBook history batches. Upstream may depend on
+  head and bounded immutable LogBookData history batches. Upstream may depend on
   this contract; the logbook package never depends on upstream.
 - `UpstreamTaskState` exposes Task Lane-owned RaceData and derived current
   state: transactional RACE_DATA application, TeamId/start-time resolution and
@@ -1136,13 +1139,13 @@ mutable collaborators:
 RACE_DATA ACK follows that successful Task Lane application; no Data Lane hop
 is required for RaceData. Data Lane startup-load/commit instead publishes immutable TimingData facts so
 Task Lane-owned `UniqueTeamRegistrations` and timing views can rebuild/update
-without receiving the mutable LogBook. This is a data dependency, not a Task Lane
+without receiving mutable LogBookData. This is a data dependency, not a Task Lane
 lifecycle dependency. The normal post-commit publication is
-`LogBookProcessor.newDataEntryEvent()`; the initial load has a separate loaded-data
+`LogBook.newDataEntryEvent()`; the initial load has a separate loaded-data
 publication because loading an existing LogBook record is not new data.
 
-`LogBook` remains passive and owns no event. This is deliberate: only
-`LogBookProcessor` knows that persistence succeeded and LogBook visibility has
+`LogBookData` remains passive and owns no event. This is deliberate: only
+`LogBook` knows that persistence succeeded and LogBookData visibility has
 crossed the commit boundary. Consumers such as upstream delivery,
 post-processing or presentation subscribe outward from that data boundary.
 Neither lane synchronously waits for work queued on the other lane.
@@ -1364,7 +1367,7 @@ validated effective configuration
 
 TimingNode initial persisted-data load:
   -> read/validate persisted TimingData on the Data Lane
-  -> rebuild LogBook / node state derived from committed history
+  -> rebuild LogBookData / node state derived from committed history
   -> publish initial loaded TimingData fact to Task-owned derived views
   -> publish first CURRENT Status
   -> emit statusChangedEvent as a wake signal
@@ -2241,7 +2244,7 @@ public EventSource<TagObservation> tagObservedEvent() {
 ```
 
 Provider callbacks perform only bounded observation ingress. EventData resolution,
-duplicate suppression, passage filtering, diagnostics and TimingNode admission run
+duplicate suppression, passage filtering, diagnostics and TimingNode queueing run
 on the TagProcessor serial scheduled lane.
 
 ### Optional raw-observation persistence
@@ -2254,7 +2257,7 @@ The Java shape is a bounded asynchronous sink:
 ```text
 Antenna Event<TagObservation>
        |
-       +--> TagProcessor ----------------------> TimingNode.offer(...)
+       +--> TagProcessor --> TimingNode.onNewRegistration(...) --> LogBook.queue(...)
        |
        +--> RawTagObservationSink
               |
@@ -2281,7 +2284,7 @@ Required behaviour:
 - stored records preserve the immutable observation values exactly enough for diagnostics;
 - queue-full/drop count is observable;
 - storage/write failures are observable;
-- diagnostic logging failure does not change TagProcessor admission or TimingData commit;
+- diagnostic logging failure does not change TagProcessor queueing or TimingData commit;
 - shutdown performs a bounded drain according to the configured diagnostic-retention
   policy and then closes the store;
 - raw observation files are explicitly non-authoritative and may be rotated/retained
@@ -2302,11 +2305,12 @@ TagProcessor
   -> TagObservationFilter
        keyed by RegistrationId
        retains per-TagId passage attribution
-  -> TimingNode.offer(...)
+  -> TimingNode.onNewRegistration(...)
+  -> LogBook.queue(...)
 ```
 
 `TagProcessor.onTagObserved(...)` is the Antenna EventSource callback. It only
-attempts bounded admission of the immutable observation and returns. Mapping,
+tries to place the immutable observation in its bounded queue and returns. Mapping,
 filtering and diagnostics do not run on the provider callback thread.
 
 On the TagProcessor lane, EventData first resolves the semantic `TagId` to a
@@ -2371,7 +2375,7 @@ another rule.
 The selected observation's original TimingTimestamp becomes the automatic
 registration effective time.
 
-#### Duplicate suppression and admission
+#### Duplicate suppression and queueing
 
 The filtering order is:
 
@@ -2389,15 +2393,15 @@ TagObservation(TagId, RSSI, observedAt)
                   per-TagId attribution
                   strongest observation
                   |
-                  +--> TimingNode.offer(addAutomaticRegistration)
+                  +--> LogBook.queue(addAutomaticRegistration)
                           |
-                          +--> ACCEPTED -> record duplicate window
-                          +--> FULL     -> do not suppress retry
+                          +--> QUEUED -> record duplicate window
+                          +--> QUEUE_FULL -> do not suppress retry
                           +--> NOT_RUNNING -> do not suppress retry
 ```
 
-Record duplicate-window state only after `TimingNode.offer(...)` returns
-`ACCEPTED`. Once R-123 is suppressed, observations from TAG-A and TAG-B are both
+Record duplicate-window state only after `LogBook.queue(...)` returns
+`QUEUED`. Once R-123 is suppressed, observations from TAG-A and TAG-B are both
 suppressed because EventData resolves both to the same RegistrationId.
 
 #### Engineering diagnostic view
@@ -2536,18 +2540,18 @@ The normal automatic-registration flow is:
 antenna/provider callback
   -> Event<TagObservation>
   -> TagProcessor
-  -> TimingNode.offer(...)
+  -> TimingNode.onNewRegistration(...)
+  -> LogBook.queue(...)
   -> Data Lane worker
   -> TimingDataPersistence.append(...)
-  -> LogBook.add(...)
+  -> LogBookData.add(...)
   -> timingDataCommittedEvent.emit(...)
 ```
 
-The first four steps must stay short and must not write files, send network data or wait
-for presentation/upstream work. `TimingNode.offer(...)` is the fire-and-forget boundary:
-it performs only bounded queue admission and returns to TagProcessor without executing or
-waiting for the TimingNode command. The lower-priority Data Lane processes accepted
-work independently afterwards.
+The callback/queueing steps must stay short and must not write files, send network data or wait
+for presentation/upstream work. `LogBook.queue(...)` is the fire-and-forget boundary:
+it only tries to place the command on the bounded Data Lane queue and returns without
+executing or waiting for that command. The Data Lane processes queued work independently afterwards.
 
 The Data Lane worker is allowed to wait for the required
 `TimingDataPersistence.append(...)` call because that local durable write is part of the
@@ -2561,7 +2565,7 @@ whether listener execution time materially increases TimingNode queue wait or qu
 high-water.
 
 Raw antenna-observation logging is diagnostic work. It uses its own bounded buffer and
-does not sit between TagProcessor and `TimingNode.offer(...)`. Losing raw diagnostic
+does not sit between TagProcessor and `LogBook.queue(...)`. Losing raw diagnostic
 records does not change whether a TimingData registration is accepted or committed.
 
 ## Internal runtime measurements
@@ -2613,7 +2617,7 @@ tag-processing counts are not TimingNode queue counts.
 
 The component that performs the work owns the hot-path counter update:
 
-- `SerialExecutorMetrics` owns lane-local queue admission, queue depth/high-water,
+- `SerialExecutorMetrics` owns low-level lane queue-result, queue depth/high-water,
   queue wait and execution duration; callers read those values through an immutable
   `SerialExecutorMetrics.Snapshot`. `SerialExecutor` records the execution facts but
   does not embed the diagnostics model in the executor class. Because every physical worker
@@ -2622,7 +2626,7 @@ The component that performs the work owns the hot-path counter update:
 - the TimingNode commit path owns TimingData append/commit and post-commit event-delivery
   counters;
 - `TagProcessingMetrics` owns observation, burst, mapping, duplicate and
-  TimingNode-admission counters for `domain.node.processing` and exposes them through an
+  TimingNode-queueing counters for `domain.node.processing` and exposes them through an
   immutable `TagProcessingMetrics.Snapshot`;
 - `SerialScheduledExecutorMetrics` owns lane-local measurements such as accepted
   immediate work, scheduled registrations/cancellations, executed work, runtime failures
@@ -2706,7 +2710,7 @@ lifetime maximum for that component instance.
 
 Unsupported JVM measurements use an explicit unavailable value in the engineering
 snapshot. Measurement unavailability or snapshot creation failure must not change
-registration admission or TimingData commit behaviour.
+registration queueing or TimingData commit behaviour.
 
 No continuous measurement thread is introduced. Timer/scheduler work used for
 TagProcessor burst expiry is unrelated to runtime measurement.
@@ -2824,26 +2828,26 @@ JVM/OS combinations.
 
 :::{design} TimingNode execution, LogBook and local events
 :id: DD-TimingNodeExecution
-:elaborates: PlatformEvents, Event, EventSource, TimingNode, LogBookProcessor, NodeTaskProcessor, LogBook
+:elaborates: PlatformEvents, Event, EventSource, TimingNode, LogBook
 
 Detailed design for TimingNode ordered execution, durable TimingData commit,
-passive LogBook reads and the local Event/EventSource publication boundary.
+passive LogBookData reads and the local Event/EventSource publication boundary.
 
 The Java design uses composition rather than an `ActiveObject` inheritance
 hierarchy. One TimingNode owns two logically independent bounded serial lanes:
 
 ```text
 TimingNode
-  ├── Data Lane  -> LogBookProcessor, LogBook, persistence,
+  ├── Data Lane  -> LogBook, LogBookState, LogBookData, persistence,
   │                lifecycle/location, TimingData sequence + commit
-  └── Task Lane  -> NodeTaskProcessor, RaceDataState,
+  └── Task Lane  -> NodeService, RaceDataState,
                    TeamAssignments, StageStartTimes,
                    UniqueTeamRegistrations, StageTiming,
                    upstream coordination + heartbeat
 ```
 
 The **Data Lane** is the sole writer for the append-only TimingData source:
-lifecycle/location state, sequence allocation, persistence and LogBook
+lifecycle/location state, sequence allocation, persistence and LogBookData
 visibility. The persisted TimingData load runs as its first task. A successful load
 publishes an immutable initial-history fact; each later successful commit
 publishes an immutable committed-TimingData fact.
@@ -2856,7 +2860,7 @@ derived state.
 
 RACE_DATA therefore does **not** cross to the Data Lane: sequence validation,
 transactional live-state mutation and ACK happen on the Task Lane. TIMING_DATA
-REQ/replay is different because its source is the Data Lane-owned LogBook; that
+REQ/replay is different because its source is Data Lane-owned LogBookData; that
 path uses bounded asynchronous handoff and immutable history batches. No lane
 blocks on a Future belonging to the other lane while they may share one
 physical worker.
@@ -2869,38 +2873,27 @@ Composition keeps that choice replaceable and lets the public TimingNode API sta
 synchronous and domain-oriented.
 
 For state-dependent operations the caller waits for the result produced on the
-Data Lane. Queue admission and the processed operation result are represented
-separately:
+Data Lane. Queueing and the processed operation result are represented separately:
 
 ```java
 final class TimingNode {
-    private final LogBookProcessor logBookProcessor;
-    private final NodeTaskProcessor taskProcessor;
+    private final LogBookAccessor logBook;
 
-    <R> R invoke(LogBookCommand<R> command) {
-        return logBookProcessor.invoke(command);
-    }
-
-    CommandAdmission offer(LogBookCommand<?> command) {
-        return logBookProcessor.offer(command);
-    }
-
-    <R> R query(LogBookQuery<R> query) {
-        return logBookProcessor.query(query);
-    }
-
-    List<StageTime> stageTiming(ZoneId zone) {
-        return taskProcessor.stageTiming(zone);
+    LogBookAccessor logBook() {
+        return logBook;
     }
 }
 
-// LogBookProcessor owns TimingData/LogBook/lifecycle state.
-// NodeTaskProcessor owns RaceData/derived timing/protocol state.
+CommandQueueResult queueResult =
+        node.logBook().queue(command);
+
+// LogBook owns Data Lane execution, LogBookState and LogBookData.
+// NodeService owns RaceData/derived timing/protocol state.
 ```
 
-The visible `TimingNode` delegates execution mechanics to its processors.
-Queue admission and the processed domain result remain separate; callers use
-the TimingNode facade rather than reaching into either processor.
+The visible `TimingNode` delegates execution mechanics to its child components.
+Queueing and the processed domain result remain separate; callers use
+the intentional child boundary rather than reaching into mutable state.
 
 The public methods above are illustrative signatures, not a requirement to use
 those exact result class names. The important split is:
@@ -2912,12 +2905,12 @@ open(locationId) / close / consistency-sensitive query
     -> caller receives processed domain result
 
 device/callback ingress that is explicitly offer-only
-    -> bounded queue admission result
+    -> bounded queue result
     -> callback may continue immediately
     -> later processing has no synchronous caller waiting for its domain result
 ```
 
-A queue-admission result is never used as a substitute for the domain result of
+A queue result is never used as a substitute for the domain result of
 a state-dependent command.
 
 The Future used to connect the queued work with a waiting caller is an internal
@@ -2942,7 +2935,7 @@ OpenResult
   ALREADY_OPEN
   NO_LOCATION
 
-submission/execution failure
+queueing/execution failure
   queue full
   node stopping/unavailable
   unexpected internal failure
@@ -2968,7 +2961,7 @@ TimingNode uses a small operation/execution exception model rather than leaking
 `java.util.concurrent` through the domain API.
 Keep that family small and add distinct exception types only where callers need
 different recovery behaviour. Timeout is a useful distinct case because its
-outcome semantics differ from definite submission rejection.
+outcome semantics differ from a definite not-queued result.
 
 ### SerialExecutor design
 
@@ -3040,7 +3033,7 @@ Usage rules:
 - `offer(Runnable)` is for producer paths that intentionally do not wait for a result;
 - TimingNode `invoke(...)` and consistency-sensitive `query(...)` use the result-bearing
   path;
-- TimingNode `offer(...)` uses the admission-only path.
+- LogBook `queue(...)` translates the low-level admission-only path into the Domain `QUEUED / QUEUE_FULL / NOT_RUNNING` result.
 
 The JDK executor rejection path is translated into the project `FULL / NOT_RUNNING`
 semantics; `RejectedExecutionException` does not leak into normal TimingNode callers.
@@ -3053,11 +3046,11 @@ The required behaviour remains:
 - different node lanes share the role worker and make progress at task boundaries;
 - state-dependent validation happens on the ordered node-local lane;
 - result-bearing work has an internal Future;
-- offer-only ingress observes definite queue admission without waiting;
+- fire-and-forget ingress observes only whether work was queued, without waiting;
 - one ordinary work-item failure does not terminate the lane;
 - an unexpected fatal lane failure is observable and does not shut down sibling lanes or the
   shared role worker;
-- closing one lane stops new admission and drains its accepted work without closing the
+- closing one lane stops new queueing and drains work already queued without closing the
   externally owned role executor;
 - a fatal lane failure likewise never shuts down that executor;
 - Runtime shuts down the shared role executor only after component lanes have stopped.
@@ -3113,7 +3106,7 @@ The execution types intentionally differ because their workloads differ:
 TimingNode
   -> SerialExecutor
        bounded command work queue
-       result-bearing and admission-only commands
+       result-bearing commands and fire-and-forget queued commands
 
 TagProcessor
   -> bounded TagObservation input queue
@@ -3159,22 +3152,22 @@ private void processRegistration(RegistrationInput input) {
 Only the Data Lane worker calls this commit path, so a producer lock around
 sequence allocation is unnecessary.
 
-`LogBook.nextSequence()` reads committed state and does not consume the value.
+`LogBookData.nextSequence()` reads committed state and does not consume the value.
 If append fails, LogBook is unchanged and retry uses the same next sequence. The
 worker must not process a later timing record ahead of that failed record.
 
-### Node data persistence and passive LogBook
+### Node data persistence and passive LogBookData
 
-`LogBook` has no worker thread. It stores immutable `TimingData` values,
+`LogBookData` has no worker thread. It stores immutable `TimingData` values,
 but it is contained mutable TimingNode state rather than a globally readable
 repository.
 
 Code outside the TimingNode ownership boundary does not read the mutable
-LogBook list directly. A consistency-sensitive query enters the Data Lane
+LogBookData list directly. A consistency-sensitive query enters the Data Lane
 and performs its bounded read in the same ordering as state changes.
 
 The read representation is deliberately not fixed to a copied list. Bounded
-IF-03 range/latest queries traverse the owned LogBook records on the TimingNode
+IF-03 range/latest queries traverse the owned LogBookData records on the TimingNode
 lane and build only the final response representation; no temporary LogBook
 `List` copy escapes the owner. Network
 write/send remains outside the Data Lane.
@@ -3203,7 +3196,7 @@ also supports ORDERED when a caller deliberately needs a read after earlier acce
 work. The first publication occurs when the asynchronous persisted-data load completes;
 later publications occur after completed command transitions. In both cases the snapshot is
 published before the corresponding status event. This read model does not permit direct access to
-LogBookProcessor-owned or LogBook mutable state.
+LogBook-owned or LogBook mutable state.
 
 ### Node data persistence boundary
 
@@ -3212,7 +3205,7 @@ need to be kept:
 
 | Store | Purpose | Commit role |
 | --- | --- | --- |
-| `TimingDataPersistence` | append/load canonical TimingData | durable append is required before LogBook visibility; source for LogBook rebuild |
+| `TimingDataPersistence` | append/load canonical TimingData | durable append is required before LogBookData visibility; source for LogBookData rebuild |
 | per-type persistence components | preserve accepted analysis history/snapshots | do not make the lower storage layer own domain semantics |
 
 The lower I/O layer exposes storage mechanics rather than domain-specific store
@@ -3249,7 +3242,7 @@ add one thread per state object and do not introduce an unbounded background
 queue.
 
 For the registration path, synchronous persistence on the node lane remains the baseline:
-producer callbacks return after command admission, while the shared Domain worker
+producer callbacks return after the command is queued, while the shared Domain worker
 performs the durable append before LogBook/event visibility. Because that physical worker is
 shared, a long `FileChannel.force(true)` can temporarily delay other Data Lanes as
 well. That is an explicit trade-off for the resource-constrained baseline, not an assumption
@@ -3259,7 +3252,7 @@ Characterize store latency, per-lane queue high-water and fairness under the agg
 20 registrations/s application workload before moving durability work off the shared Domain
 worker. If the reference Raspberry Pi cannot meet the workload because durable storage
 stalls the role worker, the next design step is a bounded durability mechanism that preserves
-commit-before-LogBook/event ordering; it is not to multiply the stress target per node.
+commit-before-LogBookData/event ordering; it is not to multiply the stress target per node.
 
 For example, an ordered RACE_DATA message containing a StageStartTimes
 change remains entirely on its owning Task Lane:
@@ -3283,7 +3276,7 @@ The cross-lane direction is instead driven by durable TimingData facts:
 ```text
 Data Lane
   -> persist TimingData
-  -> publish LogBook visibility
+  -> publish LogBookData visibility
   -> emit immutable committed TimingData fact
        |
        +-- bounded Task Lane handoff
@@ -3397,7 +3390,7 @@ adapter therefore never uses the Data Lane as its backpressure mechanism.
 
 If listener notification fails after a TimingData record is committed, that does not roll
 back the commit. A consumer that needs reliable recovery uses authoritative
-persisted/LogBook state and its own recovery/delivery mechanism.
+persisted/LogBookData state and its own recovery/delivery mechanism.
 
 State events may wake the owning control task. The task rereads CURRENT state
 and computes its desired outcome directly. For inventory, it publishes through

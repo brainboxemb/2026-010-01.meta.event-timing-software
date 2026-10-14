@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Align TimingNode component names with responsibility: active `LogBook`, passive `LogBookData`, Task Lane service `NodeService`, and plain `queue/QUEUED/QUEUE_FULL` Domain terminology while retaining technical `SerialLane` names only in the platform layer.
+
 - Use `NodeService` as the Java naming-guide example for the node-local Task Lane service; keep `Runner` reserved for execution mechanisms.
 
 - Clarify Java naming/readability: Domain/Application code uses plain queue/queued terminology, distinguishes queued work from completed work, documents wait/no-wait boundaries, and includes concrete Prefer/Avoid examples for component and local-variable names.
