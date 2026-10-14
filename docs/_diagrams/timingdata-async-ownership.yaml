@@ -3,7 +3,7 @@ diagram:
   title: Figure SDD01-TD02 — TimingNode execution and data ownership
   width: 1740
   height: 900
-  description: "4+1 process/execution refinement, not the logical component decomposition. NodeDataProcessor owns ordered Data Lane operations; NodeTaskProcessor owns Task Lane work. Both logical lanes may share a Runtime-owned physical ExecutorService."
+  description: "4+1 process/execution refinement, not the logical component decomposition. NodeDataProcessor owns TimingData, LogBook and persistence on the Data Lane; NodeTaskProcessor owns RaceData, derived timing and protocol state on the Task Lane. Both logical lanes may share a Runtime-owned physical ExecutorService."
   note: Logical lane separation defines ownership and FIFO ordering, not physical parallelism. Cross-lane work is bounded and asynchronous; neither lane waits synchronously for the other.
 
 groups:
@@ -44,12 +44,12 @@ nodes:
     layout: {x: 405, y: 155, w: 835, h: 80}
 
   - id: data-processor
-    label: "NodeDataProcessor\nData Lane owner\ncommands • ORDERED queries • data admission"
+    label: "NodeDataProcessor\nData Lane owner\nTimingData • LogBook • persistence"
     kind: service
     group: node
     layout: {x: 405, y: 300, w: 365, h: 110}
   - id: task-processor
-    label: "NodeTaskProcessor\nTask Lane owner\ncoordination • protocol tasks"
+    label: "NodeTaskProcessor\nTask Lane owner\nRaceData • derived timing • protocol"
     kind: service
     group: node
     layout: {x: 825, y: 300, w: 365, h: 110}
@@ -66,15 +66,15 @@ nodes:
     layout: {x: 825, y: 470, w: 365, h: 98}
 
   - id: node-data
-    label: "Data-owned state\nLogBook • TimingDataPersistence\nRaceData • UniqueTeamRegistrations • StageTiming"
+    label: "Data Lane-owned state\nLogBook • TimingDataPersistence\nlifecycle/location • TimingData sequence"
     kind: model
     group: node
     layout: {x: 405, y: 620, w: 365, h: 120}
-  - id: current-state
-    label: "Published immutable CURRENT views / events"
-    kind: service
+  - id: task-state
+    label: "Task Lane-owned live state\nRaceData • TeamAssignments • StageStartTimes\nUniqueTeamRegistrations • StageTiming"
+    kind: model
     group: node
-    layout: {x: 825, y: 640, w: 365, h: 82}
+    layout: {x: 825, y: 620, w: 365, h: 120}
 
   - id: domain-worker
     label: "Runtime-owned shared ExecutorService\nbacks Data + Task SerialExecutor lanes"
@@ -100,10 +100,10 @@ edges:
   - {from: tag-processor, to: data-processor, label: "bounded registration command"}
   - {from: upstream-ingress, to: task-processor, label: "notification"}
   - {from: task-processor, to: upstream-handler, label: "dispatch / protocol state"}
-  - {from: task-processor, to: data-processor, label: "bounded async command / immutable reply", dashed: true}
-  - {from: data-processor, to: node-data, label: "sole ordered mutation / read"}
-  - {from: data-processor, to: current-state, label: "publish completed state"}
-  - {from: task-processor, to: current-state, label: "task status snapshot", dashed: true}
+  - {from: task-processor, to: data-processor, label: "bounded LogBook request / immutable batch", dashed: true}
+  - {from: data-processor, to: task-processor, label: "recovered / committed TimingData facts", dashed: true}
+  - {from: data-processor, to: node-data, label: "sole LogBook / persistence mutation"}
+  - {from: task-processor, to: task-state, label: "sole RaceData / derived-state mutation"}
   - {from: data-processor, to: domain-worker, label: "Data SerialExecutor", dashed: true}
   - {from: task-processor, to: domain-worker, label: "Task SerialExecutor", dashed: true}
   - {from: upstream-handler, to: upstream-stream, label: "send / read mailbox"}
