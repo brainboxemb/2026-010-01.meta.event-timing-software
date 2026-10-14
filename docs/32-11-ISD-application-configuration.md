@@ -463,7 +463,7 @@ to UpstreamData merely for routing. `UpstreamGateway` owns the external
 transport/session boundary. Shared Domain `UpstreamData` defines the semantic
 message families; `UpstreamMessageRouter` resolves system- and TimingNode-targeted
 messages by
-`NodeId` to the corresponding bidirectional `UpstreamMessagePort`.
+`NodeId` to the corresponding bidirectional `UpstreamHandler`.
 
 A connector owns transport resources such as RabbitMQ connections/channels or the
 existing IF-03 engineering transport mapping. It does not own Domain/TimingNode selection or message
