@@ -278,7 +278,7 @@ domain/
         TimingDataPersistence.java      TimingData load/append domain port
         DefaultTimingDataPersistence.java codec/node/sequence mapping to I/O storage
     task/
-      NodeTasks.java            Task Lane owner + node task coordination
+      NodeService.java            Task Lane owner + node task coordination
     upstream/
       UpstreamHandler.java              node-scoped semantic upstream dispatch
       UpstreamHandlerTask.java          bounded Task Lane upstream turn
@@ -764,11 +764,11 @@ RegistrationId-to-TeamId overrides where EventData has no stable TeamId.
 
 `TimingNode` remains the visible Domain component boundary used by higher layers,
 but it is a composition/lifecycle facade rather than a serial-execution owner.
-It composes `LogBook`, `NodeTasks` and its node-local
+It composes `LogBook`, `NodeService` and its node-local
 `TagProcessor`. `LogBook` owns Data Lane queueing, command/query
 execution, persisted TimingData startup loading, lifecycle/location state,
 durable TimingData commit and post-commit event publication.
-`NodeTasks` owns Task Lane lifecycle, bounded Task Lane queueing and
+`NodeService` owns Task Lane lifecycle, bounded Task Lane queueing and
 semantic upstream composition. Both logical serial lanes are supplied by Runtime
 and may share one physical worker. The TagProcessor uses its separately supplied
 scheduled executor.
@@ -804,7 +804,7 @@ ORDERED
 The one-argument LogBook query remains ORDERED. A caller chooses CURRENT only
 when that LogBookQuery explicitly supports it. Status and the published LogBook
 head support CURRENT; count and record/range reads remain ORDERED. Task-owned
-queries such as StageTiming are separate and execute on NodeTasks.
+queries such as StageTiming are separate and execute on NodeService.
 
 State-changing commands still execute on the Data Lane. After a command
 completes its domain mutation, LogBook builds and publishes the immutable after-Status
@@ -2828,7 +2828,7 @@ JVM/OS combinations.
 
 :::{design} TimingNode execution, LogBook and local events
 :id: DD-TimingNodeExecution
-:elaborates: PlatformEvents, Event, EventSource, TimingNode, LogBook, NodeTasks, LogBookData
+:elaborates: PlatformEvents, Event, EventSource, TimingNode, LogBook, NodeService, LogBookData
 
 Detailed design for TimingNode ordered execution, durable TimingData commit,
 passive LogBookData reads and the local Event/EventSource publication boundary.
@@ -2840,7 +2840,7 @@ hierarchy. One TimingNode owns two logically independent bounded serial lanes:
 TimingNode
   ├── Data Lane  -> LogBook, LogBookState, LogBookData, persistence,
   │                lifecycle/location, TimingData sequence + commit
-  └── Task Lane  -> NodeTasks, RaceDataState,
+  └── Task Lane  -> NodeService, RaceDataState,
                    TeamAssignments, StageStartTimes,
                    UniqueTeamRegistrations, StageTiming,
                    upstream coordination + heartbeat
@@ -2888,7 +2888,7 @@ CommandQueueResult queueResult =
         node.logBook().queue(command);
 
 // LogBook owns Data Lane execution, LogBookState and LogBookData.
-// NodeTasks owns RaceData/derived timing/protocol state.
+// NodeService owns RaceData/derived timing/protocol state.
 ```
 
 The visible `TimingNode` delegates execution mechanics to its child components.
