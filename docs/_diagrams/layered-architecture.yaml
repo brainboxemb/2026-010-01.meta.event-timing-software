@@ -233,6 +233,7 @@ nodes:
   notation: packaging-component
   layout: {x: 405, y: 722, w: 220, h: 120}
 
+# Live race/reference data sits on the first row beside NextUpTeams.
 - id: node-data
   object_id: TimingNodeData
   group: timing-node-aggregate
@@ -244,8 +245,9 @@ nodes:
       object_id: StageStartTimes
   kind: service
   notation: packaging-component
-  layout: {x: 640, y: 722, w: 220, h: 120}
+  layout: {x: 875, y: 657, w: 220, h: 80}
 
+# Timing is placed immediately left of Upstream on the second row.
 - id: node-timing
   object_id: TimingNodeTiming
   group: timing-node-aggregate
@@ -259,7 +261,7 @@ nodes:
       object_id: StageRanking
   kind: service
   notation: packaging-component
-  layout: {x: 875, y: 722, w: 220, h: 120}
+  layout: {x: 640, y: 722, w: 220, h: 120}
 
 - id: logbook-domain
   object_id: LogBook
@@ -268,16 +270,24 @@ nodes:
   subtitle: "committed TimingData • persistence"
   kind: service
   notation: component
-  layout: {x: 405, y: 857, w: 280, h: 50}
+  layout: {x: 405, y: 857, w: 455, h: 50}
 
+# Expose semantic upstream responsibilities here, not the execution lanes.
+# I/O transport (UpstreamStream) remains outside this Domain component.
 - id: upstream-message-port
   object_id: TimingNodeUpstreamMessagePort
   group: timing-node-aggregate
   label: "Upstream"
-  subtitle: "node-scoped protocol handling"
+  items:
+    - label: UpstreamHandler
+      items:
+        - label: UpstreamHeartbeat
+        - label: UpstreamDataSync
+        - label: LogBookSync
   kind: service
-  notation: component
-  layout: {x: 815, y: 857, w: 280, h: 50}
+  notation: packaging-component
+  # Begins beneath the first-row RaceData block and ends with LogBook.
+  layout: {x: 875, y: 752, w: 220, h: 155}
 
 - id: event-data-domain
   object_id: EventData
