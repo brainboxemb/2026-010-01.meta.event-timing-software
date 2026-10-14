@@ -6,7 +6,7 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
-- Clarify Java lane-submission readability: Domain/Application code uses semantic submit/submission names, accepted means queued rather than completed, and asynchronous boundaries state whether callers wait.
+- Clarify Java naming/readability: Domain/Application code uses plain queue/queued terminology, distinguishes queued work from completed work, documents wait/no-wait boundaries, and includes concrete Prefer/Avoid examples for component and local-variable names.
 
 - Clarify Java lifecycle design: data readiness does not by itself create a sibling lifecycle dependency; activation order reflects real execution/ingress dependencies and remains owned by `ComponentLifecycleManager`.
 
