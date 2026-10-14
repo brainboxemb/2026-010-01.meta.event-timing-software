@@ -1042,8 +1042,10 @@ Application
               |     +-- UniqueTeamRegistrations
               |     +-- StagePassageList
               |     +-- StageRanking
-              +-- LogBook
-                    +-- 0..N TimingData
+              +-- Data
+                    +-- LogBook
+                    |     +-- 0..N TimingData
+                    +-- Persistence
 
 Shared Domain contracts:
   +-- EventData
@@ -1059,7 +1061,7 @@ The source for this view is `docs/_diagrams/layered-architecture.yaml`.
 
 Figure SI01-01 is the **logical view** of the 4+1 architecture:
 its contained blocks name functional responsibilities (Processing, RaceData,
-Timing, LogBook, Upstream and NextUpTeams), not execution lanes.
+Timing, Data with LogBook, Upstream and NextUpTeams), not execution lanes.
 The Data Lane, Task Lane, scheduled ingress and physical workers belong to the
 **process view**, with implementation detail in SDD-02.
 
@@ -1383,12 +1385,21 @@ explains code and execution ownership; it is not an additional runtime aggregate
 or message bus.
 :::
 
+:::{arch} TimingNode RaceData
+:id: TimingNodeRaceData
+
+`RaceData` groups current node reference data: `TeamAssignments` and
+`StageStartTimes`, received from ordered upstream RACE_DATA. It holds passive
+data; ordering and execution ownership are defined in the process view.
+:::
+
 :::{arch} TimingNode Data
 :id: TimingNodeData
 
-`TimingNodeData` groups received/current race data owned by the TimingNode serial
-boundary: `TeamAssignments` and `StageStartTimes`. These objects are populated
-from ordered upstream RACE_DATA and do not own workers.
+`Data` groups the node-local committed TimingData history under `LogBook`
+and its persistence responsibility. It is a functional grouping, not a
+separate Data Lane or worker. `TimingDataPersistence` and
+`DefaultTimingDataPersistence` are detailed in SDD-02.
 :::
 
 :::{arch} TimingNode Timing
@@ -2222,8 +2233,10 @@ Application
               |     +-- UniqueTeamRegistrations
               |     +-- StagePassageList
               |     +-- StageRanking
-              +-- LogBook
-                    +-- 0..N TimingData
+              +-- Data
+                    +-- LogBook
+                    |     +-- 0..N TimingData
+                    +-- Persistence
 
 Shared Domain contracts:
   +-- EventData
