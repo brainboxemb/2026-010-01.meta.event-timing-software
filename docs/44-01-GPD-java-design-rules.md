@@ -340,17 +340,17 @@ again.
 
 ---
 
-### DR-05 — Let the submission operation decide whether work was accepted
+### DR-05 — Let the queue operation decide whether work was queued
 
 **Rule**
 
-Call the submission operation once and handle its result. At a low-level queue/lane
+Call the queue operation once and handle its result. At a low-level queue/lane
 primitive this may be named `offer()`; at a Domain/Application boundary prefer a
-semantic name such as `submit(...)` or `trySubmitToTaskLane(...)`.
+semantic name such as `queue(...)` or `tryQueueOnTaskLane(...)`.
 
-Do not first inspect executor state and then perform submission.
+Do not first inspect executor state and then perform queueing.
 
-A non-blocking submission result describes **queue acceptance only**. `ACCEPTED`
+A non-blocking queue result describes **queue acceptance only**. `QUEUED`
 means the work was queued for later execution; it does not mean that the operation
 has already run or succeeded.
 
@@ -372,10 +372,10 @@ whether it can accept the work.
 Good:
 
 ```java
-AdmissionResult submissionResult = executor.offer(work);
+AdmissionResult queueingResult = executor.offer(work);
 
-switch (submissionResult) {
-    case ACCEPTED:
+switch (queueingResult) {
+    case QUEUED:
         break;
     case FULL:
         LOG.warn("...");
@@ -385,7 +385,7 @@ switch (submissionResult) {
         break;
     default:
         throw new IllegalStateException(
-                "Unsupported submission result " + submissionResult);
+                "Unsupported queue result " + queueingResult);
 }
 ```
 
@@ -486,7 +486,7 @@ later control run rereads CURRENT TimingNode status before deriving behaviour.
 
 Current immutable snapshots and ordered mutable reads are different consistency choices on
 the same typed query boundary. Use CURRENT when the query supports a safely published
-completed snapshot; use ORDERED when the read must be sequenced after earlier accepted node
+completed snapshot; use ORDERED when the read must be sequenced after earlier queued node
 work. Mutable LogBook traversal remains ORDERED. A result-bearing ORDERED call made
 reentrantly from that same lane must fail immediately rather than queueing behind itself and
 appearing later as a timeout.
@@ -668,7 +668,7 @@ Public component boundaries should normally explain:
 Names should carry ordinary control-flow meaning where possible. Do not make a reader
 learn low-level queue jargon to understand Domain code. For example, `admission` or
 `offer` may be appropriate inside the generic lane implementation, while Domain code
-should normally say `submit command`, `submission result`, `queue full`, or
+should normally say `queue command`, `queue result`, `queue full`, or
 `not running`.
 
 **Why**
@@ -1097,13 +1097,13 @@ logic, not in a programming-contract assertion.
 Do not hide event delivery, queue admission or thread/lane transfer inside nested lambda
 expressions.
 
-At an asynchronous boundary, prefer a named method reference and move the submission step
+At an asynchronous boundary, prefer a named method reference and move the queueing step
 into that method. The call site should read as the architecture reads.
 
 The boundary method must make wait semantics visible. A fire-and-forget method should
 say that it submits/queues work and returns immediately; a result-bearing method should
 say that it waits for ordered execution. Avoid exposing generic `offer` / `admission`
-vocabulary from Domain/Application APIs when a semantic submission name is clearer.
+vocabulary from Domain/Application APIs when a semantic queueing name is clearer.
 
 A lambda that executes **synchronously**, such as an atomic
 `AntennaSettings.update(edit -> edit.inventoryEnabled(enabled))`, is different.
@@ -1381,7 +1381,7 @@ For Java component changes, a reviewer can use this short check:
 1. **Responsibility** — Is the decision made by the component that owns it?
 2. **Lifecycle** — Are side effects explicit and are lifecycle words clear?
 3. **Event callback** — Does a synchronous callback return quickly?
-4. **Queue submission** — Is submission handled once, without a state-check race, and is acceptance clearly distinguished from completion?
+4. **Queue queueing** — Is queueing handled once, without a state-check race, and is acceptance clearly distinguished from completion?
 5. **Current state** — Are stale snapshots being replayed when only current state matters?
 6. **Failure direction** — Can a downstream operational problem leak into its producer?
 7. **Async ownership** — Does lifecycle sequencing remain with its real owner?
