@@ -766,8 +766,8 @@ RegistrationId-to-TeamId overrides where EventData has no stable TeamId.
 but it is a composition/lifecycle facade rather than a serial-execution owner.
 It composes `LogBookProcessor`, `NodeTaskProcessor` and its node-local
 `TagProcessor`. `LogBookProcessor` owns Data Lane admission, LogBook command/query
-execution, recovery, lifecycle/location state, durable TimingData commit and
-post-commit event publication.
+execution, persisted TimingData startup loading, lifecycle/location state,
+durable TimingData commit and post-commit event publication.
 `NodeTaskProcessor` owns Task Lane lifecycle, bounded task admission and
 semantic upstream composition. Both logical serial lanes are supplied by Runtime
 and may share one physical worker. The TagProcessor uses its separately supplied
@@ -781,13 +781,15 @@ seam exists for deterministic TimingNode execution-boundary tests and is documen
 test-only in code.
 
 `LogBookProcessor` publishes one immutable current `Status` snapshot as an
-explicit read model. The snapshot is unavailable while initial recovery is
-pending. TimingNode activation starts the Data Lane and admits recovery first,
-then starts the Task Lane and TagProcessor. The call does not wait for persistence
-I/O. Recovery loads TimingData and rebuilds LogBook on the Data Lane, then
-publishes the first immutable status with safe cross-thread visibility and emits
-the status event. Deactivation makes CURRENT status unavailable; reactivation
-queues a fresh recovery task and later publishes a fresh snapshot.
+explicit read model. The snapshot is unavailable while the initial persisted-data load is pending.
+TimingNode activation uses `ComponentLifecycleManager`: it starts the Task Lane,
+then activates LogBookProcessor so the Data Lane can queue persisted TimingData
+loading as its first ordered task, and finally starts TagProcessor ingress. Task
+Lane activation does not depend on LogBook state. The call does not wait for file
+I/O. The Data Lane loads TimingData and rebuilds LogBook, then publishes the first
+immutable status with safe cross-thread visibility and emits the status event.
+Deactivation makes CURRENT status unavailable; reactivation performs a fresh
+persisted-data load and later publishes a fresh snapshot.
 
 LogBook queries expose two explicit consistency modes:
 
@@ -1132,10 +1134,11 @@ mutable collaborators:
 `RaceDataState` validates a RACE_DATA change set against copies and installs
 `TeamAssignments` and `StageStartTimes` atomically on the Task Lane. The
 RACE_DATA ACK follows that successful Task Lane application; no Data Lane hop
-is required for RaceData. Data Lane recovery/commit instead publishes immutable TimingData facts so
+is required for RaceData. Data Lane startup-load/commit instead publishes immutable TimingData facts so
 Task Lane-owned `UniqueTeamRegistrations` and timing views can rebuild/update
-without receiving the mutable LogBook. The normal post-commit publication is
-`LogBookProcessor.newDataEntryEvent()`; recovery has a separate recovered-data
+without receiving the mutable LogBook. This is a data dependency, not a Task Lane
+lifecycle dependency. The normal post-commit publication is
+`LogBookProcessor.newDataEntryEvent()`; the initial load has a separate loaded-data
 publication because loading an existing LogBook record is not new data.
 
 `LogBook` remains passive and owns no event. This is deliberate: only
@@ -1351,17 +1354,18 @@ validated effective configuration
        -> AntennaManager.activate()
        -> domain.system.SystemConductor.activate()
             -> TimingNode(s).activate()
-                 -> start node lane
-                 -> queue initial recovery as first ordered node task
-                 -> start owned child lane(s)
-                 -> return without waiting for recovery
+                 -> start Task Lane
+                 -> start Data Lane and queue persisted TimingData load as its first task
+                 -> start TagProcessor lane/ingress
+                 -> return without waiting for persisted-data load
             -> start system coordination lane
             -> wake first control run
   -> PresentationRuntime.activate()
 
-TimingNode initial recovery task:
+TimingNode initial persisted-data load:
   -> read/validate persisted TimingData on the Data Lane
-  -> rebuild LogBook / recovered mutable node state
+  -> rebuild LogBook / node state derived from committed history
+  -> publish initial loaded TimingData fact to Task-owned derived views
   -> publish first CURRENT Status
   -> emit statusChangedEvent as a wake signal
 
@@ -1395,12 +1399,11 @@ The TimingSystem `Conductor` uses its own logical serial lane with
 `SerialTaskRunner`; system-Conductor lanes may share one physical worker. The
 `ApplicationConductor` only orders lifecycle and does not need a coordination
 lane. TimingNode and SystemConductor activation establish execution context and
-return without waiting for initial state acquisition. The Conductor's activation
+return without waiting for persisted TimingData loading. The Conductor's activation
 hook wakes the first normal reconciliation run. A TimingNode whose CURRENT status
-is still unavailable because its first recovery task has not published yet is
-treated as **not ready**, not as CLOSED and not as a control failure; the Conductor
-publishes no partial inventory decision. The TimingNode's first status publication
-then wakes a later reconciliation. Once a node has published current state,
+is still unavailable because its initial load has not published yet is treated as
+**not ready**, not as CLOSED and not as a control failure; the Conductor
+publishes no partial inventory decision. The TimingNode's first status publication then wakes a later reconciliation. Once a node has published current state,
 unexpected CURRENT failure remains an explicit fault rather than a guessed value.
 
 Tag events and individual antenna commands do not pass through either
