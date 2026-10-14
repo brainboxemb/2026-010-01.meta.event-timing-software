@@ -139,8 +139,8 @@ A constructor creates and validates an object. Runtime behaviour starts through 
 explicit operation such as `activate()`, `requestEnableInventory()` or `requestDisableInventory()`.
 
 For an active component, `activate()` primarily establishes lifecycle/execution context.
-If the component owns a serial lane and startup requires potentially blocking recovery or
-state reconstruction, start the lane, admit that work to the owning lane and return rather
+If the component owns a serial lane and startup requires potentially blocking persisted-data
+loading or state reconstruction, start the lane, admit that work to the owning lane and return rather
 than performing or awaiting the work on the caller thread. Readiness is a separate fact
 from lifecycle activation.
 
@@ -414,20 +414,22 @@ Good startup flow:
 ```text
 TimingNode.activate()
         |
-        +--> start TimingNode lane
-        +--> admit recovery as first node task
+        +--> start Task Lane
+        +--> start Data Lane and admit persisted-data load as its first task
+        +--> start TagProcessor ingress
         +--> return
 
-TimingNode lane
+Data Lane
         |
         +--> read/validate persisted TimingData
-        +--> rebuild node-owned state
+        +--> rebuild LogBook/current node state
+        +--> publish initial loaded-data fact to Task-owned derived views
         +--> publish immutable currentStatus
         +--> statusChangedEvent() wake
 
 SystemConductor control run
         |
-        +--> CURRENT unavailable while recovery pending
+        +--> CURRENT unavailable while persisted-data load is pending
         |       -> publish no partial decision; return
         |
         v
@@ -764,13 +766,15 @@ provider fails during a delayed transition.
 
 For Conductor:
 
-- `TimingNode.activate()` returns while blocked recovery is still running on the
-  TimingNode lane;
-- the first recovery task publishes CURRENT status only after recovered mutable
+- `TimingNode.activate()` returns while persisted TimingData is still being loaded on the
+  Data Lane;
+- Task Lane activation is independent of LogBook state and does not require a preflight
+  against the Data Lane;
+- the initial Data Lane load publishes CURRENT status only after LogBook/current
   state is complete;
 - the first Conductor run may observe startup UNAVAILABLE and then publishes no
   partial Settings decision;
-- the initial status event wakes a later reconciliation after recovery completes;
+- the initial status event wakes a later reconciliation after persisted-data loading completes;
 - a status event only wakes the control task and does not publish Settings itself;
 - every ready-state control run reads CURRENT TimingNode status before deriving desired inventory;
 - rapid state changes converge to the final desired inventory while control wakes coalesce;
