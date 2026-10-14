@@ -6,7 +6,7 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
-- Align TimingNode component names with responsibility: active `LogBook`, passive `LogBookData`, Task Lane component `NodeTasks`, and plain `queue/QUEUED/QUEUE_FULL` Domain terminology while retaining technical `SerialLane` names only in the platform layer.
+- Align TimingNode component names with responsibility: active `LogBook`, passive `LogBookData`, Task Lane service `NodeService`, and plain `queue/QUEUED/QUEUE_FULL` Domain terminology while retaining technical `SerialLane` names only in the platform layer.
 
 - Clarify Java lifecycle design: data readiness does not by itself create a sibling lifecycle dependency; activation order reflects real execution/ingress dependencies and remains owned by `ComponentLifecycleManager`.
 
