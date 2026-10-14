@@ -821,11 +821,12 @@ before emitting `statusChangedEvent(after)` when the effective status changed. A
 status reader therefore observes only completed published transitions.
 
 The active LogBook owns mutable TimingNode state and does not expose `LogBookData` directly.
-A result-bearing ORDERED `execute(...)` or `query(...)` from inside the same TimingNode
-serial lane must fail immediately as reentrant instead of queueing work behind itself and
-later timing out. CURRENT reads do not enter the lane. This protects synchronous LogBook
-visitors in particular; visitors remain bounded by their requested limit, short/non-blocking
-and must not re-enter the same TimingNode with ORDERED result-bearing work.
+State-changing `execute(command)` remains non-reentrant: a command may not synchronously
+re-enter the same Data Lane behind itself. ORDERED queries are different. If the caller is
+already executing on the Data Lane, earlier queued work has already run before the current
+turn, so the query reads the ordered state directly without queueing or waiting again.
+CURRENT reads do not enter the lane. Bounded visitors remain short/non-blocking and must not
+start reentrant state-changing LogBook commands.
 
 `TimingNodeTypes` is only a Java source-code grouping for the public TimingNode status/result/exception value types. It has no runtime state, lifecycle or architectural responsibility and therefore does not appear as another component in Figure SI01-01.
 
@@ -919,10 +920,11 @@ operation.
 published immutable read model without entering the node lane; ORDERED executes after
 earlier queued node work on that lane. The one-argument `query(query)` preserves ORDERED
 semantics. Query definitions declare supported consistency modes, so mutable LogBook reads
-cannot accidentally be requested as CURRENT. Result-bearing same-lane ORDERED reentrancy is
-invalid and fails immediately rather than waiting for its own lane. Typed command/query
-objects are local operation descriptions, not another component, central dispatcher or
-generic message bus.
+cannot accidentally be requested as CURRENT. An ORDERED query invoked from the Data Lane
+reads directly because its ordering requirement is already satisfied; callers outside the
+lane queue the query and wait for its ordered result. State-changing commands remain
+non-reentrant. Typed command/query objects are local operation descriptions, not another
+component, central dispatcher or generic message bus.
 
 The presentation-facing automatic-registration boundary is
 `applyAutomaticRegistration(action, registrationId, time)`. The action is explicit
@@ -3183,16 +3185,18 @@ Code outside the TimingNode ownership boundary does not read the mutable
 LogBookData list directly. A consistency-sensitive query enters the Data Lane
 and performs its bounded read in the same ordering as state changes.
 
-The read representation is deliberately not fixed to a copied list. Bounded
-IF-03 range/latest queries traverse the owned LogBookData records on the TimingNode
-lane and build only the final response representation; no temporary LogBook
-`List` copy escapes the owner. Network
-write/send remains outside the Data Lane.
+The read representation is deliberately selected per use-case. Bounded visitor-style
+IF-03 range/latest queries may traverse owned LogBookData records directly on the Data Lane.
+The TIMING_DATA synchronization query `timingDataRange(fromSequence, limit)` instead
+returns a bounded immutable copy so the same `LogBookAccessor` query contract can be used
+without exposing mutable LogBookData. The synchronization batch limit is 256 records.
+Network write/send remains outside the Data Lane.
 
-For range/latest/ranking-style access, prefer direct bounded traversal of the
-owned records when that avoids unnecessary allocation and GC pressure. A query may
-instead use compact derived/indexed state, reusable scratch storage or a copied
-view when measurements show that approach is cheaper overall.
+For range/latest/ranking-style access, prefer direct bounded traversal when that avoids
+unnecessary allocation and GC pressure. A bounded immutable copy is also valid when it makes
+the component boundary simpler and its cost is controlled by an explicit limit. Compact
+derived/indexed state or reusable scratch storage remain alternatives when measurements show
+they are cheaper overall.
 
 The important guarantees are:
 
