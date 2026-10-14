@@ -278,7 +278,8 @@ domain/
         TimingDataPersistence.java      TimingData load/append domain port
         DefaultTimingDataPersistence.java codec/node/sequence mapping to I/O storage
     task/
-      NodeService.java            Task Lane owner + node task coordination
+      NodeService.java                  Task Lane service + composition/lifecycle
+      NodeServiceState.java             passive Task Lane-owned node state
     upstream/
       UpstreamHandler.java              node-scoped semantic upstream dispatch
       UpstreamHandlerTask.java          bounded Task Lane upstream turn
@@ -433,32 +434,38 @@ I/O messaging
       | node-scoped semantic messages / non-blocking send
       v
 TimingNode Task Lane
-  UpstreamHandler
-    ├── UpstreamHandlerTask     one bounded upstream turn
-    ├── UpstreamHeartbeat       PING request/answer and heartbeat state
-    ├── UpstreamDataSync        RACE_DATA sequencing, ACK/REQ/SYNC protocol state
-    └── LogBookSync             TIMING_DATA replay/sync cursor and batching
-             |
-             | bounded asynchronous commands / immutable replies
-             v
+  NodeService
+    ├── NodeServiceState
+    │     ├── RaceDataState
+    │     ├── TeamAssignments
+    │     ├── StageStartTimes
+    │     └── UniqueTeamRegistrations
+    │
+    └── UpstreamHandler
+          ├── UpstreamHeartbeat
+          ├── UpstreamDataSync
+          └── LogBookSync
+                   |
+                   | read-only TimingData history access
+                   v
 TimingNode Data Lane
-    ├── TeamAssignments
-    ├── StageStartTimes
-    ├── UniqueTeamRegistrations
-    └── LogBook / TimingData persistence
+  LogBook / LogBookData / TimingData persistence
 ```
 
 The ownership rule is responsibility-based:
 
-- `UpstreamHandler` and `UpstreamHandlerTask` dispatch node-scoped upstream
-  work on the Task Lane; they do not own transport workers or mutable TimingData.
+- `NodeService` owns Task Lane lifecycle, queueing and composition. It does not
+  implement child-specific state ports.
+- `NodeServiceState` owns mutable Task Lane state and implements the narrow
+  `UpstreamTaskState` port required by upstream processing.
+- `UpstreamHandler` and its protocol helpers dispatch node-scoped upstream work
+  on the Task Lane; they do not own transport workers or node state.
 - `UpstreamHeartbeat` is Task Lane-owned protocol state and does not require a
   Data Lane round-trip for ordinary PING request/answer handling.
 - `UpstreamDataSync` owns RACE_DATA sequence/gap/ACK protocol state on the Task
-  Lane. Changes to `TeamAssignments`, `StageStartTimes` and other Data
-  Lane-owned live race data are applied through bounded asynchronous Data Lane
-  commands. ACK is emitted only after the corresponding Data Lane application
-  result returns as an immutable reply.
+  Lane. RACE_DATA changes are applied through `UpstreamTaskState` to
+  `NodeServiceState`; TeamAssignments and StageStartTimes never move to the
+  Data Lane. ACK follows successful Task Lane state application.
 - `LogBookSync` owns replay cursor/batch coordination on the Task Lane. It may
   use directly published immutable/scalar LogBook facts where explicitly
   supported; record traversal and replay batches are obtained through bounded
@@ -769,7 +776,8 @@ It composes `LogBook`, `NodeService` and its node-local
 execution, persisted TimingData startup loading, lifecycle/location state,
 durable TimingData commit and post-commit event publication.
 `NodeService` owns Task Lane lifecycle, bounded Task Lane queueing and
-semantic upstream composition. Both logical serial lanes are supplied by Runtime
+semantic upstream composition. Passive mutable Task Lane data lives in
+`NodeServiceState`, not in the service object itself. Both logical serial lanes are supplied by Runtime
 and may share one physical worker. The TagProcessor uses its separately supplied
 scheduled executor.
 
@@ -1130,9 +1138,10 @@ mutable collaborators:
   consumer-neutral committed-history capabilities: a safely published source
   head and bounded immutable LogBookData history batches. Upstream may depend on
   this contract; the logbook package never depends on upstream.
-- `UpstreamTaskState` exposes Task Lane-owned RaceData and derived current
-  state: transactional RACE_DATA application, TeamId/start-time resolution and
-  the unique-team count.
+- `UpstreamTaskState` exposes only the Task Lane state capabilities required by
+  upstream processing: transactional RACE_DATA application, TeamId/start-time
+  resolution and the unique-team count. `NodeServiceState` implements this
+  port; `NodeService` deliberately does not.
 
 `RaceDataState` validates a RACE_DATA change set against copies and installs
 `TeamAssignments` and `StageStartTimes` atomically on the Task Lane. The
@@ -2840,10 +2849,11 @@ hierarchy. One TimingNode owns two logically independent bounded serial lanes:
 TimingNode
   ├── Data Lane  -> LogBook, LogBookState, LogBookData, persistence,
   │                lifecycle/location, TimingData sequence + commit
-  └── Task Lane  -> NodeService, RaceDataState,
-                   TeamAssignments, StageStartTimes,
-                   UniqueTeamRegistrations, StageTiming,
-                   upstream coordination + heartbeat
+  └── Task Lane  -> NodeService
+                   -> NodeServiceState, RaceDataState,
+                      TeamAssignments, StageStartTimes,
+                      UniqueTeamRegistrations
+                   -> StageTiming, upstream coordination + heartbeat
 ```
 
 The **Data Lane** is the sole writer for the append-only TimingData source:
@@ -2853,8 +2863,10 @@ publishes an immutable initial-history fact; each later successful commit
 publishes an immutable committed-TimingData fact.
 
 The **Task Lane** is the sole writer for live RaceData and its derived timing
-state. It owns `RaceDataState`, `TeamAssignments`, `StageStartTimes`,
-`UniqueTeamRegistrations` and Task Lane-owned `StageTiming` queries.
+state. `NodeServiceState` owns `RaceDataState`, `TeamAssignments`,
+`StageStartTimes`, `UniqueTeamRegistrations` and the committed TimingData
+view used by Task Lane-derived timing. `NodeService` owns the service/lifecycle
+boundary and executes StageTiming queries on that state.
 Initial-loaded/committed TimingData facts rebuild or incrementally update that
 derived state.
 
@@ -2888,7 +2900,9 @@ CommandQueueResult queueResult =
         node.logBook().queue(command);
 
 // LogBook owns Data Lane execution, LogBookState and LogBookData.
-// NodeService owns RaceData/derived timing/protocol state.
+// NodeService owns Task Lane service/lifecycle/orchestration.
+// NodeServiceState owns passive RaceData/derived timing state.
+// UpstreamHandler consumes only the narrow UpstreamTaskState port.
 ```
 
 The visible `TimingNode` delegates execution mechanics to its child components.
