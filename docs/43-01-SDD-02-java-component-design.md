@@ -273,7 +273,7 @@ domain/
     logbook/
       LogBook.java                      Data Lane component + command/query/event boundary
       LogBookData.java                  passive committed TimingData history
-      LogBookReader.java              read-only committed LogBook port
+      LogBookAccessor.java              command/query/event boundary
       persistence/
         TimingDataPersistence.java      TimingData load/append domain port
         DefaultTimingDataPersistence.java codec/node/sequence mapping to I/O storage
@@ -446,7 +446,7 @@ TimingNode Task Lane
           ├── UpstreamDataSync
           └── LogBookSync
                    |
-                   | read-only TimingData history access
+                   | LogBookAccessor queries during Data Lane turns
                    v
 TimingNode Data Lane
   LogBook / LogBookData / TimingData persistence
@@ -466,10 +466,11 @@ The ownership rule is responsibility-based:
   Lane. RACE_DATA changes are applied through `UpstreamTaskState` to
   `NodeServiceState`; TeamAssignments and StageStartTimes never move to the
   Data Lane. ACK follows successful Task Lane state application.
-- `LogBookSync` owns replay cursor/batch coordination on the Task Lane. It may
-  use directly published immutable/scalar LogBook facts where explicitly
-  supported; record traversal and replay batches are obtained through bounded
-  Data Lane handoffs rather than direct collection access.
+- `LogBookSync` owns TIMING_DATA replay cursor/batch coordination during
+  Data Lane upstream turns. It uses the same `LogBookAccessor` contract as
+  other LogBook consumers: CURRENT head reads use `LogBookQuery`, while
+  bounded history batches use an ORDERED `timingDataRange(...)` query. It
+  never receives direct access to mutable `LogBookData`.
 - `UpstreamStream` remains an I/O/messaging boundary. `send` only hands a
   semantic message to the local transport mailbox; Domain code does not perform
   blocking network I/O.
@@ -1121,7 +1122,7 @@ Dependency direction is intentionally one-way:
 upstream / presentation / post-processing
           |
           v
-LogBookReader + LogBook events
+LogBookAccessor
           ^
           |
 LogBook -> LogBookState + LogBookData + TimingDataPersistence
@@ -1134,10 +1135,12 @@ component.
 The typed upstream boundaries mirror lane ownership rather than exposing
 mutable collaborators:
 
-- `LogBookReader` lives in `domain.node.logbook` and exposes only
-  consumer-neutral committed-history capabilities: a safely published source
-  head and bounded immutable LogBookData history batches. Upstream may depend on
-  this contract; the logbook package never depends on upstream.
+- `LogBookAccessor` is the single intentional LogBook contract for both
+  internal and external consumers. Consumers express the capability they need
+  with typed commands/queries/events rather than receiving a second read
+  interface. `LogBookSync` reads `timingDataHead()` and
+  `timingDataRange(...)` through `LogBookQuery`; mutable `LogBookData`
+  remains Data Lane-owned.
 - `UpstreamTaskState` exposes only the Task Lane state capabilities required by
   upstream processing: transactional RACE_DATA application, TeamId/start-time
   resolution and the unique-team count. `NodeServiceState` implements this
