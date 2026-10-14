@@ -560,6 +560,14 @@ commit/LogBook visibility boundary. They must not be collapsed into one prematur
 The LogBook and TimingData file remain authoritative. Logs are a human-readable
 operational narrative and must not be replayed as recovery state.
 
+The same commit boundary owns the generic `newDataEvent`. It is emitted by
+`NodeDataProcessor` only after durable persistence and LogBook visibility have
+succeeded. `LogBook` itself remains passive and emits no event: `LogBook.add`
+is also used while rebuilding existing history during recovery, which must not
+be mistaken for new data. Upstream delivery, post-processing and presentation
+are optional consumers that subscribe to this event; the Data component has no
+dependency on those consumers.
+
 ### Startup flow
 
 Lifecycle activation and recovery are deliberately separate:
