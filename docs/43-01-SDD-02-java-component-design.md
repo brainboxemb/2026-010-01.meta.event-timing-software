@@ -766,10 +766,10 @@ RegistrationId-to-TeamId overrides where EventData has no stable TeamId.
 `TimingNode` remains the visible Domain component boundary used by higher layers,
 but it is a composition/lifecycle facade rather than a serial-execution owner.
 It composes `LogBook`, `NodeTasks` and its node-local
-`TagProcessor`. `LogBook` owns Data Lane admission, LogBook command/query
+`TagProcessor`. `LogBook` owns Data Lane submission, command/query
 execution, persisted TimingData startup loading, lifecycle/location state,
 durable TimingData commit and post-commit event publication.
-`NodeTasks` owns Task Lane lifecycle, bounded task admission and
+`NodeTasks` owns Task Lane lifecycle, bounded task submission and
 semantic upstream composition. Both logical serial lanes are supplied by Runtime
 and may share one physical worker. The TagProcessor uses its separately supplied
 scheduled executor.
@@ -787,7 +787,7 @@ TimingNode activation uses `ComponentLifecycleManager`: it starts the Task Lane,
 then activates LogBook so the Data Lane can queue persisted TimingData
 loading as its first ordered task, and finally starts TagProcessor ingress. Task
 Lane activation does not depend on LogBook state. The call does not wait for file
-I/O. The Data Lane loads TimingData and rebuilds LogBook, then publishes the first
+I/O. The Data Lane loads TimingData and rebuilds LogBookData/state, then publishes the first
 immutable status with safe cross-thread visibility and emits the status event.
 Deactivation makes CURRENT status unavailable; reactivation performs a fresh
 persisted-data load and later publishes a fresh snapshot.
@@ -796,7 +796,7 @@ LogBook queries expose two explicit consistency modes:
 
 ```text
 CURRENT
-  latest safely published completed snapshot; no lane admission/wait/timeout
+  latest safely published completed snapshot; no lane submission/wait/timeout
 
 ORDERED
   execute on the Data Lane after earlier accepted LogBook work
@@ -1119,7 +1119,7 @@ LogBook -> LogBookState + LogBookData + TimingDataPersistence
 ```
 
 `domain.node.logbook` must not import `domain.node.upstream`. A deployment that
-only commits/persists LogBook data therefore does not require an upstream
+only commits/persists LogBookData therefore does not require an upstream
 component.
 
 The typed upstream boundaries mirror lane ownership rather than exposing
@@ -1127,7 +1127,7 @@ mutable collaborators:
 
 - `LogBookReader` lives in `domain.node.logbook` and exposes only
   consumer-neutral committed-history capabilities: a safely published source
-  head and bounded immutable LogBook history batches. Upstream may depend on
+  head and bounded immutable LogBookData history batches. Upstream may depend on
   this contract; the logbook package never depends on upstream.
 - `UpstreamTaskState` exposes Task Lane-owned RaceData and derived current
   state: transactional RACE_DATA application, TeamId/start-time resolution and
@@ -1138,13 +1138,13 @@ mutable collaborators:
 RACE_DATA ACK follows that successful Task Lane application; no Data Lane hop
 is required for RaceData. Data Lane startup-load/commit instead publishes immutable TimingData facts so
 Task Lane-owned `UniqueTeamRegistrations` and timing views can rebuild/update
-without receiving the mutable LogBook. This is a data dependency, not a Task Lane
+without receiving mutable LogBookData. This is a data dependency, not a Task Lane
 lifecycle dependency. The normal post-commit publication is
 `LogBook.newDataEntryEvent()`; the initial load has a separate loaded-data
 publication because loading an existing LogBook record is not new data.
 
 `LogBookData` remains passive and owns no event. This is deliberate: only
-`LogBook` knows that persistence succeeded and LogBook visibility has
+`LogBook` knows that persistence succeeded and LogBookData visibility has
 crossed the commit boundary. Consumers such as upstream delivery,
 post-processing or presentation subscribe outward from that data boundary.
 Neither lane synchronously waits for work queued on the other lane.
@@ -2826,10 +2826,10 @@ JVM/OS combinations.
 
 :::{design} TimingNode execution, LogBook and local events
 :id: DD-TimingNodeExecution
-:elaborates: PlatformEvents, Event, EventSource, TimingNode, LogBook, NodeTasks, LogBook
+:elaborates: PlatformEvents, Event, EventSource, TimingNode, LogBook, NodeTasks, LogBookData
 
 Detailed design for TimingNode ordered execution, durable TimingData commit,
-passive LogBook reads and the local Event/EventSource publication boundary.
+passive LogBookData reads and the local Event/EventSource publication boundary.
 
 The Java design uses composition rather than an `ActiveObject` inheritance
 hierarchy. One TimingNode owns two logically independent bounded serial lanes:
@@ -2845,7 +2845,7 @@ TimingNode
 ```
 
 The **Data Lane** is the sole writer for the append-only TimingData source:
-lifecycle/location state, sequence allocation, persistence and LogBook
+lifecycle/location state, sequence allocation, persistence and LogBookData
 visibility. The persisted TimingData load runs as its first task. A successful load
 publishes an immutable initial-history fact; each later successful commit
 publishes an immutable committed-TimingData fact.
@@ -2858,7 +2858,7 @@ derived state.
 
 RACE_DATA therefore does **not** cross to the Data Lane: sequence validation,
 transactional live-state mutation and ACK happen on the Task Lane. TIMING_DATA
-REQ/replay is different because its source is the Data Lane-owned LogBook; that
+REQ/replay is different because its source is Data Lane-owned LogBookData; that
 path uses bounded asynchronous handoff and immutable history batches. No lane
 blocks on a Future belonging to the other lane while they may share one
 physical worker.
@@ -2871,38 +2871,38 @@ Composition keeps that choice replaceable and lets the public TimingNode API sta
 synchronous and domain-oriented.
 
 For state-dependent operations the caller waits for the result produced on the
-Data Lane. Queue admission and the processed operation result are represented
+Data Lane. Queue submission and the processed operation result are represented
 separately:
 
 ```java
 final class TimingNode {
-    private final LogBook logBookProcessor;
-    private final NodeTasks taskProcessor;
+    private final LogBook logBook;
+    private final NodeTasks nodeTasks;
 
     <R> R invoke(LogBookCommand<R> command) {
-        return logBookProcessor.invoke(command);
+        return logBook.invoke(command);
     }
 
-    CommandAdmission offer(LogBookCommand<?> command) {
-        return logBookProcessor.offer(command);
+    CommandSubmissionResult submit(LogBookCommand<?> command) {
+        return logBook.submit(command);
     }
 
     <R> R query(LogBookQuery<R> query) {
-        return logBookProcessor.query(query);
+        return logBook.query(query);
     }
 
     List<StageTime> stageTiming(ZoneId zone) {
-        return taskProcessor.stageTiming(zone);
+        return nodeTasks.stageTiming(zone);
     }
 }
 
-// LogBook owns TimingData/LogBook/lifecycle state.
+// LogBook owns Data Lane execution, LogBookState and LogBookData.
 // NodeTasks owns RaceData/derived timing/protocol state.
 ```
 
-The visible `TimingNode` delegates execution mechanics to its processors.
-Queue admission and the processed domain result remain separate; callers use
-the TimingNode facade rather than reaching into either processor.
+The visible `TimingNode` delegates execution mechanics to its child components.
+Queue submission and the processed domain result remain separate; callers use
+the intentional child boundary rather than reaching into mutable state.
 
 The public methods above are illustrative signatures, not a requirement to use
 those exact result class names. The important split is:
@@ -3214,7 +3214,7 @@ need to be kept:
 
 | Store | Purpose | Commit role |
 | --- | --- | --- |
-| `TimingDataPersistence` | append/load canonical TimingData | durable append is required before LogBook visibility; source for LogBook rebuild |
+| `TimingDataPersistence` | append/load canonical TimingData | durable append is required before LogBookData visibility; source for LogBookData rebuild |
 | per-type persistence components | preserve accepted analysis history/snapshots | do not make the lower storage layer own domain semantics |
 
 The lower I/O layer exposes storage mechanics rather than domain-specific store
@@ -3285,7 +3285,7 @@ The cross-lane direction is instead driven by durable TimingData facts:
 ```text
 Data Lane
   -> persist TimingData
-  -> publish LogBook visibility
+  -> publish LogBookData visibility
   -> emit immutable committed TimingData fact
        |
        +-- bounded Task Lane handoff
