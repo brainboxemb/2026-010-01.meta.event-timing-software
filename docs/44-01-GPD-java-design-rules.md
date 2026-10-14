@@ -144,6 +144,17 @@ loading or state reconstruction, start the lane, admit that work to the owning l
 than performing or awaiting the work on the caller thread. Readiness is a separate fact
 from lifecycle activation.
 
+A data dependency is not automatically a lifecycle dependency. If one sibling component
+later consumes facts produced by another, each component may still establish its own
+execution context independently. Represent data-dependent operations as unavailable until
+the required data arrives. Do not add cross-component activation preflights that inspect a
+sibling's private lane or lifecycle state merely because data will flow between them.
+
+Lifecycle order should express a real execution/ingress dependency. For example, start a
+consumer lane before enabling a producer that may immediately emit work to it. The shared
+`ComponentLifecycleManager` owns that order, rollback and reverse deactivation; sibling
+components do not coordinate each other's internal lifecycle state.
+
 **Why**
 
 Object composition remains predictable. Creating an object should not unexpectedly start a
