@@ -273,6 +273,7 @@ domain/
     data/
       NodeDataProcessor.java            Data Lane owner + command/query execution
       LogBook.java                      passive committed TimingData history
+      TimingDataHistory.java             consumer-neutral committed-history read contract
       persistence/
         TimingDataPersistence.java      TimingData load/append domain port
         DefaultTimingDataPersistence.java codec/node/sequence mapping to I/O storage
@@ -284,7 +285,6 @@ domain/
       UpstreamHeartbeat.java            PING/heartbeat protocol state
       UpstreamDataSync.java             RACE_DATA sequence/ACK/REQ/SYNC ownership
       LogBookSync.java                  TIMING_DATA head/SYNC/REQ/batch synchronization
-      UpstreamNodeData.java             typed Data Lane LogBook/head access
       UpstreamTaskState.java            typed Task Lane RaceData/derived-state access
     racedata/
       RaceDataState.java                Task Lane-owned transactional RACE_DATA state
@@ -890,7 +890,7 @@ node.applyAutomaticRegistration(
         registrationId,
         time);
 node.statusChangedEvent().subscribe(statusListener);
-node.timingDataCommittedEvent().subscribe(timingDataListener);
+node.newDataEvent().subscribe(timingDataListener);
 ```
 
 `invoke(command)` is the result-bearing path: presentation/application callers may
@@ -1100,12 +1100,29 @@ NodeDataProcessor
             <- FileAppendOnlyRecordStore selected by Runtime
 ```
 
+Dependency direction is intentionally one-way:
+
+```text
+upstream / presentation / post-processing
+          |
+          v
+TimingDataHistory + NodeDataProcessor events
+          ^
+          |
+NodeDataProcessor -> LogBook + TimingDataPersistence
+```
+
+`domain.node.data` must not import `domain.node.upstream`. A deployment that
+only commits/persists LogBook data therefore does not require an upstream
+component.
+
 The typed upstream boundaries mirror lane ownership rather than exposing
 mutable collaborators:
 
-- `UpstreamNodeData` exposes only Data Lane-owned TIMING_DATA/LogBook
-  capabilities: a safely published source head and bounded immutable history
-  batches.
+- `TimingDataHistory` lives in `domain.node.data` and exposes only
+  consumer-neutral committed-history capabilities: a safely published source
+  head and bounded immutable LogBook history batches. Upstream may depend on
+  this contract; the data package never depends on upstream.
 - `UpstreamTaskState` exposes Task Lane-owned RaceData and derived current
   state: transactional RACE_DATA application, TeamId/start-time resolution and
   the unique-team count.
@@ -1113,10 +1130,17 @@ mutable collaborators:
 `RaceDataState` validates a RACE_DATA change set against copies and installs
 `TeamAssignments` and `StageStartTimes` atomically on the Task Lane. The
 RACE_DATA ACK follows that successful Task Lane application; no Data Lane hop
-is required for RaceData. Data Lane recovery/commit instead publishes immutable
-TimingData facts so Task Lane-owned `UniqueTeamRegistrations` and timing views
-can rebuild/update without receiving the mutable LogBook. Neither lane
-synchronously waits for work queued on the other lane.
+is required for RaceData. Data Lane recovery/commit instead publishes immutable TimingData facts so
+Task Lane-owned `UniqueTeamRegistrations` and timing views can rebuild/update
+without receiving the mutable LogBook. The normal post-commit publication is
+`NodeDataProcessor.newDataEvent()`; recovery has a separate recovered-data
+publication because loading an existing LogBook record is not new data.
+
+`LogBook` remains passive and owns no event. This is deliberate: only
+`NodeDataProcessor` knows that persistence succeeded and LogBook visibility has
+crossed the commit boundary. Consumers such as upstream delivery,
+post-processing or presentation subscribe outward from that data boundary.
+Neither lane synchronously waits for work queued on the other lane.
 
 `AppendOnlyRecordStore` contains only opaque-record storage semantics.
 `DefaultTimingDataPersistence` owns TimingData codec, TimingNodeId and sequence
