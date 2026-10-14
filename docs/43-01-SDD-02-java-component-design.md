@@ -812,7 +812,7 @@ before emitting `statusChangedEvent(after)` when the effective status changed. A
 status reader therefore observes only completed published transitions.
 
 The active LogBook owns mutable TimingNode state and does not expose `LogBookData` directly.
-A result-bearing ORDERED `invoke(...)` or `query(...)` from inside the same TimingNode
+A result-bearing ORDERED `execute(...)` or `query(...)` from inside the same TimingNode
 serial lane must fail immediately as reentrant instead of queueing work behind itself and
 later timing out. CURRENT reads do not enter the lane. This protects synchronous LogBook
 visitors in particular; visitors remain bounded by their requested limit, short/non-blocking
@@ -865,7 +865,7 @@ mirroring every `LogBook` method:
 LogBookAccessor logBook = node.logBook();
 
 TimingNodeTypes.OpenResult opened =
-        logBook.invoke(LogBookCommands.open(locationId));
+        logBook.execute(LogBookCommands.open(locationId));
 
 TimingNodeTypes.CommandQueueResult queueResult =
         logBook.queue(
@@ -899,7 +899,7 @@ node.statusChangedEvent().subscribe(statusListener);
 node.newDataEntryEvent().subscribe(timingDataListener);
 ```
 
-`invoke(command)` is the result-bearing path: presentation/application callers may
+`execute(command)` is the result-bearing path: presentation/application callers may
 wait for the processed domain result. `queue(command)` is the fire-and-forget path:
 it returns only whether the command was queued and deliberately does not wait for
 the later domain result. RFID/TagProcessor-style ingress uses this form so a device
@@ -2672,7 +2672,7 @@ The normal public Domain component contract does not expose runtime measurements
 
 ```text
 TimingNode
-  invoke(...)
+  execute(...)
   offer(...)
   query(...)
   statusChangedEvent()
@@ -3031,7 +3031,7 @@ Usage rules:
   for accepted work;
 - `ACCEPTED` is never interpreted as successful domain processing;
 - `offer(Runnable)` is for producer paths that intentionally do not wait for a result;
-- TimingNode `invoke(...)` and consistency-sensitive `query(...)` use the result-bearing
+- TimingNode `execute(...)` and consistency-sensitive `query(...)` use the result-bearing
   path;
 - LogBook `queue(...)` translates the low-level admission-only path into the Domain `QUEUED / QUEUE_FULL / NOT_RUNNING` result.
 
