@@ -200,6 +200,10 @@ Making `AntennaManager.activate()` mean both:
 
 Those are different actions and may be requested by different owners.
 
+When one owner coordinates the lifecycle of several child components, use the shared
+`ComponentLifecycleManager` for ordered activation, rollback and reverse-order
+deactivation. Do not duplicate that generic lifecycle algorithm in each component.
+
 ---
 
 ### DR-04 — A synchronous event callback must be short
@@ -1276,6 +1280,62 @@ critical section short.
 
 ---
 
+### DR-21 — Production API must serve production behaviour
+
+**Rule**
+
+Do not widen a production class API merely to make tests convenient.
+
+A public method should exist because a production caller or an intentional production
+boundary needs it. When tests need direct access to a composed child, prefer keeping that
+child reference in the test composition or using a test fixture. If a production member
+genuinely exists only as a test seam, keep it non-public where practical and mark it
+explicitly as test-only in its name or Javadoc.
+
+Repeated methods that only forward a child component's API are also a review smell. If
+that child boundary is intentionally exposed, prefer one named narrow contract such as
+`LogBookAccessor` over copying each child operation onto the parent facade.
+
+**Why**
+
+Test-only convenience methods and pass-through getters slowly become accidental production
+API. They hide the real owner of behaviour, make top-level components look responsible for
+mechanisms they do not own, and make later refactoring harder because tests depend on the
+wrong boundary.
+
+**Example**
+
+Prefer test composition that retains the owned child directly:
+
+```java
+NodeTaskProcessor tasks = new NodeTaskProcessor(...);
+TimingNode node = new TimingNode(logBook, tasks, tags);
+
+UpstreamHandler handler = tasks.upstreamHandler();
+```
+
+When production callers intentionally need LogBook operations, expose one narrow boundary:
+
+```java
+LogBookAccessor logBook = timingNode.logBook();
+Status status = logBook.query(LogBookQueries.status(), ReadConsistency.CURRENT);
+```
+
+**Avoid**
+
+```java
+public UpstreamHandler upstreamHandler() {
+    return taskProcessor.upstreamHandler();
+}
+```
+
+when no production caller uses that method and it exists only so a test can reach the child.
+
+Also avoid growing a parent facade with repeated one-line `invoke`, `offer`, `query`
+and event pass-throughs that simply mirror the same child component.
+
+---
+
 ## Pull-request review check
 
 For Java component changes, a reviewer can use this short check:
@@ -1299,7 +1359,8 @@ For Java component changes, a reviewer can use this short check:
 16. **Wrapping** — Are lines kept compact up to the 120-character maximum instead of mechanically wrapped?
 17. **Lifecycle reuse** — Can an ordinary component activate again after clean deactivation?
 18. **State synchronization** — Are lifecycle checks and their state transitions protected by the same synchronization boundary?
-19. **Tests** — Is the risky behaviour tested, not only the happy path?
+19. **Production API** — Does each public member serve a production boundary, and are intentional test-only seams explicit?
+20. **Tests** — Is the risky behaviour tested, not only the happy path?
 
 A review can cite a rule such as `DR-05`, but the rule text and example should remain
 clear enough that the identifier is not required to understand the review comment.
