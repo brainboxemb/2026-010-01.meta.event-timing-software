@@ -288,8 +288,7 @@ domain/
       NodeTaskLane.java                 Task Lane execution/wait adapter around SerialLane
       NodeServiceState.java             passive Task Lane-owned node state
     upstream/
-      UpstreamHandler.java              node-scoped semantic upstream dispatch
-      UpstreamHandlerTask.java          bounded Task Lane upstream turn
+      UpstreamHandler.java              node-scoped semantic upstream dispatch / bounded lane turns
       UpstreamHeartbeat.java            PING/heartbeat protocol state
       UpstreamDataSync.java             RACE_DATA sequence/ACK/REQ/SYNC ownership
       LogBookSync.java                  TIMING_DATA head/SYNC/REQ/batch synchronization
