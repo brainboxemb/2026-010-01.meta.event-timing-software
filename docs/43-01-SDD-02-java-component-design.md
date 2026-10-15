@@ -821,7 +821,7 @@ before emitting `statusChangedEvent(after)` when the effective status changed. A
 status reader therefore observes only completed published transitions.
 
 The active LogBook owns mutable TimingNode state and does not expose `LogBookData` directly.
-State-changing `execute(command)` remains non-reentrant: a command may not synchronously
+State-changing `process(command)` remains non-reentrant: a command may not synchronously
 re-enter the same Data Lane behind itself. ORDERED queries are different. If the caller is
 already executing on the Data Lane, earlier queued work has already run before the current
 turn, so the query reads the ordered state directly without queueing or waiting again.
@@ -875,13 +875,12 @@ mirroring every `LogBook` method:
 LogBookAccessor logBook = node.logBook();
 
 TimingNodeTypes.OpenResult opened =
-        logBook.execute(LogBookCommands.open(locationId));
+        logBook.process(LogBookCommands.open(locationId));
 
-TimingNodeTypes.CommandQueueResult queueResult =
-        logBook.queue(
-                LogBookCommands.addAutomaticRegistration(
-                        registrationId,
-                        time));
+logBook.execute(
+        LogBookCommands.addAutomaticRegistration(
+                registrationId,
+                time));
 
 TimingNodeTypes.Status currentStatus =
         logBook.query(
@@ -909,12 +908,12 @@ node.statusChangedEvent().subscribe(statusListener);
 node.newDataEntryEvent().subscribe(timingDataListener);
 ```
 
-`execute(command)` is the result-bearing path: presentation/application callers may
-wait for the processed domain result. `queue(command)` is the fire-and-forget path:
-it returns only whether the command was queued and deliberately does not wait for
-the later domain result. RFID/TagProcessor-style ingress uses this form so a device
-callback cannot be held up by persistence, LogBook work or another queued TimingNode
-operation.
+`process(command)` is the result-bearing path: presentation/application callers wait
+for the processed domain result. `execute(command)` is the fire-and-forget path: it
+returns after the command is queued and deliberately does not wait for the later domain
+result. Queue rejection propagates immediately as `RejectedExecutionException`.
+RFID/TagProcessor-style ingress uses this form so a device callback cannot be held up by
+persistence, LogBook work or another queued TimingNode operation.
 
 `query(query, consistency)` makes the read contract explicit. CURRENT returns a safely
 published immutable read model without entering the node lane; ORDERED executes after
@@ -2889,8 +2888,8 @@ possible, but it would couple the domain type to one threading mechanism.
 Composition keeps that choice replaceable and lets the public TimingNode API stay
 synchronous and domain-oriented.
 
-For state-dependent operations the caller waits for the result produced on the
-Data Lane. Queueing and the processed operation result are represented separately:
+For state-dependent operations the caller uses the result-bearing LogBook path; device
+or callback ingress may use the fire-and-forget path:
 
 ```java
 final class TimingNode {
@@ -2901,8 +2900,11 @@ final class TimingNode {
     }
 }
 
-CommandQueueResult queueResult =
-        node.logBook().queue(command);
+TimingNodeTypes.OpenResult opened =
+        node.logBook().process(LogBookCommands.open(locationId));
+
+node.logBook().execute(
+        LogBookCommands.addAutomaticRegistration(registrationId, time));
 
 // LogBook owns Data Lane execution, LogBookState and LogBookData.
 // NodeService owns Task Lane service/lifecycle/orchestration.
@@ -2911,11 +2913,11 @@ CommandQueueResult queueResult =
 ```
 
 The visible `TimingNode` delegates execution mechanics to its child components.
-Queueing and the processed domain result remain separate; callers use
-the intentional child boundary rather than reaching into mutable state.
+`process(command)` waits for the processed domain result; `execute(command)` returns
+after queueing and has no synchronous domain result. Callers use the intentional child
+boundary rather than reaching into mutable state.
 
-The public methods above are illustrative signatures, not a requirement to use
-those exact result class names. The important split is:
+The important split is:
 
 ```text
 open(locationId) / close / consistency-sensitive query
