@@ -1268,6 +1268,11 @@ antenna.selfTestCompletedEvent()
 Also avoid extracting meaningless methods such as `handle(...)` or `process(...)`.
 The extracted method must name the execution/event boundary it represents.
 
+Do not extract a private helper merely to shorten the caller or relocate `try/catch`,
+branches or ordinary control flow. An extraction must expose a real mechanism,
+architectural boundary or owned responsibility. If no such concept exists, keep the
+control flow where the decision is made.
+
 ---
 
 ### DR-18 — Keep line wrapping readable
