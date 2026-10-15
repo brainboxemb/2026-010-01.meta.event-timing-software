@@ -363,10 +363,11 @@ Do not create project-specific admission/result types merely to rename Java's ex
 execute/submit/rejection model. A deviation needs a concrete semantic requirement that the
 JDK contract cannot express. Extra vocabulary without such a requirement adds review noise.
 
-Domain components may still use domain words where they add real meaning. For example,
-`LogBook.queue(command)` says that a LogBook command is fire-and-forget. Its implementation
-may delegate to `SerialLane.execute(...)`; it does not need a separate
-`CommandQueueResult` merely to say that lane admission succeeded.
+Domain components may still use domain words where they add real meaning. For the LogBook
+boundary, `process(command)` means execute in LogBook order and return the domain result,
+while `execute(command)` is the fire-and-forget path. The latter may delegate to
+`SerialLane.execute(...)`; lane rejection uses `RejectedExecutionException` rather than
+a separate project-specific queue/admission result.
 
 **Why**
 
@@ -698,9 +699,9 @@ architecture, without first knowing the implementation mechanism.
 
 | Intent | Prefer | Avoid at Domain/Application level |
 | --- | --- | --- |
-| Execute a command and return its domain result | `execute(command)` | `invoke(command)`, public `executeAndWait(command)` |
-| Queue work and return immediately | `queue(command)`, `tryQueueOnTaskLane(work)` | `offer(...)`, `submit(...)` |
-| Result of queueing | `CommandQueueResult`, `queueResult` | `AdmissionResult`, `admission`, `submissionResult` |
+| Process a LogBook command and return its domain result | `process(command)` | `invoke(command)`, public `executeAndWait(command)` |
+| Execute a fire-and-forget LogBook command | `execute(command)` | `queue(command)`, `offer(...)`, `submit(...)` at the Domain boundary |
+| Try to queue internal lane work without waiting | `tryQueueOnTaskLane(work)` | exposing queue-container operations outside the lane owner |
 | Work is waiting to run | `QUEUED` | `ACCEPTED` |
 | Queue cannot accept more work | `QUEUE_FULL` | bare `FULL` outside the queue primitive |
 | Execute serially and return the result | `executeOnDataLaneAndWait(...)` | generic `run(...)` when waiting is important |
