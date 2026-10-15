@@ -736,14 +736,23 @@ that also owns domain state, protocol state or business decisions.
 Use `Executor` for objects that implement or concretely represent Java
 `Executor`/`ExecutorService` execution resources. Do not call a
 `ThreadPoolExecutor` or `ScheduledThreadPoolExecutor` a `worker`: the executor
-owns/schedules work, while its worker thread(s) perform that work. Reserve `worker`
-for an actual `Thread`, a thread role/count, or a diagnostic thread name. For example:
+owns/schedules work while one or more Java threads perform that work.
+
+Thread names should identify the **functional role**, not restate that they are threads.
+Do not mechanically append `-worker` or `-thread`. The surrounding thread dump,
+debugger or `Thread` API already supplies that context. Add a numeric suffix only when
+one executor may create multiple threads. For example:
 
 ```java
 ThreadPoolExecutor timingNodeExecutor = ...;
-ScheduledThreadPoolExecutor tagProcessorExecutor = ...;
-ThreadFactory threadFactory = threadFactory("tp-dl-node-worker");
+ScheduledThreadPoolExecutor tagProcessorScheduledExecutor = ...;
+
+threadFactory("tp-dl-node");
+threadFactory("tp-dl-tagproc");
 ```
+
+For counts of actual Java threads, prefer names such as `SHARED_IO_THREADS` rather than
+`SHARED_IO_WORKERS`.
 
 When a logical `SerialLane` depends on such an executor, name the dependency
 `backingExecutor` (or another explicit executor name), not `workerExecutor`.
