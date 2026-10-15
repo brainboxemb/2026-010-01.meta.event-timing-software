@@ -308,13 +308,22 @@ one listener may be stored directly, and only two or more listeners require an i
 array representation. Subscription order remains stable. Concurrent runtime
 `emit(...)` calls are allowed, but runtime rewiring is not part of the event contract.
 
-`Event.emit(...)` isolates ordinary listener `RuntimeException` failures and reports
-them through `Event.DeliveryReport`. When listener failure can lose an important
-cross-component handoff, the event owner/emitter must inspect that report and record or
-otherwise handle the failure. Do not rebuild the same general listener-isolation policy
-inside every subscriber with local `try/catch`. A subscriber should catch an exception
-only when it owns a more specific recovery decision that the event delivery mechanism
-cannot express.
+`Event.emit(...)` isolates ordinary listener `RuntimeException` failures and
+makes them available through `Event.DeliveryReport`. The emitter owns publication
+of its domain fact, not the downstream work performed by arbitrary subscribers.
+Do not require an emitter to inspect subscriber outcomes, infer whether a consumer
+committed work, or implement a consumer-specific recovery policy.
+
+A receiving component or its composition boundary owns its expected operational
+failures (for example, a rejected enqueue to the LogBook Data Lane). It should
+handle those failures locally, with relevant identity and diagnostics, without
+putting subscriber-specific knowledge in the source component. Where repeated
+`RejectedExecutionException` handling would obscure a named handoff, a small
+execution guard may separate the queued operation from the caller-owned rejection
+handler; it must not invent an alternative queue-admission protocol. Other
+unexpected subscriber `RuntimeException` failures remain isolated by `Event`;
+system-wide reporting of those failures belongs to event infrastructure/diagnostics,
+not to domain event producers.
 
 Initialization is also separate from events. SystemConductor activation wakes its first
 normal reconciliation run; that run reads CURRENT TimingNode status and publishes
