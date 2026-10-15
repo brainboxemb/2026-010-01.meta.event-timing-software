@@ -278,25 +278,35 @@ An `onXxx(...)` method is a handler name, not a subscription API.
 particular composition currently has one subscriber. When a relationship is semantically
 a direct action to one owned component, use a normal method call instead of an event.
 
-Cross-component event wiring is completed during Runtime composition before
-activation. `subscribe(...)` is therefore a composition-time operation; runtime
-operation is emit-only and the baseline `EventSource<T>` exposes no `unsubscribe(...)`.
+Event wiring is fixed before activation at the **smallest component owner
+that owns both endpoints**. `subscribe(...)` is therefore a composition-time
+operation; runtime operation is emit-only and the baseline `EventSource<T>`
+exposes no `unsubscribe(...)`.
+
+Apply the same ownership rule at every level:
+- a top-level component wires relationships between its own child components;
+- a parent component wires relationships that cross child-component boundaries;
+- Runtime constructs objects and resolves configuration/routing data, but should
+  not retain ownership of a relationship once a real component owns both ends;
+- lifecycle methods never add or remove subscriptions.
+
+Current examples:
+- `TimingNode` owns node-internal links among LogBook, NodeService and
+  TagProcessor;
+- application `TimingSystem` owns system-level links from TimingNode status to
+  SystemConductor and from AntennaManager observations to TimingNode ingress;
+- `ApplicationConductor` owns application lifecycle across complete
+  TimingSystems but does not need to know their internal event graph.
 
 **Make externally wired relationships discoverable in both places:**
-- The receiving component's class Javadoc must state which externally supplied
-  event(s) invoke its handler and name or link to the composition owner that
-  installs the subscription.
-- The composition code must comment the purpose of non-obvious event links,
-  including whether the handler consumes the event payload or only wakes a
-  task that rereads CURRENT state.
-- Internal completion-event subscriptions between helpers owned by one component
-  may stay inside that component; do not move every local listener to Runtime.
+- The receiving component's class Javadoc states which owner installs the link.
+- The owning component comments non-obvious event links, including whether a
+  payload is consumed or merely wakes work that rereads CURRENT state.
+- Similar ownership relationships use the same wiring pattern unless an explicit
+  design decision records why they differ.
 
-For example, `SystemConductor` documents that `TimingSystemComposer` connects
-`TimingNode.statusChangedEvent()` to `onTimingNodeStatusChanged(...)`. The
-Composer installs the subscription and explains that it is a wake signal, not
-a queued command or a second copy of node state. A developer inspecting either
-class can locate the other half of the relationship.
+A developer inspecting either endpoint should be able to identify the component
+that owns the relationship without searching for hidden Runtime rewiring.
 
 A component's `activate()`, `deactivate()`, `start()` or `close()` changes component
 or transport behaviour, not the application event graph. Do not hide
@@ -1546,6 +1556,13 @@ Repeated methods that only forward a child component's API are also a review sme
 that child boundary is intentionally exposed, prefer one named narrow contract such as
 `LogBookAccessor` over copying each child operation onto the parent facade.
 
+A single forwarding method **is** justified when it is the semantic ingress of the parent
+component and exists specifically to keep an owned child private. The method must describe
+the parent-level fact/action, not expose the child's implementation mechanism. For example,
+system-level antenna routing may call `TimingNode.onTagObserved(...)`; TimingNode then
+delegates internally to its TagProcessor. The system owner therefore depends on the
+TimingNode component boundary and does not need `tagProcessor()` access.
+
 **Why**
 
 Test-only convenience methods and pass-through getters slowly become accidental production
@@ -1568,7 +1585,7 @@ When production callers intentionally need LogBook operations, expose one narrow
 
 ```java
 LogBookAccessor logBook = timingNode.logBook();
-Status status = logBook.query(LogBookQueries.status(), ReadConsistency.CURRENT);
+Status status = logBook.process(LogBookQueries.status(), ReadConsistency.CURRENT);
 ```
 
 **Avoid**
@@ -1581,8 +1598,10 @@ public UpstreamHandler upstreamHandler() {
 
 when no production caller uses that method and it exists only so a test can reach the child.
 
-Also avoid growing a parent facade with repeated one-line `execute`, `queue`, `query`
-and event pass-throughs that simply mirror the same child component.
+Also avoid growing a parent facade with repeated one-line `execute`, `queue`, `process`
+and event pass-throughs that simply mirror the same child component. A justified semantic
+ingress should normally be a small, deliberate exception rather than the start of a mirror
+API for the child.
 
 ---
 

@@ -1005,16 +1005,17 @@ resolve effective configuration
   -> create PlatformEnvironment
   -> construct Runtime resources
   -> construct Domain, I/O, Application and Presentation objects
-  -> wire cross-component relationships
+  -> construct each TimingSystem and fix its internal event graph
   -> Runtime execution resources start
-  -> Application Conductor activates the application core
-       AntennaManager
-       TimingSystem Conductor(s)
-         TimingNode(s)
+  -> Application Conductor activates complete TimingSystem(s)
+       TimingSystem
+         AntennaManager
+         SystemConductor
+           TimingNode(s)
   -> Presentation activates
 ```
 
-Construction itself must not start physical application worker threads or install hidden cross-component behaviour. Runtime constructs and wires the object graph and owns the physical execution resources. The Application `Conductor` owns activation order and rollback for the major application components. It activates the `AntennaManager` before the Domain TimingSystem `Conductor`, so the system Conductor can apply its initial inventory decision after its TimingNodes are active. Deactivation uses the reverse order. Concrete Presentation adapters are composed by Runtime and activate after the coordinated application core. Normal application/domain interactions do not route through Runtime after activation.
+Construction itself must not start physical application threads or install hidden runtime behaviour. Runtime constructs the object graph, resolves configuration/routing data and owns physical execution resources. Each application `TimingSystem` fixes the event graph between the children it owns before activation and owns its child lifecycle: AntennaManager before Domain SystemConductor, reverse on shutdown. The Application `Conductor` owns activation order and rollback across complete TimingSystems rather than knowing their internal children. Concrete Presentation adapters are composed by Runtime and activate after the coordinated application core. Normal application/domain interactions do not route through Runtime after activation.
 
 The compact software/domain ownership model is intentionally also kept as copyable text:
 
@@ -1197,10 +1198,12 @@ application/
 :id: ApplicationConductor
 
 `application.ApplicationConductor` owns activation order, rollback and reverse
-deactivation of the major application components. In the current composition it
-activates `AntennaManager` before the TimingSystem `Conductor`; the latter then
-activates the TimingNodes in its own TimingSystem. The Application Conductor does
-not decide inventory state or process tag observations.
+deactivation across complete application `TimingSystem` components. It does not
+know the internal AntennaManager/SystemConductor/TimingNode graph of a system.
+Each TimingSystem owns that graph, activates AntennaManager before its
+SystemConductor, and is the architectural owner for the complete current
+`SystemStatus`. The Application Conductor does not decide inventory state or
+process tag observations.
 :::
 
 :::{arch} Configuration control  
