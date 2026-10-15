@@ -1299,10 +1299,16 @@ control flow where the decision is made.
 Use **120 characters as the maximum Java source line length**.
 
 Do not wrap a statement merely because it has multiple arguments. When a complete,
-readable statement fits within 120 characters, keep it on one line.
+readable statement fits within 120 characters, keep it on one line. This applies equally
+to assignments, constructor/method calls, callback declarations and method references.
+
+"One declaration per line" means do not combine unrelated variables such as
+`int width, height;`; it does **not** mean moving a short initializer onto its own line.
 
 Wrap only when the line would exceed 120 characters or when the expression has enough
-logical structure that line breaks genuinely improve understanding.
+logical structure that line breaks genuinely improve understanding. Explicitly naming a
+meaningful `Runnable`, `Callable` or `Consumer` (DR-10/DR-17) does not require the
+initializer itself to be split across lines.
 
 **Why**
 
@@ -1333,6 +1339,35 @@ inventoryEnabledSetting.request(Boolean.valueOf(enabled));
 ```
 
 when it fits comfortably within the limit.
+
+For assignments and lifecycle wiring, prefer the compact form when it remains readable:
+
+```java
+this.timingNodeId = logBook.timingNodeId();
+
+lifecycle.register(nodeService, NodeService::activate, NodeService::deactivate);
+lifecycle.register(logBook, LogBook::activate, LogBook::deactivate);
+
+Runnable queueRegistration = () -> logBook.execute(command);
+```
+
+Avoid mechanical wrapping such as:
+
+```java
+this.timingNodeId =
+        logBook.timingNodeId();
+
+lifecycle.register(
+        nodeService,
+        NodeService::activate,
+        NodeService::deactivate);
+
+Runnable queueRegistration =
+        () -> logBook.execute(command);
+```
+
+A callback with a long body may still use a line break after `=` when that genuinely
+improves readability; the rule is not to force either shape mechanically.
 
 For a genuinely long or structured expression, break at logical boundaries and align the
 continuation so the structure remains visible.
