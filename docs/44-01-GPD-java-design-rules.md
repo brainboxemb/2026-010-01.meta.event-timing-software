@@ -293,10 +293,10 @@ Apply the same ownership rule at every level:
 Current examples:
 - `TimingNode` owns node-internal links among LogBook, NodeService and
   TagProcessor;
-- application `TimingSystem` owns system-level links from TimingNode status to
-  SystemConductor and from AntennaManager observations to TimingNode ingress;
-- `ApplicationConductor` owns application lifecycle across complete
-  TimingSystems but does not need to know their internal event graph.
+- `domain.system.TimingSystem` connects TimingNode status to
+  `TimingSystemConductor` and AntennaManager observations to TimingNode ingress;
+- `ApplicationConductor` orchestrates application lifecycle across complete
+  TimingSystems but does not implement their internal event graph.
 
 **Make externally wired relationships discoverable in both places:**
 - The receiving component's class Javadoc states which owner installs the link.
@@ -335,7 +335,7 @@ unexpected subscriber `RuntimeException` failures remain isolated by `Event`;
 system-wide reporting of those failures belongs to event infrastructure/diagnostics,
 not to domain event producers.
 
-Initialization is also separate from events. SystemConductor activation wakes its first
+Initialization is also separate from events. TimingSystemConductor activation wakes its first
 normal reconciliation run; that run reads CURRENT TimingNode status and publishes
 the desired AntennaSettings state. No synthetic status-change event is required.
 
