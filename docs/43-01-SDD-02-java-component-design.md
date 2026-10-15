@@ -1402,15 +1402,21 @@ system control run:
   -> AntennaManager wakes and reconciles hardware asynchronously
 ```
 
-Runtime owns construction, wiring and physical worker lifetime. The
-`ApplicationConductor` owns activation order, rollback and reverse deactivation
-of the major application components. Runtime registers every composed
-TimingSystem with it before activation; the class does not assume one
-TimingSystem. The TimingSystem `Conductor` owns the lifecycle
-of its TimingNodes and the system-level inventory decision.
+Runtime owns construction and physical executor lifetime. A concrete
+`application.TimingSystem` owns the internal graph and lifecycle of one
+configured system: its optional `AntennaManager`, Domain `SystemConductor`
+and TimingNodes. Runtime prepares already resolved construction/routing data and
+then registers the completed TimingSystem with `ApplicationConductor`.
+`ApplicationConductor` owns only application-level activation order, rollback
+and reverse deactivation across complete TimingSystems. `SystemConductor`
+continues to own TimingNode lifecycle and the Domain inventory decision.
 
-The TimingSystem `Conductor` holds the associated antenna-specific
-`AntennaSettings`, not `AntennaManager`. Generic Setting mechanics belong to
+The application `TimingSystem` is the only system-level owner allowed to know
+both the I/O-side `AntennaManager` and Domain-side `SystemConductor`/TimingNodes.
+It is therefore also the natural owner for the central `SystemStatus`: a future
+complete system view can combine node, conductor and antenna state without making
+Domain depend on I/O. The TimingSystem `Conductor` itself holds only the associated
+antenna-specific `AntennaSettings`, not `AntennaManager`. Generic Setting mechanics belong to
 Infrastructure / cross-cutting; the component-specific `AntennaSettings`
 belongs beside the antenna manager in I/O. The settings object is shared
 control state, not an inventory-control interface. Runtime resolves the IF-11
@@ -1421,9 +1427,10 @@ antenna power, self-test, initialization, multiplexing, recovery and shutdown
 mechanics.
 
 The TimingSystem `Conductor` uses its own logical serial lane with
-`SerialTaskRunner`; system-Conductor lanes may share one physical worker. The
-`ApplicationConductor` only orders lifecycle and does not need a coordination
-lane. TimingNode and SystemConductor activation establish execution context and
+`SerialTaskRunner`; system-Conductor lanes may share one backing executor.
+`TimingSystem` activates its AntennaManager before its SystemConductor and
+deactivates them in reverse order. `ApplicationConductor` only orders complete
+TimingSystems and does not need a coordination lane. TimingNode and SystemConductor activation establish execution context and
 return without waiting for persisted TimingData loading. The Conductor's activation
 hook wakes the first normal reconciliation run. A TimingNode whose CURRENT status
 is still unavailable because its initial load has not published yet is treated as
@@ -1432,14 +1439,16 @@ publishes no partial inventory decision. The TimingNode's first status publicati
 unexpected CURRENT failure remains an explicit fault rather than a guessed value.
 
 Tag events and individual antenna commands do not pass through either
-Conductor. Runtime wires each configured antenna observation directly to the
-TagProcessors named by that antenna's `timingNodes` mapping. Those targets must
-belong to the manager's referenced TimingSystem; one antenna may fan out to
-multiple nodes in that system.
+Conductor. Runtime resolves the configured antenna-to-node mapping as pure
+composition data. The owning `TimingSystem` installs each observation event link
+to the target `TimingNode` component boundary; TimingNode then delegates the
+observation to its internal TagProcessor. External system composition never
+reaches directly into the node's TagProcessor. Targets must belong to the same
+TimingSystem and one antenna may fan out to multiple nodes.
 
 ```java
 antennaManager.tagObservedEvent(antennaId)
-    .subscribe(timingNode.tagProcessor()::onTagObserved);
+    .subscribe(timingNode::onTagObserved);
 ```
 
 For semantic local events, accessor names describe the fact that happened and end in
