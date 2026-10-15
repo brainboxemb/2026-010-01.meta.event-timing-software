@@ -759,10 +759,21 @@ old comment in the same pull request.
 
 For lambdas and callbacks, prefer the form that is easiest to understand in context.
 A lambda is fine when it is genuinely clearer or measurably useful in a hot path. Do not
-avoid a lambda merely because it is a lambda. However, a non-trivial lambda must not hide
-its purpose behind syntax alone: use a named method/method reference when that reads
-better, or give the `Runnable` / `Callable` a meaningful local name before passing it
-to the execution boundary.
+avoid a lambda merely because it is a lambda. However, a callback must not hide its purpose
+behind syntax alone.
+
+Use the following rule:
+
+1. **Trivial callback:** keep the lambda inline when the operation and callback role are
+   immediately obvious from the receiving method.
+2. **Meaningful callback:** declare a local variable with the explicit functional-interface
+   type and a name that describes the callback's role before passing it to the boundary.
+   This applies not only to `Runnable` and `Callable`, but also to types such as
+   `Consumer<T>`, `BiConsumer<T,U>`, `Function<T,R>`, `Supplier<T>`,
+   `Predicate<T>` and similar project/API callback contracts.
+3. **Multi-step or lifecycle callback:** prefer a named method and method reference when
+   the callback performs several operations, changes state, owns error/lifecycle handling,
+   or is clearer as a reusable operation.
 
 For example, this is fine when the named method already explains the callback:
 
@@ -784,14 +795,33 @@ over:
 return submitAndWait(() -> applyCommand(command), command.name());
 ```
 
-The local name should describe the deferred operation, not the lambda syntax. This is
-especially useful at serial-lane, task-runner and asynchronous execution boundaries where
-the distinction between queueing work and executing the work itself matters.
+The same rule applies to non-execution callbacks. When the explicit functional type makes
+the contract clearer, prefer:
 
-An inline lambda that performs several steps, changes state, or has non-obvious lifecycle
-meaning should normally be replaced by a named method or a meaningfully named
-`Runnable` / `Callable`. A comment is appropriate only when it explains ownership,
-threading, lifecycle or another reason that the code itself cannot express clearly.
+```java
+final boolean inventoryRequired = required;
+Consumer<AntennaSettings.Edit> settingsUpdate =
+        edit -> edit.inventoryEnabled(inventoryRequired);
+
+antennaSettings.update(settingsUpdate);
+```
+
+over:
+
+```java
+final boolean inventoryRequired = required;
+antennaSettings.update(edit -> edit.inventoryEnabled(inventoryRequired));
+```
+
+The local name should describe the deferred/callback operation, not the lambda syntax.
+This is especially useful at serial-lane, task-runner, asynchronous-execution,
+configuration-update and event/callback boundaries where the distinction between invoking
+the boundary and the work performed by the callback matters.
+
+Do not add a comment merely to explain `() ->`, `->`, captured variables or the fact
+that a functional interface is invoked later. A comment is appropriate only when it
+explains ownership, threading, lifecycle, transaction semantics or another reason that
+the code itself cannot express clearly.
 
 ---
 
