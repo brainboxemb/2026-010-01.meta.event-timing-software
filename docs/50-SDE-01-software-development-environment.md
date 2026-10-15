@@ -92,6 +92,30 @@ Current baseline:
 
 Individual repositories may add tools, but system-wide additions should be deliberate and documented.
 
+### NetBeans Java editor formatting
+
+The Java coding rules use a **120-character maximum source line length**. A developer using
+Apache NetBeans should configure the editor margin to the same value so the visual guide and
+the formatter do not suggest the old ~80-character wrapping style.
+
+In NetBeans:
+
+1. Open **Tools → Options → Editor → Formatting**.
+2. Set **Language** to **All Languages** (or **Java** when maintaining a Java-specific formatter profile).
+3. Set **Category** to **Tabs and Indents**.
+4. Set **Right Margin** to **120**.
+5. When using the **Wrapping** category, keep wrapping choices consistent with the Java design rule:
+   do not force short method calls or one argument per line merely because a statement has several arguments.
+
+The editor margin is a visual/formatting aid, not a reason to stretch every line to 120 characters.
+Break earlier when a logical boundary makes the code easier to read. Conversely, when a complete
+statement remains clear and fits within 120 characters, keep it compact rather than mechanically
+wrapping it around 80 characters.
+
+The normative source-formatting rule remains `DR-18 — Keep line wrapping readable` in
+`44-01-GPD-java-design-rules.md`; this SDE section only describes how to configure the primary IDE
+to support that rule.
+
 ## Repository baseline
 
 Every implementation or coordination repository is expected to contain at least:
