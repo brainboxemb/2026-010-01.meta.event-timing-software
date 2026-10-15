@@ -284,7 +284,8 @@ domain/
         TimingDataPersistence.java      TimingData load/append domain port
         DefaultTimingDataPersistence.java codec/node/sequence mapping to I/O storage
     task/
-      NodeService.java                  Task Lane service + composition/lifecycle
+      NodeService.java                  Task Lane semantic service / derived-state orchestration
+      NodeTaskLane.java                 Task Lane execution/wait adapter around SerialLane
       NodeServiceState.java             passive Task Lane-owned node state
     upstream/
       UpstreamHandler.java              node-scoped semantic upstream dispatch
@@ -782,10 +783,14 @@ It composes `LogBook`, `NodeService` and its node-local
 `TagProcessor`. `LogBook` owns Data Lane queueing, command/query
 execution, persisted TimingData startup loading, lifecycle/location state,
 durable TimingData commit and post-commit event publication.
-`NodeService` owns Task Lane lifecycle, bounded Task Lane queueing and
-semantic upstream composition. Passive mutable Task Lane data lives in
-`NodeServiceState`, not in the service object itself. Both logical serial lanes are supplied by Runtime
-and may share one physical worker. The TagProcessor uses its separately supplied
+`NodeService` owns Task Lane semantic orchestration. Its package-private
+`NodeTaskLane` adapts the Runtime-supplied `SerialLane` for Task Lane
+lifecycle, current-thread checks and result-bearing wait/error mapping; it does
+not introduce another queue or executor. Passive mutable Task Lane data lives in
+`NodeServiceState`, not in the service object itself. Other node-owned helpers
+such as UpstreamHandler may use the same underlying Task Lane for non-blocking
+handoffs. Both logical serial lanes are supplied by Runtime and may share one
+physical worker. The TagProcessor uses its separately supplied
 scheduled executor.
 
 A production `TimingNode` is always constructed as a complete capability.
