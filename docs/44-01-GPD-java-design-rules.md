@@ -1556,6 +1556,13 @@ Repeated methods that only forward a child component's API are also a review sme
 that child boundary is intentionally exposed, prefer one named narrow contract such as
 `LogBookAccessor` over copying each child operation onto the parent facade.
 
+A single forwarding method **is** justified when it is the semantic ingress of the parent
+component and exists specifically to keep an owned child private. The method must describe
+the parent-level fact/action, not expose the child's implementation mechanism. For example,
+system-level antenna routing may call `TimingNode.onTagObserved(...)`; TimingNode then
+delegates internally to its TagProcessor. The system owner therefore depends on the
+TimingNode component boundary and does not need `tagProcessor()` access.
+
 **Why**
 
 Test-only convenience methods and pass-through getters slowly become accidental production
@@ -1578,7 +1585,7 @@ When production callers intentionally need LogBook operations, expose one narrow
 
 ```java
 LogBookAccessor logBook = timingNode.logBook();
-Status status = logBook.query(LogBookQueries.status(), ReadConsistency.CURRENT);
+Status status = logBook.process(LogBookQueries.status(), ReadConsistency.CURRENT);
 ```
 
 **Avoid**
@@ -1591,8 +1598,10 @@ public UpstreamHandler upstreamHandler() {
 
 when no production caller uses that method and it exists only so a test can reach the child.
 
-Also avoid growing a parent facade with repeated one-line `execute`, `queue`, `query`
-and event pass-throughs that simply mirror the same child component.
+Also avoid growing a parent facade with repeated one-line `execute`, `queue`, `process`
+and event pass-throughs that simply mirror the same child component. A justified semantic
+ingress should normally be a small, deliberate exception rather than the start of a mirror
+API for the child.
 
 ---
 
