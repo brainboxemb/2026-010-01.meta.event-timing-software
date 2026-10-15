@@ -1300,19 +1300,19 @@ Shared Domain contracts
     configured representation / codec / compatibility
 ```
 
-`TimingSystem` is the parent logical domain aggregate. One Timing Point Application hosts 1..N TimingSystems; each TimingSystem owns an internal `SystemId`, one `Conductor`, a complete `SystemStatus` overview and 1..N TimingNodes. `SystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. Current upstream communication remains TimingNode-oriented: Messaging exposes a node-scoped `UpstreamStream` to each TimingNode.
+`TimingSystem` is a Domain component. One Timing Point Application hosts 1..N TimingSystems; each TimingSystem contains an internal `SystemId`, one `TimingSystemConductor`, a complete `SystemStatus` overview and 1..N TimingNodes, and uses associated I/O components such as `AntennaManager`. `SystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. Current upstream communication remains TimingNode-oriented: Messaging exposes a node-scoped `UpstreamStream` to each TimingNode.
 
 :::{arch} TimingSystem Conductor
 :id: SystemConductor
 :realizes: SI01-REQ-053
 
-One `domain.system.Conductor` belongs to each TimingSystem. It is the first
-system-level coordinator and owns the lifecycle of that system's 1..N
-`TimingNode` components. It reads their OPEN/CLOSED/ERROR states and calls the
-associated `AntennaManager` directly: inventory is enabled while at least one
-TimingNode is OPEN and disabled when none is OPEN. The Conductor does not perform
-antenna power, self-test, initialization or multiplexing and does not route
-TagObservation events.
+One `domain.system.TimingSystemConductor` belongs to each TimingSystem. It
+coordinates that system's 1..N `TimingNode` components and owns their lifecycle.
+It reads their OPEN/CLOSED/ERROR states and publishes the required inventory intent
+through the shared `AntennaSettings`: inventory is enabled while at least one
+TimingNode is OPEN and disabled when none is OPEN. `AntennaManager` owns hardware
+power, self-test, initialization, multiplexing and inventory reconciliation. The
+TimingSystemConductor does not route TagObservation events.
 
 Its control style is **event-triggered reconciliation**. A relevant state-change
 notification wakes the Conductor; the reconciliation reads authoritative current
@@ -2153,10 +2153,11 @@ interface and live delivery remains best effort.
 :::{arch} TimingSystem  
 :id: TimingSystem  
 
-A `TimingSystem` is an internal parent domain aggregate.
+A `TimingSystem` is a Domain component.
 One **Timing Point Application** (SI-01) may host 1..N TimingSystems, for example
-to run multiple independent simulation contexts. Each TimingSystem owns a complete
-`SystemStatus` overview and 1..N TimingNodes. Its internal `SystemId` is not
+to run multiple independent simulation contexts. Each TimingSystem contains a complete
+`SystemStatus` overview, one `TimingSystemConductor` and 1..N TimingNodes, and
+uses associated I/O components such as `AntennaManager`. Its internal `SystemId` is not
 assumed to be part of the upstream wire contract; current upstream routing resolves
 the globally configured `NodeId` target at application scope.
 :::
