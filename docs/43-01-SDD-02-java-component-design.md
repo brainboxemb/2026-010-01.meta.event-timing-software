@@ -2270,7 +2270,7 @@ The Java shape is a bounded asynchronous sink:
 ```text
 Antenna Event<TagObservation>
        |
-       +--> TagProcessor --> TimingNode.onNewRegistration(...) --> LogBook.queue(...)
+       +--> TagProcessor --> TimingNode.onNewRegistration(...) --> LogBook.execute(...)
        |
        +--> RawTagObservationSink
               |
@@ -2319,7 +2319,7 @@ TagProcessor
        keyed by RegistrationId
        retains per-TagId passage attribution
   -> TimingNode.onNewRegistration(...)
-  -> LogBook.queue(...)
+  -> LogBook.execute(...)
 ```
 
 `TagProcessor.onTagObserved(...)` is the Antenna EventSource callback. It only
@@ -2406,14 +2406,14 @@ TagObservation(TagId, RSSI, observedAt)
                   per-TagId attribution
                   strongest observation
                   |
-                  +--> LogBook.queue(addAutomaticRegistration)
+                  +--> LogBook.execute(addAutomaticRegistration)
                           |
                           +--> QUEUED -> record duplicate window
                           +--> QUEUE_FULL -> do not suppress retry
                           +--> NOT_RUNNING -> do not suppress retry
 ```
 
-Record duplicate-window state only after `LogBook.queue(...)` returns
+Record duplicate-window state only after `LogBook.execute(...)` returns
 `QUEUED`. Once R-123 is suppressed, observations from TAG-A and TAG-B are both
 suppressed because EventData resolves both to the same RegistrationId.
 
@@ -2554,7 +2554,7 @@ antenna/provider callback
   -> Event<TagObservation>
   -> TagProcessor
   -> TimingNode.onNewRegistration(...)
-  -> LogBook.queue(...)
+  -> LogBook.execute(...)
   -> Data Lane worker
   -> TimingDataPersistence.append(...)
   -> LogBookData.add(...)
@@ -2562,7 +2562,7 @@ antenna/provider callback
 ```
 
 The callback/queueing steps must stay short and must not write files, send network data or wait
-for presentation/upstream work. `LogBook.queue(...)` is the fire-and-forget boundary:
+for presentation/upstream work. `LogBook.execute(...)` is the fire-and-forget boundary:
 it only tries to place the command on the bounded Data Lane queue and returns without
 executing or waiting for that command. The Data Lane processes queued work independently afterwards.
 
@@ -2578,7 +2578,7 @@ whether listener execution time materially increases TimingNode queue wait or qu
 high-water.
 
 Raw antenna-observation logging is diagnostic work. It uses its own bounded buffer and
-does not sit between TagProcessor and `LogBook.queue(...)`. Losing raw diagnostic
+does not sit between TagProcessor and `LogBook.execute(...)`. Losing raw diagnostic
 records does not change whether a TimingData registration is accepted or committed.
 
 ## Internal runtime measurements
