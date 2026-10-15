@@ -269,7 +269,6 @@ domain/
   system/
     TimingSystem.java                   TimingSystem component; contains TimingNodes and uses system I/O
     TimingSystemConductor.java          TimingSystem coordination and TimingNode lifecycle
-    SystemStatus.java                   complete current semantic TimingSystem status
   node/
     TimingNode.java                     top-level facade / composition / lifecycle
     logbook/
@@ -999,12 +998,12 @@ mirror the hardware name.
 
 :::
 
-:::{design} Domain data, upstream and system-status composition
+:::{design} Domain data and upstream composition
 :id: DD-DomainIntegration
-:elaborates: TimingNodeUpstreamHandler, UpstreamStream, UpstreamGateway, TimingSystem, SystemStatus, UpstreamData
+:elaborates: TimingNodeUpstreamHandler, UpstreamStream, UpstreamGateway, TimingSystem, UpstreamData
 
 Detailed Domain composition for LogBook/TimingData ownership, shared UpstreamData
-semantics, routing boundaries and SystemStatus aggregation.
+semantics and routing boundaries.
 
 `TimingNode` contains the active `LogBook` component and its passive
 `LogBookData` history as part of the TimingNode aggregate. `LogBookData` keeps
@@ -1040,19 +1039,6 @@ commit-before-ACK guarantees in code.
 If the TimingNode capability grows into several cohesive areas, deeper
 packages such as `timing/registration` or `timing/stage` may become useful.
 Do not create those packages before the corresponding code exists.
-
-The Domain-level `SystemStatus` is a dedicated component contained by one `TimingSystem`. It owns the semantic current-state overview; it is not a wrapper around
-concrete adapter objects and not merely an `OK` flag. It can represent current
-TimingNode state together with operational I/O state such as antenna/display
-connectivity, keypad/beeper availability, device-network health, storage,
-upstream connectivity and synchronisation. Concrete I/O components expose or
-publish semantic status inputs; `SystemStatus` must not depend on classes such
-as `Rev1CanDisplay`, socket/session implementations or vendor antenna drivers.
-
-TimingNode status reaches SystemStatus as an immutable semantic snapshot/result
-created through the TimingNode ownership boundary. `SystemStatus` does not call
-into `LogBook`, lifecycle fields, location fields or other mutable TimingNode
-internals directly.
 
 An external interface response shape does not require an equally shaped internal Java object.
 For example, the status JSON does not by itself require classes named
@@ -1418,11 +1404,7 @@ rollback and reverse deactivation across complete TimingSystems.
 `TimingSystemConductor` coordinates the TimingNodes and their Domain inventory
 decision.
 
-Because TimingSystem is the component that has access to the contained TimingNodes
-and the I/O components it uses, the system-level `SystemStatus` belongs to that
-TimingSystem responsibility. A complete system view can combine relevant node,
-conductor and antenna state without moving those responsibilities into
-`ApplicationConductor`. The `TimingSystemConductor` itself holds only the associated
+The `TimingSystemConductor` itself holds only the associated
 antenna-specific `AntennaSettings`, not `AntennaManager`. Generic Setting mechanics belong to
 Infrastructure / cross-cutting; the component-specific `AntennaSettings`
 belongs beside the antenna manager in I/O. The settings object is shared

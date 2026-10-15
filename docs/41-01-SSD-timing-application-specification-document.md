@@ -1028,7 +1028,6 @@ Domain
   +-- TimingSystem
         +-- SystemId            internal composition/simulation identity
         +-- TimingSystemConductor  system-local coordination / inventory
-        +-- SystemStatus        complete current system overview
         +-- uses AntennaManager
         +-- contains 1..N TimingNode
               +-- NodeId        functional upstream/timing-data identity
@@ -1201,10 +1200,9 @@ application/
 `application.ApplicationConductor` owns activation order, rollback and reverse
 deactivation across complete application `TimingSystem` components. It does not
 know the internal AntennaManager/SystemConductor/TimingNode graph of a system.
-Each TimingSystem owns that graph, activates AntennaManager before its
-SystemConductor, and is the architectural owner for the complete current
-`SystemStatus`. The Application Conductor does not decide inventory state or
-process tag observations.
+Each TimingSystem owns that graph and activates AntennaManager before its
+TimingSystemConductor. The Application Conductor does not decide inventory state
+or process tag observations.
 :::
 
 :::{arch} Configuration control  
@@ -1269,7 +1267,6 @@ one parent/child tree:
 TimingSystem (1..N per Application)
   SystemId                    internal only
   Conductor                   system coordinator; TimingNodes + inventory
-  SystemStatus                complete current system overview
   1..N TimingNode
     NodeId                    functional protocol/data identity
     LocationId
@@ -1300,7 +1297,7 @@ Shared Domain contracts
     configured representation / codec / compatibility
 ```
 
-`TimingSystem` is a Domain component. One Timing Point Application hosts 1..N TimingSystems; each TimingSystem contains an internal `SystemId`, one `TimingSystemConductor`, a complete `SystemStatus` overview and 1..N TimingNodes, and uses associated I/O components such as `AntennaManager`. `SystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. Current upstream communication remains TimingNode-oriented: Messaging exposes a node-scoped `UpstreamStream` to each TimingNode.
+`TimingSystem` is a Domain component. One Timing Point Application hosts 1..N TimingSystems; each TimingSystem contains an internal `SystemId`, one `TimingSystemConductor` and 1..N TimingNodes, and uses associated I/O components such as `AntennaManager`. `SystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. Current upstream communication remains TimingNode-oriented: Messaging exposes a node-scoped `UpstreamStream` to each TimingNode.
 
 :::{arch} TimingSystem Conductor
 :id: SystemConductor
@@ -2155,22 +2152,11 @@ interface and live delivery remains best effort.
 
 A `TimingSystem` is a Domain component.
 One **Timing Point Application** (SI-01) may host 1..N TimingSystems, for example
-to run multiple independent simulation contexts. Each TimingSystem contains a complete
-`SystemStatus` overview, one `TimingSystemConductor` and 1..N TimingNodes, and
-uses associated I/O components such as `AntennaManager`. Its internal `SystemId` is not
+to run multiple independent simulation contexts. Each TimingSystem contains one
+`TimingSystemConductor` and 1..N TimingNodes, and uses associated I/O components
+such as `AntennaManager`. Its internal `SystemId` is not
 assumed to be part of the upstream wire contract; current upstream routing resolves
 the globally configured `NodeId` target at application scope.
-:::
-
-:::{arch} SystemStatus  
-:id: SystemStatus  
-
-`SystemStatus` is a dedicated Domain component contained by one
-`TimingSystem`. It owns the complete current operational overview of that
-system, including TimingNode state plus semantic device, device-network,
-storage, upstream-connectivity and synchronisation status. Concrete adapter
-objects remain outside Domain and contribute status through typed semantic
-inputs.
 :::
 
 :::{arch} TimingNode  
@@ -2226,7 +2212,6 @@ Application
   +-- 1..N TimingSystem
         +-- SystemId            internal composition/simulation identity
         +-- Conductor           system-local coordination / inventory
-        +-- SystemStatus        complete current system overview
         +-- 1..N TimingNode
               +-- NodeId        functional upstream/timing-data identity
               +-- LocationId
@@ -2622,27 +2607,6 @@ Status should allow presentation and diagnostics to observe application, timing-
 - local clock/time-source health where relevant to timing validity;
 - network/upstream connectivity;
 - inbound/outbound synchronisation state.
-
-Each `TimingSystem` contains its own dedicated Domain `SystemStatus` component. This is a complete current-state
-overview of that TimingSystem, not an `OK`/error flag. It aggregates the
-TimingSystem lifecycle and protocol state, its 1..N TimingNode statuses and the
-semantic status of composed I/O relevant to operation: for example antenna
-availability, whether a display is connected, keypad/beeper availability,
-device-network health, storage availability, upstream connectivity and
-synchronisation state. Domain owns the meaning of this overview; concrete CAN,
-socket, vendor-device and persistence implementations remain in I/O and report
-semantic status without leaking adapter classes into Domain.
-
-`SystemStatus` does not bypass TimingNode ownership to inspect node internals.
-A TimingNode supplies semantic immutable status published from its owned ordered
-state boundary; SystemStatus may retain/aggregate that representation together
-with system/I/O health. An application-wide status response may therefore use
-published CURRENT node status, or deliberately request an ORDERED node status
-when sequencing behind earlier accepted work is required.
-
-An application-facing status view may aggregate the 1..N TimingSystem statuses
-and application/runtime problems into one response; that aggregation does not
-move SystemStatus ownership back to the Application.
 
 Status returned to a client is read-only from that client's point of view. The transport response does not define the internal Java class structure used to produce it.
 
