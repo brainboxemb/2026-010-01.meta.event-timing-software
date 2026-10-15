@@ -1395,6 +1395,32 @@ Runnable queueRegistration =
 A callback with a long body may still use a line break after `=` when that genuinely
 improves readability; the rule is not to force either shape mechanically.
 
+For a constructor or method with a **multi-line body**, leave one blank line immediately
+after the opening brace. This visually separates the declaration/signature from the body,
+especially when the body starts with contract checks or local setup. Do not add that blank
+line to a genuinely one-line method body.
+
+Prefer:
+
+```java
+public TimingNode(LogBook logBook, NodeService nodeService, TagProcessor tagProcessor) {
+
+    checkArgument(logBook != null, "logBook must not be null");
+    checkArgument(nodeService != null, "nodeService must not be null");
+    checkArgument(tagProcessor != null, "tagProcessor must not be null");
+
+    this.logBook = logBook;
+    this.nodeService = nodeService;
+    this.tagProcessor = tagProcessor;
+}
+```
+
+A compact one-line body remains compact:
+
+```java
+public long timingDataHead() { return logBookData.headSequence(); }
+```
+
 For a genuinely long or structured expression, break at logical boundaries and align the
 continuation so the structure remains visible.
 
