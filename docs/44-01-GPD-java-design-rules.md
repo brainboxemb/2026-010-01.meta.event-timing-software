@@ -308,6 +308,14 @@ one listener may be stored directly, and only two or more listeners require an i
 array representation. Subscription order remains stable. Concurrent runtime
 `emit(...)` calls are allowed, but runtime rewiring is not part of the event contract.
 
+`Event.emit(...)` isolates ordinary listener `RuntimeException` failures and reports
+them through `Event.DeliveryReport`. When listener failure can lose an important
+cross-component handoff, the event owner/emitter must inspect that report and record or
+otherwise handle the failure. Do not rebuild the same general listener-isolation policy
+inside every subscriber with local `try/catch`. A subscriber should catch an exception
+only when it owns a more specific recovery decision that the event delivery mechanism
+cannot express.
+
 Initialization is also separate from events. SystemConductor activation wakes its first
 normal reconciliation run; that run reads CURRENT TimingNode status and publishes
 the desired AntennaSettings state. No synthetic status-change event is required.
