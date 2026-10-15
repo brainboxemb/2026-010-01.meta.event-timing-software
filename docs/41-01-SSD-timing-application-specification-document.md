@@ -2212,7 +2212,6 @@ Application
   +-- 1..N TimingSystem
         +-- SystemId            internal composition/simulation identity
         +-- Conductor           system-local coordination / inventory
-        +-- SystemStatus        complete current system overview
         +-- 1..N TimingNode
               +-- NodeId        functional upstream/timing-data identity
               +-- LocationId
