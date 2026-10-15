@@ -268,7 +268,8 @@ runtime/
 
 domain/
   system/
-    SystemConductor.java                TimingSystem coordination and TimingNode lifecycle
+    TimingSystem.java                   TimingSystem component; contains TimingNodes and uses system I/O
+    TimingSystemConductor.java          TimingSystem coordination and TimingNode lifecycle
   node/
     TimingNode.java                     top-level facade / composition / lifecycle
     logbook/
@@ -1360,26 +1361,26 @@ Runtime is not another business/domain layer; it is where the executable object 
 assembled.
 
 The executable composition must remain readable as one linear construct-wire-start flow.
-The Runtime composition root constructs 1..N TimingSystem contexts from
-validated effective configuration. Each contains 1..N TimingNodes, one
-`domain.system.SystemConductor` and its associated I/O composition. The Java Runtime
-materializes the configured TimingSystems and TimingNodes directly; no
-placeholder `TimingSystem` domain class is required for composition.
+The Runtime composition root constructs 1..N `domain.system.TimingSystem`
+components from validated effective configuration. Each TimingSystem contains
+1..N TimingNodes and one `TimingSystemConductor`, and uses associated I/O
+components such as `AntennaManager`. Runtime resolves the concrete construction
+inputs and antenna-to-node mapping, then constructs the TimingSystem component.
 
 ```text
 validated effective configuration
   -> PlatformEnvironment / Runtime time / shared executors
-  -> construct TimingNodes, AntennaManager and system Conductor
-  -> construct one application.ApplicationConductor
-  -> for each TimingSystem:
-       -> registerTimingSystem(AntennaManager, domain.system.SystemConductor)
-  -> wire node status signals to the system Conductor
-  -> wire antenna observations directly to configured TagProcessors
+  -> construct TimingNodes, AntennaManager and TimingSystemConductor
+  -> construct domain.system.TimingSystem
+       -> connect TimingNode status to TimingSystemConductor
+       -> connect AntennaManager observations to TimingNode ingress
+  -> register TimingSystem with application.ApplicationConductor
   -> start physical workers
   -> application.ApplicationConductor.activate()
-       -> AntennaManager.activate()
-       -> domain.system.SystemConductor.activate()
-            -> TimingNode(s).activate()
+       -> domain.system.TimingSystem.activate()
+            -> AntennaManager.activate()
+            -> TimingSystemConductor.activate()
+                 -> TimingNode(s).activate()
                  -> start Task Lane
                  -> start Data Lane and queue persisted TimingData load as its first task
                  -> start TagProcessor lane/ingress
@@ -1403,20 +1404,21 @@ system control run:
   -> AntennaManager wakes and reconciles hardware asynchronously
 ```
 
-Runtime owns construction and physical executor lifetime. A concrete
-`application.TimingSystem` owns the internal graph and lifecycle of one
-configured system: its optional `AntennaManager`, Domain `SystemConductor`
-and TimingNodes. Runtime prepares already resolved construction/routing data and
-then registers the completed TimingSystem with `ApplicationConductor`.
-`ApplicationConductor` owns only application-level activation order, rollback
-and reverse deactivation across complete TimingSystems. `SystemConductor`
-continues to own TimingNode lifecycle and the Domain inventory decision.
+Runtime owns construction and physical executor lifetime. The
+`domain.system.TimingSystem` component contains its TimingNodes and
+`TimingSystemConductor`, uses its optional `AntennaManager`, and fixes the
+system-level event connections before activation. Runtime prepares resolved
+construction and mapping data and registers the completed TimingSystem with
+`ApplicationConductor`. `ApplicationConductor` orchestrates activation,
+rollback and reverse deactivation across complete TimingSystems.
+`TimingSystemConductor` coordinates the TimingNodes and their Domain inventory
+decision.
 
-The application `TimingSystem` is the only system-level owner allowed to know
-both the I/O-side `AntennaManager` and Domain-side `SystemConductor`/TimingNodes.
-It is therefore also the natural owner for the central `SystemStatus`: a future
-complete system view can combine node, conductor and antenna state without making
-Domain depend on I/O. The TimingSystem `Conductor` itself holds only the associated
+Because TimingSystem is the component that has access to the contained TimingNodes
+and the I/O components it uses, the system-level `SystemStatus` belongs to that
+TimingSystem responsibility. A complete system view can combine relevant node,
+conductor and antenna state without moving those responsibilities into
+`ApplicationConductor`. The `TimingSystemConductor` itself holds only the associated
 antenna-specific `AntennaSettings`, not `AntennaManager`. Generic Setting mechanics belong to
 Infrastructure / cross-cutting; the component-specific `AntennaSettings`
 belongs beside the antenna manager in I/O. The settings object is shared
@@ -1427,15 +1429,16 @@ manager-wide inventory as system behaviour requires; the manager still owns
 antenna power, self-test, initialization, multiplexing, recovery and shutdown
 mechanics.
 
-The TimingSystem `Conductor` uses its own logical serial lane with
-`SerialTaskRunner`; system-Conductor lanes may share one backing executor.
-`TimingSystem` activates its AntennaManager before its SystemConductor and
-deactivates them in reverse order. `ApplicationConductor` only orders complete
-TimingSystems and does not need a coordination lane. TimingNode and SystemConductor activation establish execution context and
-return without waiting for persisted TimingData loading. The Conductor's activation
+`TimingSystemConductor` uses its own logical serial lane with
+`SerialTaskRunner`; TimingSystemConductor lanes may share one backing executor.
+`TimingSystem` activates its AntennaManager before its TimingSystemConductor and
+deactivates them in reverse order. `ApplicationConductor` only orchestrates
+complete TimingSystems and does not need a coordination lane. TimingNode and
+TimingSystemConductor activation establish execution context and
+return without waiting for persisted TimingData loading. The TimingSystemConductor activation
 hook wakes the first normal reconciliation run. A TimingNode whose CURRENT status
 is still unavailable because its initial load has not published yet is treated as
-**not ready**, not as CLOSED and not as a control failure; the Conductor
+**not ready**, not as CLOSED and not as a control failure; the TimingSystemConductor
 publishes no partial inventory decision. The TimingNode's first status publication then wakes a later reconciliation. Once a node has published current state,
 unexpected CURRENT failure remains an explicit fault rather than a guessed value.
 
