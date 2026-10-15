@@ -188,8 +188,8 @@ nodes:
   kind: application
   notation: component
   layout: {x: 55, y: 425, w: 220, h: 50}
-- id: timing-system-conductor
-  object_id: TimingSystemConductor
+- id: system-conductor
+  object_id: SystemConductor
   group: timing-system-aggregate
   label: "Conductor"
   subtitle: "system coordinator"
