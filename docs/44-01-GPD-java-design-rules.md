@@ -363,10 +363,12 @@ Do not create project-specific admission/result types merely to rename Java's ex
 execute/submit/rejection model. A deviation needs a concrete semantic requirement that the
 JDK contract cannot express. Extra vocabulary without such a requirement adds review noise.
 
-Domain components may still use domain words where they add real meaning. For example,
-`LogBook.queue(command)` says that a LogBook command is fire-and-forget. Its implementation
-may delegate to `SerialLane.execute(...)`; it does not need a separate
-`CommandQueueResult` merely to say that lane admission succeeded.
+Domain components may still use domain words where they add real meaning, but they should
+not redefine Java execution words. For example, `LogBook.execute(command)` is
+fire-and-forget and follows `Executor.execute(...)` semantics, while
+`LogBook.process(command)` waits for the ordered domain result. Queue rejection remains
+the standard `RejectedExecutionException`; no separate command-admission result type is
+needed merely to say that queueing succeeded.
 
 **Why**
 
@@ -698,12 +700,13 @@ architecture, without first knowing the implementation mechanism.
 
 | Intent | Prefer | Avoid at Domain/Application level |
 | --- | --- | --- |
-| Execute a command and return its domain result | `execute(command)` | `invoke(command)`, public `executeAndWait(command)` |
-| Queue work and return immediately | `queue(command)`, `tryQueueOnTaskLane(work)` | `offer(...)`, `submit(...)` |
-| Result of queueing | `CommandQueueResult`, `queueResult` | `AdmissionResult`, `admission`, `submissionResult` |
+| Execute fire-and-forget work | `execute(command)`, `lane.execute(runnable)` | `queue(command)`, `offer(...)` |
+| Process a domain command and wait for its result | `process(command)` | `invoke(command)`, public `executeAndWait(command)` |
+| Submit result-bearing lane work | `lane.submit(callable) -> Future<R>` | project-specific submit/admission wrappers |
+| Submit and synchronously await inside an implementation helper | private `submitAndWait(...)` | `executeOnDataLaneAndWait(...)` |
+| Queueing failure | `RejectedExecutionException` | `CommandQueueResult`, `AdmissionResult` |
 | Work is waiting to run | `QUEUED` | `ACCEPTED` |
 | Queue cannot accept more work | `QUEUE_FULL` | bare `FULL` outside the queue primitive |
-| Execute serially and return the result | `executeOnDataLaneAndWait(...)` | generic `run(...)` when waiting is important |
 | Active component that owns LogBook behaviour | `LogBook` | `LogBookProcessor` when it is more than a processor |
 | Passive committed history | `LogBookData` | another active-sounding `LogBook` |
 | Node Task Lane service | `NodeService` | `NodeTaskRunner` when it owns domain state as well |
@@ -758,19 +761,51 @@ old comment in the same pull request.
 
 For lambdas and callbacks, prefer the form that is easiest to understand in context.
 A lambda is fine when it is genuinely clearer or measurably useful in a hot path. Do not
-avoid a lambda merely because it is a lambda. However, a non-trivial lambda must not hide
-its purpose behind syntax alone: use a named method/method reference when that reads
-better, or add a short comment explaining what the callback does and why it belongs there.
+avoid a lambda merely because it is a lambda.
 
-For example, this is fine when the named method already explains the callback:
+When a non-trivial lambda or method reference is one argument among several execution,
+cleanup or callback arguments, prefer a **named local functional value** first:
+
+- use the narrow Java type that describes the contract, such as `Runnable`,
+  `Callable<R>` or `Consumer<T>`;
+- give the local value a name that says what will happen, such as `scheduleLoad` or
+  `cleanup`, not merely `operation` or `handler`;
+- add a short comment when the deferred execution point is still not obvious;
+- keep the actual helper call free of nested lambda syntax.
+
+For example:
+
+```java
+// Runnable with no arguments that schedules persisted-data loading on the SerialLane.
+Runnable scheduleLoad =
+        () -> serialLane.execute(this::loadPersistedData);
+
+// Cleanup Runnable invoked when scheduling is rejected.
+Runnable cleanup =
+        serialLane::close;
+
+SafeExecute.run(
+        scheduleLoad,
+        cleanup,
+        "Persisted TimingData load could not be scheduled");
+```
+
+This is preferable to hiding both functional arguments directly inside
+`SafeExecute.run(...)`. A reader can inspect the two operations separately and the final
+call reads as a normal three-argument operation.
+
+A compact method reference is still fine when the named method already explains the
+callback:
 
 ```java
 currentRunFuture.whenComplete(this::runCompleted);
 ```
 
-An inline lambda that performs several steps, changes state, or has non-obvious lifecycle
-meaning should normally be replaced by a named method or have its intent explained directly
-above it.
+Do not extract a tiny pass-through method solely to hide lambda syntax. Extract a method
+when the method itself has domain/lifecycle meaning or is reused. For reviewers who do not
+read lambda syntax fluently, a local comment may explicitly explain that `()` means the
+functional value takes no arguments and `->` introduces the deferred body when that helps
+make an execution boundary clear.
 
 ---
 
@@ -1149,13 +1184,20 @@ logic, not in a programming-contract assertion.
 Do not hide event delivery, queueing or thread/lane transfer inside nested lambda
 expressions.
 
-At an asynchronous boundary, prefer a named method reference and move the queueing step
-into that method. The call site should read as the architecture reads.
+At an asynchronous boundary, make each deferred operation visible before composing the
+final call. Prefer, in this order:
 
-The boundary method must make wait semantics visible. A fire-and-forget method should
-say that it queues work and returns immediately; a result-bearing method should say that
-it waits for ordered execution. Avoid exposing generic `offer`, `admission`, `submit` or
-`submission` vocabulary from Domain/Application APIs when ordinary queueing words are clearer.
+1. a clear inline method reference when there is only one obvious callback;
+2. a named local `Runnable`/`Callable`/functional value when multiple deferred actions
+   participate in one call or nested lambda syntax hides the execution order;
+3. a named method only when that method carries real domain/lifecycle meaning or is reused.
+
+Do **not** create a pass-through method merely to move lambda punctuation elsewhere.
+
+Wait semantics must remain visible. Fire-and-forget work uses `execute(...)`; result-bearing
+lane work uses `submit(...)` and a standard `Future`; a domain method that deliberately
+waits for the result should use a domain word such as `process(...)` or a private technical
+helper such as `submitAndWait(...)`.
 
 A lambda that executes **synchronously**, such as an atomic
 `AntennaSettings.update(edit -> edit.inventoryEnabled(enabled))`, is different.
@@ -1173,49 +1215,52 @@ execution begins.
 
 **Example**
 
-Prefer:
+When one helper composes more than one deferred action, name those actions first:
+
+```java
+// Runnable with no arguments that schedules persisted-data loading.
+Runnable scheduleLoad =
+        () -> serialLane.execute(this::loadPersistedData);
+
+// Cleanup action used only when scheduling is rejected.
+Runnable cleanup =
+        serialLane::close;
+
+SafeExecute.run(
+        scheduleLoad,
+        cleanup,
+        "Persisted TimingData load could not be scheduled");
+```
+
+The call site then reads:
+
+```text
+schedule load
+cleanup on rejection
+        |
+        v
+SafeExecute.run(...)
+```
+
+A simple single callback may remain a method reference:
 
 ```java
 antenna.selfTestCompletedEvent()
-        .subscribe(
-                this::onSelfTestCompleted);
-
-private void onSelfTestCompleted(
-        AntennaSelfTestResult result) {
-    taskRunner.execute(
-            () -> selfTestCompleted(
-                    result));
-}
-```
-
-The names make the two boundaries explicit:
-
-```text
-device event callback
-        |
-        v
-onSelfTestCompleted
-        |
-        v
-manager serial lane
-        |
-        v
-selfTestCompleted
+        .subscribe(this::onSelfTestCompleted);
 ```
 
 **Avoid**
 
 ```java
-antenna.selfTestCompletedEvent()
-        .subscribe(
-                result ->
-                        taskRunner.execute(
-                                () -> selfTestCompleted(
-                                        result)));
+SafeExecute.run(
+        () -> serialLane.execute(this::loadPersistedData),
+        serialLane::close,
+        "Persisted TimingData load could not be scheduled");
 ```
 
-Also avoid extracting meaningless methods such as `handle(...)` or `process(...)`.
-The extracted method must name the execution/event boundary it represents.
+The inline version is shorter but makes the reader decode two functional arguments while
+also understanding the helper contract. Also avoid extracting meaningless pass-through
+methods such as `handle(...)` merely to hide the same syntax.
 
 ---
 
