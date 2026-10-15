@@ -271,9 +271,13 @@ domain/
   node/
     TimingNode.java                     top-level facade / composition / lifecycle
     logbook/
-      LogBook.java                      Data Lane component + command/query/event boundary
+      LogBook.java                      Data Lane component facade + command/query/event boundary
+      LogBookAccessor.java              intentional external/internal access boundary
+      LogBookDataLane.java              LogBook-specific ordered execution/wait adapter
+      LogBookOperations.java            state-changing operations + TimingData commit/recovery
+      LogBookState.java                 passive node/logbook facts + committed-history owner
+      LogBookStatus.java                CURRENT status publication + status-change event
       LogBookData.java                  passive committed TimingData history
-      LogBookAccessor.java              command/query/event boundary
       persistence/
         TimingDataPersistence.java      TimingData load/append domain port
         DefaultTimingDataPersistence.java codec/node/sequence mapping to I/O storage
@@ -1126,7 +1130,11 @@ upstream / presentation / post-processing
 LogBookAccessor
           ^
           |
-LogBook -> LogBookState + LogBookData + TimingDataPersistence
+LogBook
+  ├── LogBookDataLane -> SerialLane
+  ├── LogBookOperations -> LogBookState + TimingDataPersistence
+  ├── LogBookStatus -> published CURRENT Status
+  └── LogBookState -> LogBookData
 ```
 
 `domain.node.logbook` must not import `domain.node.upstream`. A deployment that
@@ -1137,11 +1145,12 @@ The typed upstream boundaries mirror lane ownership rather than exposing
 mutable collaborators:
 
 - `LogBookAccessor` is the single intentional LogBook contract for both
-  internal and external consumers. Consumers express the capability they need
-  with typed commands/queries/events rather than receiving a second read
-  interface. `LogBookSync` reads `timingDataHead()` and
-  `timingDataRange(...)` through `LogBookQuery`; mutable `LogBookData`
-  remains Data Lane-owned.
+  internal and external consumers. `execute(command)` submits a command
+  without a caller result; `process(command)` and `process(query)` return a
+  result. Query processing may use CURRENT or ORDERED consistency without
+  changing that public result-bearing contract. `LogBookSync` processes
+  `timingDataHead()` and `timingDataRange(...)` through `LogBookQuery`;
+  mutable `LogBookData` remains Data Lane-owned.
 - `UpstreamTaskState` exposes only the Task Lane state capabilities required by
   upstream processing: transactional RACE_DATA application, TeamId/start-time
   resolution and the unique-team count. `NodeServiceState` implements this
@@ -2851,8 +2860,11 @@ hierarchy. One TimingNode owns two logically independent bounded serial lanes:
 
 ```text
 TimingNode
-  ├── Data Lane  -> LogBook, LogBookState, LogBookData, persistence,
-  │                lifecycle/location, TimingData sequence + commit
+  ├── Data Lane  -> LogBook facade
+  │                ├── LogBookDataLane -> SerialLane ordering/wait/rejection mapping
+  │                ├── LogBookOperations -> commands, TimingData creation, persistence + commit
+  │                ├── LogBookStatus -> published CURRENT status + status-change event
+  │                └── LogBookState -> passive lifecycle/location facts + LogBookData history
   └── Task Lane  -> NodeService
                    -> NodeServiceState, RaceDataState,
                       TeamAssignments, StageStartTimes,
@@ -2860,11 +2872,17 @@ TimingNode
                    -> StageTiming, upstream coordination + heartbeat
 ```
 
-The **Data Lane** is the sole writer for the append-only TimingData source:
-lifecycle/location state, sequence allocation, persistence and LogBookData
-visibility. The persisted TimingData load runs as its first task. A successful load
-publishes an immutable initial-history fact; each later successful commit
-publishes an immutable committed-TimingData fact.
+The **Data Lane** is the sole writer for the append-only TimingData source.
+`LogBookDataLane` adapts the generic `SerialLane` to the LogBook result contract
+(startup scheduling, ordered submit/wait, reentrancy prevention and
+`OperationException` mapping) without creating another queue or thread model.
+`LogBookOperations` owns state-changing domain operations, TimingData creation,
+time capture, durable append, startup reconstruction and commit metrics/logging.
+`LogBookState` contains only passive mutable facts and committed in-memory history,
+while `LogBookStatus` owns the safely published CURRENT status snapshot and
+status-change publication. The persisted TimingData load runs as the first ordered
+Data Lane task. A successful load publishes an immutable initial-history fact; each
+later successful commit publishes an immutable committed-TimingData fact.
 
 The **Task Lane** is the sole writer for live RaceData and its derived timing
 state. `NodeServiceState` owns `RaceDataState`, `TeamAssignments`,
@@ -2906,16 +2924,22 @@ TimingNodeTypes.OpenResult opened =
 node.logBook().execute(
         LogBookCommands.addAutomaticRegistration(registrationId, time));
 
-// LogBook owns Data Lane execution, LogBookState and LogBookData.
+// LogBook is the Data Lane component boundary.
+// LogBookDataLane owns LogBook-specific lane execution mechanics.
+// LogBookOperations owns state-changing command/commit work.
+// LogBookState owns passive facts/history; LogBookStatus owns published status.
 // NodeService owns Task Lane service/lifecycle/orchestration.
 // NodeServiceState owns passive RaceData/derived timing state.
 // UpstreamHandler consumes only the narrow UpstreamTaskState port.
 ```
 
 The visible `TimingNode` delegates execution mechanics to its child components.
-`process(command)` waits for the processed domain result; `execute(command)` returns
-after queueing and has no synchronous domain result. Callers use the intentional child
-boundary rather than reaching into mutable state.
+`execute(command)` returns after queueing and has no synchronous domain result.
+`process(command)` and `process(query)` are the result-bearing boundary. An ORDERED
+query waits for its Data Lane turn; a CURRENT query may read an already safely published
+snapshot directly. The word `process` therefore denotes "handle this request and return
+its result", not "always enqueue this request". Callers use the intentional child boundary
+rather than reaching into mutable state.
 
 The important split is:
 
