@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Backend Integration Interface Specification (ISD) &#8212; Event timing engineering graph migration-013 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-data-viewer/jsonview.bundle.css?v=f6ef2277" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/libs/html/datatables.min.css?v=4b4fd840" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/needstable.css?v=5e1b6797" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_links.css?v=2150a916" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_core.css?v=f5b60a78" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_style.css?v=92936fa5" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_toggle.css?v=5c6620df" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/modern.css?v=803738c0" />
+    <script src="../_static/jquery.js?v=5d32c60e"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+    <script src="../_static/documentation_options.js?v=567e79b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/sphinx-data-viewer/jsonview.bundle.js?v=18cd53c5"></script>
+    <script src="../_static/sphinx-data-viewer/jsonview_loader.js?v=f7ff7e7d"></script>
+    <script src="../_static/sphinx-needs/libs/html/datatables.min.js?v=8a4aee21"></script>
+    <script src="../_static/sphinx-needs/libs/html/datatables_loader.js?v=a2cae175"></script>
+    <script src="../_static/sphinx-needs/libs/html/sphinx_needs_collapse.js?v=dca66431"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="TimingData Interchange Interface Design Description (IDD)" href="33-05-IDD-timingdata-interchange.html" />
+    <link rel="prev" title="TimingData Interchange Interface Specification (ISD)" href="32-05-ISD-timingdata-interchange.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="backend-integration-interface-specification-isd">
+<h1>Backend Integration Interface Specification (ISD)<a class="headerlink" href="#backend-integration-interface-specification-isd" title="Link to this heading">¶</a></h1>
+<p>Status: draft</p>
+<p>System interface: <strong>IF-06 — Backend Integration</strong></p>
+<section id="purpose">
+<h2>Purpose<a class="headerlink" href="#purpose" title="Link to this heading">¶</a></h2>
+<p>This Interface Specification Document defines the semantic contract between the
+<strong>Timing Point Application (SI-01)</strong> and an external backend.</p>
+<p>The interface is expressed in terms of <strong>UpstreamData</strong>. UpstreamData is the
+transport-independent message model used to exchange:</p>
+<ul class="simple">
+<li><p>committed TimingData;</p></li>
+<li><p>node-scoped reference data;</p></li>
+<li><p>data synchronization information;</p></li>
+<li><p>backend/link status information.</p></li>
+</ul>
+<p>UpstreamData is deliberately a small semantic layer around existing data models.
+It does not replace TimingData and it does not redefine TimingData record identity,
+ordering or registration semantics.</p>
+<p>The concrete public/default JSON representation is defined in
+<code class="docutils literal notranslate"><span class="pre">33-06-IDD-upstreamdata-json.md</span></code>. Other deployment-specific representations may
+implement the same semantic contract behind the UpstreamData representation/codec
+boundary.</p>
+<p>IF-06 does not define RabbitMQ queues/exchanges, HTTP routes, WebSocket event names,
+Java classes, provider discovery or private deployment protocol details.</p>
+</section>
+<section id="terms-and-abbreviations">
+<h2>Terms and abbreviations<a class="headerlink" href="#terms-and-abbreviations" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>IF</strong> — system interface</p></li>
+<li><p><strong>ISD</strong> — Interface Specification Document</p></li>
+<li><p><strong>IDD</strong> — Interface Design Description</p></li>
+<li><p><strong>SI-01</strong> — Timing Point Application</p></li>
+<li><p><strong>Backend</strong> — external race/event backend system</p></li>
+<li><p><strong>TimingData</strong> — committed timing record model defined by IF-05</p></li>
+<li><p><strong>UpstreamData</strong> — transport-independent semantic message exchanged through IF-06</p></li>
+<li><p><strong>reference data</strong> — backend-owned or backend-synchronized race/event data used by SI-01</p></li>
+</ul>
+</section>
+<section id="relationship-to-other-documents">
+<h2>Relationship to other documents<a class="headerlink" href="#relationship-to-other-documents" title="Link to this heading">¶</a></h2>
+<p>IF-06 is allocated by
+<code class="docutils literal notranslate"><span class="pre">31-SSSD-software-system-specification-document.md</span></code>.</p>
+<p>TimingData semantics remain owned by
+<code class="docutils literal notranslate"><span class="pre">32-05-ISD-timingdata-interchange.md</span></code>. When IF-06 carries TimingData, it carries
+those same semantic values and record identities; it does not define another timing
+record format.</p>
+<p>SI-01 requirements consuming this interface are in
+<code class="docutils literal notranslate"><span class="pre">41-01-SSD-timing-application-specification-document.md</span></code>.</p>
+<p>The connector/transport design is elaborated by
+<code class="docutils literal notranslate"><span class="pre">43-01-SDD-03-backoffice-transport-design.md</span></code>.</p>
+<p>The public/default JSON representation is defined by
+<code class="docutils literal notranslate"><span class="pre">33-06-IDD-upstreamdata-json.md</span></code>.</p>
+</section>
+<section id="parties">
+<h2>Parties<a class="headerlink" href="#parties" title="Link to this heading">¶</a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Backend
+   ^
+   | IF-06 UpstreamData
+   v
+SI-01 Timing Point Application
+</pre></div>
+</div>
+<p>Both directions are supported. The meaning of a message is defined by its
+UpstreamData family, not by the selected transport.</p>
+</section>
+<section id="interface-model">
+<h2>Interface model<a class="headerlink" href="#interface-model" title="Link to this heading">¶</a></h2>
+<section id="upstreamdata">
+<h3>UpstreamData<a class="headerlink" href="#upstreamdata" title="Link to this heading">¶</a></h3>
+<p>UpstreamData is the common semantic boundary between application behaviour and
+backend transports. The public/reference representation uses <strong>one message model
+in both directions</strong>. A TimingData/log-record value is carried <em>inside</em> a
+TIMING_DATA message as payload, rather than being a separate wire-message format.
+PING requests/answers, reference-data and synchronization exchanges use the
+same message model with their respective message types and payloads. A deployment-specific adapter may encode
+the inbound and outbound wire directions differently, without changing the
+shared semantic UpstreamData model.</p>
+<p>The current semantic families are:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Family</p></th>
+<th class="head"><p>Typical direction</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>TimingData transfer</p></td>
+<td><p>SI-01 -&gt; Central System</p></td>
+<td><p>transfer committed TimingData records using their existing LogBook/IF-05 sequence</p></td>
+</tr>
+<tr class="row-odd"><td><p>RaceData transfer</p></td>
+<td><p>Central System -&gt; SI-01</p></td>
+<td><p>transfer ordered incremental race-state changes using a Central-owned source sequence</p></td>
+</tr>
+<tr class="row-even"><td><p>SYNC</p></td>
+<td><p>bidirectional</p></td>
+<td><p>advertise the current source head of one ordered stream</p></td>
+</tr>
+<tr class="row-odd"><td><p>ACK</p></td>
+<td><p>SI-01 -&gt; Central System</p></td>
+<td><p>acknowledge contiguously applied RaceData through a sequence number</p></td>
+</tr>
+<tr class="row-even"><td><p>REQ</p></td>
+<td><p>bidirectional</p></td>
+<td><p>request retransmission of TIMING_DATA or RACE_DATA from a sequence number</p></td>
+</tr>
+<tr class="row-odd"><td><p>Ping request / answer</p></td>
+<td><p>bidirectional</p></td>
+<td><p>one PING family with REQ/ANS op and an optional HB heartbeat mode; mode absence denotes a manual check</p></td>
+</tr>
+<tr class="row-even"><td><p>Status</p></td>
+<td><p>bidirectional</p></td>
+<td><p>expose upstream/source synchronization and connector health relevant to integration</p></td>
+</tr>
+</tbody>
+</table>
+<p>The public RaceData and synchronization semantics are defined below. Their
+representations must remain compatible with the common requirements in this ISD.</p>
+</section>
+<section id="timingdata-relationship">
+<h3>TimingData relationship<a class="headerlink" href="#timingdata-relationship" title="Link to this heading">¶</a></h3>
+<p>When an UpstreamData message carries TimingData:</p>
+<ul class="simple">
+<li><p>the contained value is the same semantic TimingData defined by IF-05;</p></li>
+<li><p>Node ID + sequence number remains the TimingData record identity;</p></li>
+<li><p>the TimingData sequence remains the authoritative source order;</p></li>
+<li><p>batching or transport delivery does not renumber records;</p></li>
+<li><p>transport/message identifiers do not become TimingData record identifiers;</p></li>
+<li><p>retransmission of an already committed record does not create a new TimingData
+record merely because it is sent again.</p></li>
+</ul>
+<p>A transport may batch multiple TimingData records into one delivery, but the
+contained records retain their individual IF-05 identity and ordering.</p>
+</section>
+<section id="racedata-relationship">
+<h3>RaceData relationship<a class="headerlink" href="#racedata-relationship" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">RACE_DATA</span></code> is the ordered Central System -&gt; SI-01 stream for live race-state
+changes owned by one addressed TimingNode. It is <strong>not</strong> a complete snapshot and
+does not carry a separate revision number.</p>
+<p>Each RACE_DATA message carries one positive source <code class="docutils literal notranslate"><span class="pre">seq</span></code> for that NodeId. The
+Central System allocates this sequence monotonically starting at 1. SI-01 keeps the
+highest contiguously applied RaceData sequence for each TimingNode.</p>
+<p>The current v1 RaceData payload can contain one or more incremental change sections:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">teamAssignments</span></code> changes the live RegistrationId -&gt; TeamId assignment;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stageStartTimes</span></code> changes TeamId-scoped stage-start definitions.</p></li>
+</ul>
+<p>Each change uses an explicit operation such as <code class="docutils literal notranslate"><span class="pre">SET</span></code> or <code class="docutils literal notranslate"><span class="pre">DEL</span></code>. Absence of a
+section means no change to that part of RaceData. Receiving a RACE_DATA message
+therefore never implies that omitted state must be cleared.</p>
+<p>The reserve mapping is keyed by RegistrationId rather than physical TagId because
+stable EventData already resolves both reserve tags, for example
+<code class="docutils literal notranslate"><span class="pre">TT-R-0001-1/2</span> <span class="pre">-&gt;</span> <span class="pre">RT-R-0001</span></code>. RaceData supplies only the live
+<code class="docutils literal notranslate"><span class="pre">RT-R-0001</span> <span class="pre">-&gt;</span> <span class="pre">TeamId</span></code> assignment. A RegistrationId that already resolves to a
+stable TeamId through EventData shall not be remapped by RaceData.</p>
+<p>A RACE_DATA message is validated as one ordered unit before its sequence advances:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">seq</span> <span class="pre">=</span> <span class="pre">lastApplied</span> <span class="pre">+</span> <span class="pre">1</span></code>: validate and apply all changes; only after successful
+application advance <code class="docutils literal notranslate"><span class="pre">lastApplied</span></code> and send ACK for that sequence;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">seq</span> <span class="pre">&lt;=</span> <span class="pre">lastApplied</span></code>: do not apply the changes again; the receiver may repeat
+its current cumulative ACK;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">seq</span> <span class="pre">&gt;</span> <span class="pre">lastApplied</span> <span class="pre">+</span> <span class="pre">1</span></code>: a gap exists; do not apply the out-of-order message and
+request RACE_DATA again from <code class="docutils literal notranslate"><span class="pre">lastApplied</span> <span class="pre">+</span> <span class="pre">1</span></code>.</p></li>
+</ul>
+<p>This makes loss detectable without repeatedly sending the full race state. If SI-01
+does not persist RaceData across a restart, it starts with RaceData sequence 0 and
+can rebuild state by requesting RACE_DATA from sequence 1.</p>
+</section>
+<section id="data-synchronization">
+<h3>Data synchronization<a class="headerlink" href="#data-synchronization" title="Link to this heading">¶</a></h3>
+<p>Synchronization uses the <strong>existing source sequence of each stream</strong>. IF-06 does not
+create one generic delivery sequence over all message types.</p>
+<p>The two ordered streams are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">TIMING_DATA</span></code>: SI-01 -&gt; Central System, ordered by the existing IF-05/LogBook
+<code class="docutils literal notranslate"><span class="pre">seqNr</span></code> for one NodeId;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">RACE_DATA</span></code>: Central System -&gt; SI-01, ordered by the Central-owned RACE_DATA
+<code class="docutils literal notranslate"><span class="pre">seq</span></code> for one NodeId.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">SYNC</span></code> advertises the sender’s current source head for one stream. Sequence 0 means
+that source currently has no records/messages for the addressed TimingNode.</p>
+<p>The receiving peer compares that source head with its own highest contiguous received
+or applied sequence. When it is behind, it sends <code class="docutils literal notranslate"><span class="pre">REQ</span></code> for that stream from the first
+missing sequence:</p>
+<ul class="simple">
+<li><p>Central System -&gt; SI-01: <code class="docutils literal notranslate"><span class="pre">REQ(stream=TIMING_DATA,</span> <span class="pre">fromSeq=N)</span></code> requests LogBook
+TimingData beginning at IF-05 <code class="docutils literal notranslate"><span class="pre">seqNr=N</span></code>;</p></li>
+<li><p>SI-01 -&gt; Central System: <code class="docutils literal notranslate"><span class="pre">REQ(stream=RACE_DATA,</span> <span class="pre">fromSeq=N)</span></code> requests Central
+RaceData beginning at RACE_DATA <code class="docutils literal notranslate"><span class="pre">seq=N</span></code>.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">fromSeq=1</span></code> therefore means “send the complete retained stream from its beginning”.
+A deployment-specific legacy codec may map this semantic request to an older special
+wire value such as a RECV/package-id value of <code class="docutils literal notranslate"><span class="pre">0000</span></code>; that legacy sentinel is not
+the public source sequence itself.</p>
+<p>For RaceData, <code class="docutils literal notranslate"><span class="pre">ACK(stream=RACE_DATA,</span> <span class="pre">seq=N)</span></code> confirms that SI-01 has successfully
+applied the stream contiguously through N. ACK is sent only after semantic application;
+transport/session delivery acknowledgement is not a substitute. A sequence gap causes
+REQ rather than advancement of the ACK point.</p>
+<p>For TimingData, the LogBook remains the authoritative replay source. SI-01 may publish
+newly committed records proactively, but loss does not require a second durable outbox:
+after reconnect or SYNC, the Central System can request any retained TimingData sequence
+again through REQ. Retransmission preserves the original IF-05 record identity and
+content.</p>
+<p>PING, ACK, REQ and SYNC are control messages. They do not consume TimingData <code class="docutils literal notranslate"><span class="pre">seqNr</span></code>
+or RaceData <code class="docutils literal notranslate"><span class="pre">seq</span></code> values themselves.</p>
+</section>
+<section id="ping-request-answer-lifecycle">
+<h3>PING request / answer lifecycle<a class="headerlink" href="#ping-request-answer-lifecycle" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">PING</span></code> is one bidirectional UpstreamData message family used to verify that the
+configured upstream connection remains operational. A PING exchange has:</p>
+<ul class="simple">
+<li><p><strong>op</strong> (required): <code class="docutils literal notranslate"><span class="pre">REQ</span></code> initiates a check; <code class="docutils literal notranslate"><span class="pre">ANS</span></code> responds to it;</p></li>
+<li><p><strong>mode</strong> (optional): <code class="docutils literal notranslate"><span class="pre">HB</span></code> marks an automatically scheduled heartbeat; when
+<code class="docutils literal notranslate"><span class="pre">mode</span></code> is absent, the request is an explicitly initiated/manual check.</p></li>
+</ul>
+<p>A receiver of a valid PING <code class="docutils literal notranslate"><span class="pre">op</span> <span class="pre">=</span> <span class="pre">REQ</span></code> replies with one PING <code class="docutils literal notranslate"><span class="pre">op</span> <span class="pre">=</span> <span class="pre">ANS</span></code>. The
+answer preserves the request’s <code class="docutils literal notranslate"><span class="pre">mode</span></code>, including its absence for a manual
+request. This applies in both directions: SI-01 may initiate a request and
+receive the backend’s answer, and SI-01 also answers requests received from
+the backend. There is no separate PONG message type in the default model.
+A request/correlation identifier is not part of the mandatory IF-06 semantic
+contract; an implementation may use one to associate answers with requests.</p>
+<p>For each active upstream connector initiated by SI-01:</p>
+<ul class="simple">
+<li><p>when the connector first reaches its operational <strong>CONNECTED</strong> state, SI-01 sends one
+<strong>heartbeat</strong> PING immediately;</p></li>
+<li><p>while that connection remains operational, SI-01 sends another <strong>heartbeat</strong> PING every <strong>30 seconds</strong>;</p></li>
+<li><p>when the connector leaves the operational connected state, periodic PING generation
+stops;</p></li>
+<li><p>after a later reconnect, a new cycle begins with another immediate PING followed by
+the 30-second period.</p></li>
+</ul>
+<p>A <strong>manual</strong> PING may be explicitly initiated by either party; it does not change,
+reset or replace SI-01’s scheduled heartbeat cycle.</p>
+<p>PING REQUEST/ANSWER is connection/upstream activity. It is <strong>not TimingData</strong>,
+does not consume a TimingData sequence number and does not create or modify a
+LogBook record.</p>
+<p>The timeout/failure policy for an unanswered PING is intentionally not fixed yet. A
+transport may also have a lower-level keepalive mechanism, but that does not replace the
+semantic PING request/answer exchange.</p>
+</section>
+</section>
+<section id="operation-identifiers">
+<h2>Operation identifiers<a class="headerlink" href="#operation-identifiers" title="Link to this heading">¶</a></h2>
+<p>Operations use stable semantic identifiers independent from transport.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Operation</p></th>
+<th class="head"><p>Direction</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">IF06-OP-01</span> <span class="pre">DELIVER_TIMING_DATA</span></code></p></td>
+<td><p>SI-01 -&gt; Central System</p></td>
+<td><p>deliver committed TimingData without changing IF-05 identity/order</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">IF06-OP-02</span> <span class="pre">APPLY_RACE_DATA</span></code></p></td>
+<td><p>Central System -&gt; SI-01</p></td>
+<td><p>validate and apply one ordered incremental RaceData message</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">IF06-OP-03</span> <span class="pre">SYNC</span></code></p></td>
+<td><p>bidirectional</p></td>
+<td><p>advertise one source stream’s current head sequence</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">IF06-OP-04</span> <span class="pre">STATUS</span></code></p></td>
+<td><p>bidirectional</p></td>
+<td><p>exchange/observe integration status</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">IF06-OP-05</span> <span class="pre">PING_REQUEST</span></code></p></td>
+<td><p>bidirectional</p></td>
+<td><p>initiate PING with op REQ and optional HB mode</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">IF06-OP-06</span> <span class="pre">PING_ANSWER</span></code></p></td>
+<td><p>bidirectional</p></td>
+<td><p>answer a PING request with op ANS, retaining the request’s optional mode</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">IF06-OP-07</span> <span class="pre">ACK</span></code></p></td>
+<td><p>SI-01 -&gt; Central System</p></td>
+<td><p>acknowledge contiguously applied RACE_DATA through sequence N</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">IF06-OP-08</span> <span class="pre">REQ</span></code></p></td>
+<td><p>bidirectional</p></td>
+<td><p>request TIMING_DATA or RACE_DATA retransmission from sequence N</p></td>
+</tr>
+</tbody>
+</table>
+<p>These identifiers describe semantic interaction. A concrete transport may map them
+to messages, routes, topics, requests or events without changing their meaning.</p>
+</section>
+<section id="semantic-operations">
+<h2>Semantic operations<a class="headerlink" href="#semantic-operations" title="Link to this heading">¶</a></h2>
+<section id="if06-op-01-deliver-timing-data">
+<h3>IF06-OP-01 DELIVER_TIMING_DATA<a class="headerlink" href="#if06-op-01-deliver-timing-data" title="Link to this heading">¶</a></h3>
+<p>Input:</p>
+<ul class="simple">
+<li><p>one or more already committed TimingData records;</p></li>
+<li><p>source/node scope sufficient to route the records.</p></li>
+</ul>
+<p>Required behaviour:</p>
+<ul class="simple">
+<li><p>preserve each record’s IF-05 semantic values and record key;</p></li>
+<li><p>preserve source ordering;</p></li>
+<li><p>permit retransmission for synchronization;</p></li>
+<li><p>never imply that transport delivery rewrites local committed data.</p></li>
+</ul>
+</section>
+<section id="if06-op-02-apply-race-data">
+<h3>IF06-OP-02 APPLY_RACE_DATA<a class="headerlink" href="#if06-op-02-apply-race-data" title="Link to this heading">¶</a></h3>
+<p>Input:</p>
+<ul class="simple">
+<li><p>addressed TimingNode;</p></li>
+<li><p>positive Central-owned RACE_DATA <code class="docutils literal notranslate"><span class="pre">seq</span></code>;</p></li>
+<li><p>one or more incremental RaceData changes.</p></li>
+</ul>
+<p>Outcome:</p>
+<ul class="simple">
+<li><p>next expected sequence and all changes valid: apply the message as one ordered unit,
+advance the contiguous RaceData sequence and emit ACK;</p></li>
+<li><p>duplicate/already-applied sequence: do not apply again; cumulative ACK may be repeated;</p></li>
+<li><p>sequence gap: do not apply the message and issue REQ RACE_DATA from the first missing
+sequence;</p></li>
+<li><p>semantically invalid change: do not advance the sequence and expose a diagnosable
+rejection/conflict.</p></li>
+</ul>
+</section>
+<section id="if06-op-03-sync">
+<h3>IF06-OP-03 SYNC<a class="headerlink" href="#if06-op-03-sync" title="Link to this heading">¶</a></h3>
+<p>This bidirectional operation advertises one source stream’s current head for an
+addressed TimingNode:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">stream</span> <span class="pre">=</span> <span class="pre">TIMING_DATA</span></code>: the TimingNode’s current LogBook/IF-05 source head;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stream</span> <span class="pre">=</span> <span class="pre">RACE_DATA</span></code>: the Central System’s current RaceData source head.</p></li>
+</ul>
+<p>Sequence 0 means no data currently exists in that source stream. A receiver that is
+behind requests the missing range with IF06-OP-08 REQ. SYNC itself does not replay
+payloads and does not consume either source sequence.</p>
+</section>
+<section id="if06-op-07-ack">
+<h3>IF06-OP-07 ACK<a class="headerlink" href="#if06-op-07-ack" title="Link to this heading">¶</a></h3>
+<p>ACK confirms semantic application of an ordered source stream. In public v1 the
+required use is SI-01 acknowledging RACE_DATA. The ACK carries the addressed NodeId,
+<code class="docutils literal notranslate"><span class="pre">stream</span> <span class="pre">=</span> <span class="pre">RACE_DATA</span></code> and the highest contiguous sequence successfully applied.</p>
+</section>
+<section id="if06-op-08-req">
+<h3>IF06-OP-08 REQ<a class="headerlink" href="#if06-op-08-req" title="Link to this heading">¶</a></h3>
+<p>REQ is bidirectional and carries:</p>
+<ul class="simple">
+<li><p>addressed TimingNode;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stream</span> <span class="pre">=</span> <span class="pre">TIMING_DATA</span> <span class="pre">|</span> <span class="pre">RACE_DATA</span></code>;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fromSeq</span> <span class="pre">&gt;=</span> <span class="pre">1</span></code>.</p></li>
+</ul>
+<p>Central System uses TIMING_DATA REQ to request LogBook records beginning at IF-05
+sequence <code class="docutils literal notranslate"><span class="pre">fromSeq</span></code>. SI-01 uses RACE_DATA REQ to request Central messages beginning
+at RaceData sequence <code class="docutils literal notranslate"><span class="pre">fromSeq</span></code>. <code class="docutils literal notranslate"><span class="pre">fromSeq=1</span></code> means resend the retained stream from
+its beginning.</p>
+</section>
+<section id="if06-op-04-status">
+<h3>IF06-OP-04 STATUS<a class="headerlink" href="#if06-op-04-status" title="Link to this heading">¶</a></h3>
+<p>Integration status may expose:</p>
+<ul class="simple">
+<li><p>connector/backend availability;</p></li>
+<li><p>source/node synchronization state;</p></li>
+<li><p>pending outbound work;</p></li>
+<li><p>last accepted/rejected reference-data update;</p></li>
+<li><p>last successful inbound/outbound semantic exchange.</p></li>
+</ul>
+<p>Transport-specific diagnostic detail may be added by an implementation, but the
+common semantic status shall remain transport-independent.</p>
+</section>
+<section id="if06-op-05-ping-request">
+<h3>IF06-OP-05 PING_REQUEST<a class="headerlink" href="#if06-op-05-ping-request" title="Link to this heading">¶</a></h3>
+<p>A PING request has <code class="docutils literal notranslate"><span class="pre">op</span> <span class="pre">=</span> <span class="pre">REQ</span></code>. An automatically generated heartbeat
+request adds <code class="docutils literal notranslate"><span class="pre">mode</span> <span class="pre">=</span> <span class="pre">HB</span></code>; a manually initiated request omits <code class="docutils literal notranslate"><span class="pre">mode</span></code>.
+It has no TimingData payload or record identity.
+Neither a legacy wire-level marker nor a sequence/correlation number is mandated
+by IF-06.</p>
+<p>For the SI-01 initiated heartbeat, the first PING REQUEST follows the connector
+transition to operational CONNECTED immediately. Subsequent heartbeat requests
+are generated at a 30-second period while that same connection remains operational.
+Manual PING requests do not affect that schedule.</p>
+</section>
+<section id="if06-op-06-ping-answer">
+<h3>IF06-OP-06 PING_ANSWER<a class="headerlink" href="#if06-op-06-ping-answer" title="Link to this heading">¶</a></h3>
+<p>The receiver of a valid PING REQUEST responds with one PING message carrying
+<code class="docutils literal notranslate"><span class="pre">op</span> <span class="pre">=</span> <span class="pre">ANS</span></code> and the request’s unchanged optional <code class="docutils literal notranslate"><span class="pre">mode</span></code>. If the
+request omits <code class="docutils literal notranslate"><span class="pre">mode</span></code>, the answer also omits it. An answer has no TimingData
+payload or record identity and must not trigger another answer.</p>
+<p>A PING ANSWER confirms receipt and handling of a liveness request.
+Implementations may add correlation identifiers to match individual requests
+and answers. IF-06 does not yet define how many unanswered PING requests,
+or what elapsed time, changes connector health/state.</p>
+</section>
+</section>
+<section id="failure-semantics">
+<h2>Failure semantics<a class="headerlink" href="#failure-semantics" title="Link to this heading">¶</a></h2>
+<p>Stable semantic failure categories include:</p>
+<ul class="simple">
+<li><p>invalid or unsupported UpstreamData;</p></li>
+<li><p>unknown/unmapped source or node;</p></li>
+<li><p>unsupported reference-data family;</p></li>
+<li><p>stale/conflicting reference-data update;</p></li>
+<li><p>unsupported representation/version;</p></li>
+<li><p>backend/transport unavailable;</p></li>
+<li><p>delivery outcome unknown;</p></li>
+<li><p>synchronization incomplete.</p></li>
+</ul>
+<p>Transport failure is not equivalent to failure of the local TimingData commit that
+produced outbound work.</p>
+<p>A caller/connector shall not claim semantic acceptance merely because bytes were
+successfully written to a transport.</p>
+</section>
+<section id="representation-and-transport-independence">
+<h2>Representation and transport independence<a class="headerlink" href="#representation-and-transport-independence" title="Link to this heading">¶</a></h2>
+<p>IF-06 separates three concerns:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>semantic UpstreamData
+        |
+UpstreamData representation / codec
+        |
+connector / transport
+</pre></div>
+</div>
+<p>The public/default implementation uses the JSON representation defined by
+<code class="docutils literal notranslate"><span class="pre">33-06-IDD-upstreamdata-json.md</span></code>.</p>
+<p>Alternative representations may be supplied for a deployment through the same
+UpstreamData representation/codec boundary. Such an implementation may use another
+text, binary, fixed-field or proprietary representation as long as it preserves the
+applicable IF-06 semantics.</p>
+<p>The selected representation is independent from the transport selection. For
+example, the default JSON UpstreamData representation may be carried through an
+engineering API transport or RabbitMQ.</p>
+</section>
+<section id="compatibility">
+<h2>Compatibility<a class="headerlink" href="#compatibility" title="Link to this heading">¶</a></h2>
+<p>Compatible representation extensions shall not silently change existing UpstreamData
+semantics.</p>
+<p>A concrete representation shall expose enough version/type information to reject
+unsupported input deterministically.</p>
+<p>A deployment-specific representation may support only the semantic families required
+by that deployment, but unsupported required families shall be reported explicitly and
+shall not be reinterpreted as another message family.</p>
+</section>
+<section id="if-06-requirements">
+<h2>IF-06 requirements<a class="headerlink" href="#if-06-requirements" title="Link to this heading">¶</a></h2>
+<div class="need_container docutils container" id="SNCB-0ac7a115">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF06-REQ-001">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Transport-independent UpstreamData semantics</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF06-REQ-001" title="IF06-REQ-001">IF06-REQ-001</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">required by: <span class="depends_on"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-064" title="IF06-REQ-001">SI01-REQ-064</a></span></span></div>
+<div class="line">verified by: <span class="verifies"><span><a class="reference internal" href="61-01-VTS-timing-application-verification-test-specification.html#VC-ST1-010" title="IF06-REQ-001">VC-ST1-010</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>IF-06 shall define backend integration in terms of transport-independent UpstreamData
+rather than RabbitMQ-, HTTP-, WebSocket- or deployment-specific wire messages.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-457a5215">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF06-REQ-002">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Preserve TimingData semantics</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF06-REQ-002" title="IF06-REQ-002">IF06-REQ-002</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">required by: <span class="depends_on"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-064" title="IF06-REQ-002">SI01-REQ-064</a></span></span></div>
+<div class="line">verified by: <span class="verifies"><span><a class="reference internal" href="61-01-VTS-timing-application-verification-test-specification.html#VC-ST1-010" title="IF06-REQ-002">VC-ST1-010</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>When UpstreamData carries TimingData, it shall preserve every applicable IF-05 semantic
+value, including Node ID, sequence number and record-type values, without renumbering or
+rewriting the committed TimingData record.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-70a5e7a8">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF06-REQ-003">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Keep transport identity separate from TimingData identity</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF06-REQ-003" title="IF06-REQ-003">IF06-REQ-003</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">required by: <span class="depends_on"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-064" title="IF06-REQ-003">SI01-REQ-064</a></span></span></div>
+<div class="line">verified by: <span class="verifies"><span><a class="reference internal" href="61-01-VTS-timing-application-verification-test-specification.html#VC-ST1-010" title="IF06-REQ-003">VC-ST1-010</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>Transport, delivery, batch or session identifiers shall not replace the IF-05
+TimingData record key or source sequence.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-1a567d54">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF06-REQ-004">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Support node-scoped reference data</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF06-REQ-004" title="IF06-REQ-004">IF06-REQ-004</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">required by: <span class="depends_on"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-063" title="IF06-REQ-004">SI01-REQ-063</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>IF-06 shall support Central System-to-SI-01 RACE_DATA messages with explicit NodeId,
+positive ordered source sequence and incremental race-state changes. RaceData source
+ordering shall be independent from TimingData source ordering.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-e50e5a5a">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF06-REQ-005">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Explicit reference-data outcome</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF06-REQ-005" title="IF06-REQ-005">IF06-REQ-005</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">required by: <span class="depends_on"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-063" title="IF06-REQ-005">SI01-REQ-063</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>A RACE_DATA message shall have an observable applied, duplicate, gap or rejected
+outcome. SI-01 shall acknowledge only contiguously applied RaceData and shall expose
+enough reason/status information to diagnose a gap or invalid change.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-7cd4d524">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF06-REQ-006">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Synchronization preserves source identity</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF06-REQ-006" title="IF06-REQ-006">IF06-REQ-006</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">required by: <span class="depends_on"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-065" title="IF06-REQ-006">SI01-REQ-065</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>Data synchronization shall preserve the authoritative identities/order of
+the data being synchronized and shall not create a second source sequence for committed
+TimingData.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-481464d9">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF06-REQ-007">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Local TimingData commit independent from backend delivery</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF06-REQ-007" title="IF06-REQ-007">IF06-REQ-007</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">required by: <span class="depends_on"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-065" title="IF06-REQ-007">SI01-REQ-065</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>Backend transport/session unavailability shall not by itself invalidate or roll back an
+already successful local TimingData commit. Pending backend synchronization shall
+remain separately representable.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-6056e896">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF06-REQ-008">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Public default JSON representation</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF06-REQ-008" title="IF06-REQ-008">IF06-REQ-008</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">verified by: <span class="verifies"><span><a class="reference internal" href="61-01-VTS-timing-application-verification-test-specification.html#VC-ST1-010" title="IF06-REQ-008">VC-ST1-010</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>The public/reference implementation shall provide a versioned JSON representation of
+UpstreamData suitable for development, engineering and integration verification. The
+same UpstreamData message structure shall be used in both directions; committed
+TimingData records shall be nested in a TIMING_DATA message payload rather than
+being transmitted as standalone legacy log-line messages.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-4efab534">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF06-REQ-009">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Alternative representation support</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF06-REQ-009" title="IF06-REQ-009">IF06-REQ-009</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span></span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>A deployment may provide an alternative UpstreamData representation behind the supported
+representation/codec boundary without requiring the public application/domain model to
+depend on deployment-specific wire-format classes or private source.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-57f43bdb">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF06-REQ-010">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Connector transport independence</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF06-REQ-010" title="IF06-REQ-010">IF06-REQ-010</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">required by: <span class="depends_on"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-064" title="IF06-REQ-010">SI01-REQ-064</a></span></span></div>
+<div class="line">verified by: <span class="verifies"><span><a class="reference internal" href="61-01-VTS-timing-application-verification-test-specification.html#VC-ST1-010" title="IF06-REQ-010">VC-ST1-010</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>The same applicable UpstreamData semantics shall be usable through different configured
+backend connectors/transports. Selecting another transport shall not redefine TimingData,
+reference-data or synchronization semantics.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-1916ed48">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF06-REQ-017">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Synchronize by contiguous TimingData source sequence</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF06-REQ-017" title="IF06-REQ-017">IF06-REQ-017</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">required by: <span class="depends_on"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-081" title="IF06-REQ-017">SI01-REQ-081</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-084" title="IF06-REQ-017">SI01-REQ-084</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>For one NodeId, SYNC shall advertise the current source head of one ordered stream.
+TIMING_DATA uses the TimingNode’s existing IF-05/LogBook sequence and RACE_DATA uses
+the Central System’s RaceData source sequence. Sequence 0 shall mean that the selected
+source stream currently contains no data. A receiver behind that head shall use REQ
+from its first missing sequence.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-1c133942">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF06-REQ-018">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Keep transport acknowledgement separate from semantic acknowledgement</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF06-REQ-018" title="IF06-REQ-018">IF06-REQ-018</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span></span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>Transport/session delivery success shall not replace source-sequence synchronization.
+For RACE_DATA, only successful ordered semantic application advances the ACK point.
+For TIMING_DATA, retained LogBook records remain replayable until the Central System
+no longer requests them during source synchronization.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-acf3cd5a">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF06-REQ-019">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Make TimingData retransmission idempotent by record identity</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF06-REQ-019" title="IF06-REQ-019">IF06-REQ-019</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">required by: <span class="depends_on"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-082" title="IF06-REQ-019">SI01-REQ-082</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>Retransmission shall preserve the original NodeId, source sequence and TimingData
+content. Re-receiving the same record key with the same semantic content shall be
+idempotent. Re-receiving the same record key with different semantic content shall
+be treated as a synchronization conflict and shall not silently overwrite data.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-ead79c4f">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF06-REQ-020">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Reconcile reference-data freshness through SYNC state</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF06-REQ-020" title="IF06-REQ-020">IF06-REQ-020</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">required by: <span class="depends_on"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-082" title="IF06-REQ-020">SI01-REQ-082</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-084" title="IF06-REQ-020">SI01-REQ-084</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>IF-06 shall support bidirectional REQ by source sequence. Central System shall be able
+to request TIMING_DATA from an IF-05/LogBook sequence and SI-01 shall be able to request
+RACE_DATA from a Central source sequence. A request from sequence 1 shall mean replay
+from the retained beginning of that stream.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-e597a640">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF06-REQ-021">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Re-establish synchronization after connection changes</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF06-REQ-021" title="IF06-REQ-021">IF06-REQ-021</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">required by: <span class="depends_on"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-085" title="IF06-REQ-021">SI01-REQ-085</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>When an upstream semantic connection is established or re-established, the peers
+shall exchange fresh SYNC source-head state for the applicable TimingNodes. Each
+receiver shall compare the advertised source head with its own highest contiguous
+received/applied position and request missing data with REQ. Progress remembered from
+an earlier transport/session shall not cause either source sequence to be skipped.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-c9c8667e">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF06-REQ-014">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Ordered RaceData application and acknowledgement</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF06-REQ-014" title="IF06-REQ-014">IF06-REQ-014</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">required by: <span class="depends_on"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-078" title="IF06-REQ-014">SI01-REQ-078</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>Each node-scoped RACE_DATA message shall carry a positive Central-owned source sequence.
+SI-01 shall apply only the next expected sequence, advance its contiguous RaceData
+position only after successful application, and then acknowledge that applied sequence.
+A duplicate shall not be applied twice. A sequence gap shall not be skipped and shall
+cause a RACE_DATA request from the first missing sequence.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-0fbd0de1">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF06-REQ-015">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Separate stable EventData from live RaceData</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF06-REQ-015" title="IF06-REQ-015">IF06-REQ-015</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">required by: <span class="depends_on"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-077" title="IF06-REQ-015">SI01-REQ-077</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-078" title="IF06-REQ-015">SI01-REQ-078</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>RACE_DATA shall be able to carry incremental TeamAssignments changes as
+RegistrationId-to-TeamId assignments that are not stable EventData profile identity.
+The semantic contract is generic and does not classify an assignment by tag type.
+It shall not redefine a stable RegistrationId-to-TeamId mapping supplied by EventData.
+Physical TagIds remain resolved to their RegistrationId by EventData.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-1434c1a3">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF06-REQ-016">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Define StageStartTimes reference semantics</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF06-REQ-016" title="IF06-REQ-016">IF06-REQ-016</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">required by: <span class="depends_on"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-079" title="IF06-REQ-016">SI01-REQ-079</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>RACE_DATA shall be able to carry incremental TeamId-scoped stage-start-time changes.
+A SET shall carry one <code class="docutils literal notranslate"><span class="pre">TimingTimestamp</span></code> value containing at least local race
+time-of-day. The timestamp may also contain a local date or already be absolute
+when the source knows that information. A source that knows only time-of-day
+shall remain valid; no transport or codec layer shall invent a date or time zone.
+DEL removes the current definition. Elapsed-time and race-time-zone interpretation
+belong to SI-01 domain behaviour, not to transport or codec layers.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-d96c1347">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF06-REQ-011">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Immediate upstream PING on connect</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF06-REQ-011" title="IF06-REQ-011">IF06-REQ-011</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">required by: <span class="depends_on"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-075" title="IF06-REQ-011">SI01-REQ-075</a></span></span></div>
+<div class="line">verified by: <span class="verifies"><span><a class="reference internal" href="61-01-VTS-timing-application-verification-test-specification.html#VC-ST1-009" title="IF06-REQ-011">VC-ST1-009</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>When a configured upstream connector reaches its operational connected state, SI-01
+shall send one PING UpstreamData message with <code class="docutils literal notranslate"><span class="pre">op</span> <span class="pre">=</span> <span class="pre">REQ</span></code> and
+<code class="docutils literal notranslate"><span class="pre">mode</span> <span class="pre">=</span> <span class="pre">HB</span></code> immediately.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-7464c3a2">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF06-REQ-012">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">Periodic upstream PING while connected</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF06-REQ-012" title="IF06-REQ-012">IF06-REQ-012</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">required by: <span class="depends_on"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-075" title="IF06-REQ-012">SI01-REQ-075</a></span></span></div>
+<div class="line">verified by: <span class="verifies"><span><a class="reference internal" href="61-01-VTS-timing-application-verification-test-specification.html#VC-ST1-009" title="IF06-REQ-012">VC-ST1-009</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>While a configured upstream connector remains operationally connected after its initial
+heartbeat PING, SI-01 shall send a further heartbeat PING every 30 seconds. Scheduled
+PING generation shall stop when that connector is no longer operationally connected
+and shall restart with an immediate heartbeat PING after a later reconnect.
+An explicitly initiated manual PING shall not reset this schedule. PING shall not
+consume TimingData sequence identity or create TimingData/LogBook records.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="need_container docutils container" id="SNCB-306992d0">
+<table class="need needs_grid_simple needs_layout_engineering_reader needs_style_none needs_type_ifreq docutils align-default" id="IF06-REQ-013">
+<tbody>
+<tr class="need head row-odd"><td class="need head"><div class="needs_head line-block">
+<div class="line"><span><span class="needs_type_name"><span class="needs_data">Interface Requirement</span></span>: </span><strong><span><span class="needs_title"><span class="needs_data">PING request op, answer and optional heartbeat mode</span></span></span></strong><span> <span class="needs-id"><a class="reference internal" href="#IF06-REQ-013" title="IF06-REQ-013">IF06-REQ-013</a></span> <span class="needs needs_collapse" id="target__hide__meta"><span class="needs collapsed collapse_is_hidden"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg></span><span class="needs visible"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right-circle"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></span></span> </span></div>
+</div>
+</td>
+</tr>
+<tr class="need meta row-even"><td class="need meta"><div class="needs_meta line-block">
+<div class="line"><span><span><div class="line"><span class="needs_status"><span class="needs_label">status: </span><span class="needs_data">D</span></span></div>
+</span></span></div>
+<div class="line"><span><div class="line">required by: <span class="depends_on"><span><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-075" title="IF06-REQ-013">SI01-REQ-075</a>, <a class="reference internal" href="41-01-SSD-timing-application-specification-document.html#SI01-REQ-076" title="IF06-REQ-013">SI01-REQ-076</a></span></span></div>
+<div class="line">verified by: <span class="verifies"><span><a class="reference internal" href="61-01-VTS-timing-application-verification-test-specification.html#VC-ST1-009" title="IF06-REQ-013">VC-ST1-009</a></span></span></div>
+</span></div>
+</div>
+</td>
+</tr>
+<tr class="need content row-odd"><td class="need content" colspan="1"><p>IF-06 shall use one PING semantic message family with required
+<code class="docutils literal notranslate"><span class="pre">op</span> <span class="pre">=</span> <span class="pre">REQ</span> <span class="pre">|</span> <span class="pre">ANS</span></code> and optional <code class="docutils literal notranslate"><span class="pre">mode</span> <span class="pre">=</span> <span class="pre">HB</span></code>. A PING REQUEST
+without <code class="docutils literal notranslate"><span class="pre">mode</span></code> denotes an explicitly initiated/manual check; no <code class="docutils literal notranslate"><span class="pre">MANUAL</span></code>
+value is required. The receiver of a valid PING REQUEST shall send one
+PING ANSWER preserving the request’s <code class="docutils literal notranslate"><span class="pre">mode</span></code> (including its absence)
+as part of processing the request, without waiting for the 30-second
+heartbeat schedule. A PING with <code class="docutils literal notranslate"><span class="pre">op</span> <span class="pre">=</span> <span class="pre">ANS</span></code> shall not itself be answered. This applies in
+both directions. Unknown <code class="docutils literal notranslate"><span class="pre">mode</span></code> values shall not silently be treated as manual
+checks. No separate PONG message type, PING sequence number or correlation
+identifier is mandated by the interface; a representation/implementation may add
+optional correlation. PING REQUEST/ANSWER shall not consume TimingData sequence
+identity or create TimingData/LogBook records.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="open-points">
+<h2>Open points<a class="headerlink" href="#open-points" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Exact operational retry/backoff timing for repeated REQ/ACK when a peer remains
+unavailable; source ordering and replay semantics are defined while connector timing
+remains an implementation concern.</p></li>
+<li><p>Whether all status is exchanged as UpstreamData or some connector diagnostics remain
+local-only implementation status.</p></li>
+<li><p>Timeout/health policy for missing or late PING ANSWER messages.</p></li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Event timing engineering graph</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="30-UC-system-use-cases.html">System use cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html">Timing Application Specification Document (SSD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="41-02-SSD-gui-application-specification-document.html">Engineering Desktop Client Specification Document (SSD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="43-01-SDD-02-java-component-design.html">Java component, package and artifact detailed design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32-03-ISD-application-control-status.html">API Interface Specification (ISD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32-04-ISD-web-interface.html">Web Interface Specification (ISD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32-05-ISD-timingdata-interchange.html">TimingData Interchange Interface Specification (ISD)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Backend Integration Interface Specification (ISD)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#purpose">Purpose</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#terms-and-abbreviations">Terms and abbreviations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#relationship-to-other-documents">Relationship to other documents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#parties">Parties</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#interface-model">Interface model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#operation-identifiers">Operation identifiers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#semantic-operations">Semantic operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#failure-semantics">Failure semantics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#representation-and-transport-independence">Representation and transport independence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#compatibility">Compatibility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#if-06-requirements">IF-06 requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#open-points">Open points</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="33-05-IDD-timingdata-interchange.html">TimingData Interchange Interface Design Description (IDD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="33-06-IDD-upstreamdata-json.html">UpstreamData JSON Interface Design Description (IDD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="61-01-VTS-timing-application-verification-test-specification.html">Timing Application Verification Test Specification (VTS)</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="32-05-ISD-timingdata-interchange.html" title="previous chapter">TimingData Interchange Interface Specification (ISD)</a></li>
+      <li>Next: <a href="33-05-IDD-timingdata-interchange.html" title="next chapter">TimingData Interchange Interface Design Description (IDD)</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/docs/32-06-ISD-backend-integration.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

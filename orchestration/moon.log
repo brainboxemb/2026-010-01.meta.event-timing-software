@@ -1,0 +1,34 @@
+software:docs.planning | Documentation capability: docs.planning
+software:docs.planning | action=planning
+software:docs.planning | source_revision=8739a6fbacd5f76cfd81524982e6812b21a6e14d
+software:docs.planning | owner_revision=8739a6fbacd5f76cfd81524982e6812b21a6e14d
+software:docs.planning | tool_eng_docs_sha=417feac3b9f8b277a544337968087d97b8204a3d
+software:docs.planning | > /opt/hostedtoolcache/Python/3.12.15/x64/bin/python tools/generate_sip_planning.py
+software:docs.planning | > /opt/hostedtoolcache/Python/3.12.15/x64/bin/python tools/generate_sip_manager_roadmap.py
+▮▮▮▮ software:docs.planning (cached, 5ms, 479be1f6)
+software:docs.diagrams | Documentation capability: docs.diagrams
+software:docs.diagrams | action=diagrams
+software:docs.diagrams | source_revision=442d5c4e35ea1fdca2b7973ed875c8f09336a8fa
+software:docs.diagrams | owner_revision=442d5c4e35ea1fdca2b7973ed875c8f09336a8fa
+software:docs.diagrams | tool_eng_docs_sha=417feac3b9f8b277a544337968087d97b8204a3d
+software:docs.diagrams | > eng-docs diagrams --source docs/_diagrams --theme docs/_diagram-theme/default.yaml --out bld/docs/architecture
+software:docs.diagrams | > /opt/hostedtoolcache/Python/3.12.15/x64/bin/python tools/generate_architecture_diagrams.py
+software:docs.diagrams | > /opt/hostedtoolcache/Python/3.12.15/x64/bin/python tools/generate_timing_detail_diagrams.py
+software:docs.diagrams | > /opt/hostedtoolcache/Python/3.12.15/x64/bin/python tools/generate_data_display_diagrams.py
+software:docs.diagrams | > /opt/hostedtoolcache/Python/3.12.15/x64/bin/python tools/generate_system_model_diagrams.py
+▮▮▮▮ software:docs.diagrams (cached, 7ms, 4b33098a)
+▮▮▮▮ software:docs.assemble (b83a63d3)
+software:docs.assemble | Documentation capability: docs.assemble
+software:docs.assemble | action=assemble
+software:docs.assemble | source_revision=2e61127b7a68fbaee2331868551085fb8c1c018f
+software:docs.assemble | owner_revision=2e61127b7a68fbaee2331868551085fb8c1c018f
+software:docs.assemble | tool_eng_docs_sha=417feac3b9f8b277a544337968087d97b8204a3d
+software:docs.assemble | > eng-docs manifest --source bld/docs-producers/architecture --out bld/docs-producers/architecture/assets-publication.yml --producer event-timing-software.architecture-publication --source-revision 442d5c4e35ea1fdca2b7973ed875c8f09336a8fa --lifecycle docs --relationship producer-source --include *.svg --include *.drawio --include README.md
+software:docs.assemble | > eng-docs manifest --source bld/docs-producers/architecture --out bld/docs-producers/architecture/assets-raw.yml --producer event-timing-software.architecture-raw --source-revision 442d5c4e35ea1fdca2b7973ed875c8f09336a8fa --lifecycle docs --relationship producer-source --include *.svg --include *.drawio --include README.md
+software:docs.assemble | > eng-docs manifest --source bld/docs-producers/planning --out bld/docs-producers/planning/assets.yml --producer event-timing-software.planning --source-revision 8739a6fbacd5f76cfd81524982e6812b21a6e14d --lifecycle docs --relationship producer-source
+software:docs.assemble | > eng-docs assemble --root . --config docs/assembly.yml --out bld/docs --source-repository brainboxemb/2026-010-01.meta.event-timing-software --source-revision 2e61127b7a68fbaee2331868551085fb8c1c018f
+▮▮▮▮ software:docs.assemble (1s 453ms, b83a63d3)
+
+Tasks: 3 completed (2 cached)
+ Time: 1s 585ms
+
