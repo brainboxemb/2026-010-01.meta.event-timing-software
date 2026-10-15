@@ -1005,30 +1005,32 @@ resolve effective configuration
   -> create PlatformEnvironment
   -> construct Runtime resources
   -> construct Domain, I/O, Application and Presentation objects
-  -> construct each TimingSystem and fix its internal event graph
+  -> construct each Domain TimingSystem and fix its internal event graph
   -> Runtime execution resources start
-  -> Application Conductor activates complete TimingSystem(s)
+  -> Application Conductor orchestrates complete TimingSystem(s)
        TimingSystem
-         AntennaManager
-         SystemConductor
-           TimingNode(s)
+         uses AntennaManager
+         contains TimingSystemConductor
+         contains TimingNode(s)
   -> Presentation activates
 ```
 
-Construction itself must not start physical application threads or install hidden runtime behaviour. Runtime constructs the object graph, resolves configuration/routing data and owns physical execution resources. Each application `TimingSystem` fixes the event graph between the children it owns before activation and owns its child lifecycle: AntennaManager before Domain SystemConductor, reverse on shutdown. The Application `Conductor` owns activation order and rollback across complete TimingSystems rather than knowing their internal children. Concrete Presentation adapters are composed by Runtime and activate after the coordinated application core. Normal application/domain interactions do not route through Runtime after activation.
+Construction itself must not start physical application threads or install hidden runtime behaviour. Runtime constructs the object graph, resolves configuration/mapping data and owns physical execution resources. Each Domain `TimingSystem` fixes the event graph for the components it contains or uses before activation and controls their lifecycle: AntennaManager before TimingSystemConductor, reverse on shutdown. The Application `Conductor` orchestrates activation and rollback across complete TimingSystems rather than implementing TimingSystem behaviour. Concrete Presentation adapters are composed by Runtime and activate after the coordinated application core. Normal application/domain interactions do not route through Runtime after activation.
 
 The compact software/domain ownership model is intentionally also kept as copyable text:
 
 ```text
 Application
   +-- ApplicationId
-  +-- Conductor                 application lifecycle / activation order
-  |
-  +-- 1..N TimingSystem
+  +-- Conductor                 orchestrates 1..N TimingSystems
+
+Domain
+  +-- TimingSystem
         +-- SystemId            internal composition/simulation identity
-        +-- Conductor           system-local coordination / inventory
+        +-- TimingSystemConductor  system-local coordination / inventory
         +-- SystemStatus        complete current system overview
-        +-- 1..N TimingNode
+        +-- uses AntennaManager
+        +-- contains 1..N TimingNode
               +-- NodeId        functional upstream/timing-data identity
               +-- LocationId
               +-- lifecycle / status
@@ -1067,12 +1069,11 @@ The Data Lane, Task Lane, scheduled ingress and physical workers belong to the
 **process view**, with implementation detail in SDD-02.
 
 In Figure SI01-01, `TimingSystem` and `TimingNode` are shown as UML-style
-component/aggregate containers. They are the architecture identities themselves,
-not UML class declarations. A small neutral inner property block lists the
-important identity/state concepts owned by each aggregate, without its own title,
-stereotype or component glyph; it therefore does not prescribe Java fields or a
-concrete class shape. Geometric containment plus the `TimingNode (1..N)` label
-expresses that one TimingSystem owns 1..N TimingNodes.
+component containers. They name architecture responsibilities, not UML class
+declarations. A small neutral inner property block lists important identity/state
+concepts without prescribing Java fields or a concrete class shape. Geometric
+containment plus the `TimingNode (1..N)` label expresses that one TimingSystem
+contains 1..N TimingNodes.
 
 The Domain/I/O boundary is deliberately **shaped rather than a rigid horizontal
 layer cake**. Domain has extra space below its contained components and yields
@@ -1080,8 +1081,8 @@ through a lower-right polygon cut-away. I/O uses a complementary polygon with a
 raised right shoulder around Devices. A small visible gap remains between both
 layer outlines, so neither responsibility appears to overlap the other. This expresses architectural proximity/cohesion only. Domain may call an I/O
 component directly when the domain behaviour genuinely depends on that component;
-for example, the TimingSystem `Conductor` calls its `AntennaManager` to change
-the shared inventory state.
+for example, TimingSystem uses its associated `AntennaManager` for system-level
+I/O behaviour while `TimingSystemConductor` coordinates its TimingNodes.
 
 #### Presentation
 
