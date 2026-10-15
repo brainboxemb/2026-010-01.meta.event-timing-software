@@ -760,7 +760,8 @@ For lambdas and callbacks, prefer the form that is easiest to understand in cont
 A lambda is fine when it is genuinely clearer or measurably useful in a hot path. Do not
 avoid a lambda merely because it is a lambda. However, a non-trivial lambda must not hide
 its purpose behind syntax alone: use a named method/method reference when that reads
-better, or add a short comment explaining what the callback does and why it belongs there.
+better, or give the `Runnable` / `Callable` a meaningful local name before passing it
+to the execution boundary.
 
 For example, this is fine when the named method already explains the callback:
 
@@ -768,9 +769,28 @@ For example, this is fine when the named method already explains the callback:
 currentRunFuture.whenComplete(this::runCompleted);
 ```
 
+When an execution call is easier to scan without the lambda body inside its argument list,
+prefer:
+
+```java
+Callable<R> commandApplication = () -> applyCommand(command);
+return submitAndWait(commandApplication, command.name());
+```
+
+over:
+
+```java
+return submitAndWait(() -> applyCommand(command), command.name());
+```
+
+The local name should describe the deferred operation, not the lambda syntax. This is
+especially useful at serial-lane, task-runner and asynchronous execution boundaries where
+the distinction between queueing work and executing the work itself matters.
+
 An inline lambda that performs several steps, changes state, or has non-obvious lifecycle
-meaning should normally be replaced by a named method or have its intent explained directly
-above it.
+meaning should normally be replaced by a named method or a meaningfully named
+`Runnable` / `Callable`. A comment is appropriate only when it explains ownership,
+threading, lifecycle or another reason that the code itself cannot express clearly.
 
 ---
 
