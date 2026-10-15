@@ -244,7 +244,8 @@ The TimingNode implementation is grouped as:
 ```text
 application/
   ApplicationId.java
-  ApplicationConductor.java        application lifecycle / activation order
+  ApplicationConductor.java        application lifecycle / TimingSystem activation order
+  TimingSystem.java                system-level owner / wiring / lifecycle / future SystemStatus
   ConfigurationControl.java        configuration query/update use-cases
 infra/
   lifecycle/
