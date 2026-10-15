@@ -245,7 +245,6 @@ The TimingNode implementation is grouped as:
 application/
   ApplicationId.java
   ApplicationConductor.java        application lifecycle / TimingSystem activation order
-  TimingSystem.java                system-level owner / wiring / lifecycle / future SystemStatus
   ConfigurationControl.java        configuration query/update use-cases
 infra/
   lifecycle/
@@ -270,6 +269,7 @@ domain/
   system/
     TimingSystem.java                   TimingSystem component; contains TimingNodes and uses system I/O
     TimingSystemConductor.java          TimingSystem coordination and TimingNode lifecycle
+    SystemStatus.java                   complete current semantic TimingSystem status
   node/
     TimingNode.java                     top-level facade / composition / lifecycle
     logbook/
@@ -1037,7 +1037,7 @@ If the TimingNode capability grows into several cohesive areas, deeper
 packages such as `timing/registration` or `timing/stage` may become useful.
 Do not create those packages before the corresponding code exists.
 
-The Domain-level `SystemStatus` is a dedicated component contained by one `TimingSystem`. It is a semantic aggregate, not a wrapper around
+The Domain-level `SystemStatus` is a dedicated component contained by one `TimingSystem`. It owns the semantic current-state overview; it is not a wrapper around
 concrete adapter objects and not merely an `OK` flag. It can represent current
 TimingNode state together with operational I/O state such as antenna/display
 connectivity, keypad/beeper availability, device-network health, storage,
@@ -1045,7 +1045,7 @@ upstream connectivity and synchronisation. Concrete I/O components expose or
 publish semantic status inputs; `SystemStatus` must not depend on classes such
 as `Rev1CanDisplay`, socket/session implementations or vendor antenna drivers.
 
-TimingNode status reaches this aggregate as an immutable semantic snapshot/result
+TimingNode status reaches SystemStatus as an immutable semantic snapshot/result
 created through the TimingNode ownership boundary. `SystemStatus` does not call
 into `LogBook`, lifecycle fields, location fields or other mutable TimingNode
 internals directly.
