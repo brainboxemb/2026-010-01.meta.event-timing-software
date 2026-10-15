@@ -777,17 +777,12 @@ For example:
 
 ```java
 // Runnable with no arguments that schedules persisted-data loading on the SerialLane.
-Runnable scheduleLoad =
-        () -> serialLane.execute(this::loadPersistedData);
+Runnable scheduleLoad = () -> serialLane.execute(this::loadPersistedData);
 
 // Cleanup Runnable invoked when scheduling is rejected.
-Runnable cleanup =
-        serialLane::close;
+Runnable cleanup = serialLane::close;
 
-SafeExecute.run(
-        scheduleLoad,
-        cleanup,
-        "Persisted TimingData load could not be scheduled");
+SafeExecute.run(scheduleLoad, cleanup, "Persisted TimingData load could not be scheduled");
 ```
 
 This is preferable to hiding both functional arguments directly inside
@@ -1219,17 +1214,12 @@ When one helper composes more than one deferred action, name those actions first
 
 ```java
 // Runnable with no arguments that schedules persisted-data loading.
-Runnable scheduleLoad =
-        () -> serialLane.execute(this::loadPersistedData);
+Runnable scheduleLoad = () -> serialLane.execute(this::loadPersistedData);
 
 // Cleanup action used only when scheduling is rejected.
-Runnable cleanup =
-        serialLane::close;
+Runnable cleanup = serialLane::close;
 
-SafeExecute.run(
-        scheduleLoad,
-        cleanup,
-        "Persisted TimingData load could not be scheduled");
+SafeExecute.run(scheduleLoad, cleanup, "Persisted TimingData load could not be scheduled");
 ```
 
 The call site then reads:
