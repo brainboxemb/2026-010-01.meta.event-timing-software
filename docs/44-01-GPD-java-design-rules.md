@@ -733,6 +733,23 @@ Use `Runner` for an execution mechanism that runs work, such as
 `SerialTaskRunner` or `YieldingTaskRunner`. Do not use `Runner` for a component
 that also owns domain state, protocol state or business decisions.
 
+Use `Executor` for objects that implement or concretely represent Java
+`Executor`/`ExecutorService` execution resources. Do not call a
+`ThreadPoolExecutor` or `ScheduledThreadPoolExecutor` a `worker`: the executor
+owns/schedules work, while its worker thread(s) perform that work. Reserve `worker`
+for an actual `Thread`, a thread role/count, or a diagnostic thread name. For example:
+
+```java
+ThreadPoolExecutor timingNodeExecutor = ...;
+ScheduledThreadPoolExecutor tagProcessorExecutor = ...;
+ThreadFactory threadFactory = threadFactory("tp-dl-node-worker");
+```
+
+When a logical `SerialLane` depends on such an executor, name the dependency
+`backingExecutor` (or another explicit executor name), not `workerExecutor`.
+Likewise, a field or accessor containing a `SerialLane` should say `Lane` when
+that distinction would otherwise be ambiguous (for example `tagProcessorLane()`).
+
 Use `Processor` when processing input is the actual responsibility, as with
 `TagProcessor`. Do not add `Processor`, `Manager`, `Controller` or `Service`
 merely because a class is active. Prefer the responsibility itself when that produces
