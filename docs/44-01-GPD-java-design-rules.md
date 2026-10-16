@@ -194,7 +194,8 @@ For SI-01 we use, for example:
 
 ```text
 software component      activate / deactivate
-TimingNode state        OPEN / CLOSED / ERROR
+TimingNode state        OPEN / CLOSED
+TimingNode failure      ErrorStatus
 antenna provider         initialize / startInventory / stopInventory / shutdown
 ```
 
@@ -716,6 +717,24 @@ threading/lifecycle helpers or non-obvious code, explain:
 4. important threading or serial-lane assumptions;
 5. the reason for a non-obvious implementation choice.
 
+At an execution boundary, the Javadoc must also make caller-visible execution behaviour
+explicit when the method name alone does not already make it obvious. State whether the call:
+
+- returns directly without waiting for queued work;
+- blocks until an ordered operation/result completes;
+- queues fire-and-forget work and returns after queue admission;
+- invokes event/callback listeners synchronously on the emitting thread or lane.
+
+Do not leave this to implementation archaeology. In particular, a method that returns
+`void` must not force a reviewer to guess whether the requested work is already complete,
+merely queued, or still being delivered synchronously.
+
+Keep simple accessor comments simple. Do not add adjectives such as `immutable`,
+`resolved`, `authoritative` or `logical` unless that distinction is relevant to the
+caller's contract. For example, `Returns the antenna assigned to this node` is clearer
+than `Returns the resolved antenna identity for this logical TimingNode` when there is
+no unresolved or mutable alternative.
+
 Names should carry ordinary control-flow meaning where possible. Do not make a reader
 learn low-level queue/executor jargon to understand Domain code.
 
@@ -903,7 +922,8 @@ Keep these distinctions:
 
 ```text
 activate / deactivate       software component lifecycle
-OPEN / CLOSED / ERROR       TimingNode state
+OPEN / CLOSED               TimingNode state
+ErrorStatus                  TimingNode failure
 initialize                  prepare antenna provider
 startInventory              start tag inventory
 shutdown                    release antenna/provider resources
