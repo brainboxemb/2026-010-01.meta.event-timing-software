@@ -745,16 +745,17 @@ change. `NO_CHANGE`, `INVALID` and `RESTART_REQUIRED` do not emit it.
 
 WebSocket listener startup does not wait for TimingNode recovery. After connection
 SI-01 sends a **complete** `STATUS_SNAPSHOT` before the client relies on subsequent
-change events. For a `role=upstream` connection, the Engineering API connector is marked operationally
-connected only after that initial snapshot is successfully sent. It then emits its
-immediate heartbeat PING and node-scoped `SYNC(stream=TIMING_DATA, seq=<LogBook head>)`
-as normal `UPSTREAM_DATA` events. The Central System Simulator answers with its
-RACE_DATA source-head SYNC and can issue TIMING_DATA REQ as required. Closing that
-WebSocket marks the connector disconnected and stops its heartbeat lifecycle without
-clearing LogBook or applied RaceData state. A TimingNode in operational `INIT`
-is included in the complete snapshot. The connection therefore does not close
-merely because persisted-data recovery is still in progress; a later
-`STATUS_CHANGED` reports `OK` or `ERROR`.
+change events. For a `role=upstream` connection, the Engineering API connector is marked
+operationally connected only after that initial snapshot is successfully sent. It then emits
+its immediate heartbeat PING and node-scoped
+`SYNC(stream=TIMING_DATA, seq=<LogBook head>)` as normal `UPSTREAM_DATA` events. The
+Central System Simulator answers with its RACE_DATA source-head SYNC and can issue
+TIMING_DATA REQ as required. Closing that WebSocket marks the connector disconnected and
+stops its heartbeat lifecycle without clearing LogBook or applied RaceData state.
+
+The TimingNode snapshot contains its current functional state and LocationId even while
+persisted-data recovery is still in progress. Recovery completion or failure does not create
+a synthetic TimingNode status transition in this baseline.
 
 ### Slow-client / outbound backlog policy
 
