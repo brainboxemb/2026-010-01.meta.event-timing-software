@@ -661,7 +661,7 @@ InventoryTask
 
 Each TimingSystem `Conductor` uses `SerialTaskRunner` and
 `CooperativeTaskController` for event-triggered reconciliation.
-`TimingNode.PROPERTIES_CHANGED` is emitted after one committed property update.
+`TimingNode.PROPERTIES.CHANGED` is emitted after one committed property update.
 For TimingSystemConductor it only wakes the existing control task. The later run reads
 each TimingNode's current functional state directly. It computes
 `inventoryEnabled = any node OPEN` as a local boolean and publishes the
@@ -834,7 +834,7 @@ in-memory commit, LogBook publishes one immutable committed-TimingData fact thro
 TimingNode owns functional OPEN/CLOSED state, operational INIT/OK/ERROR state,
 current LocationId and operational problem as separate `Property<T>` values in one
 `PropertyContainer`. Its `open()` and `close()` methods commit functional
-state/LocationId together and publish one `PROPERTIES_CHANGED` notification; they do
+state/LocationId together and publish one `PROPERTIES.CHANGED` notification; they do
 not wait for lifecycle TimingData persistence.
 
 Operational state changes independently through the same property container. LogBook recovery/commit failure changes the
@@ -1468,7 +1468,7 @@ hook wakes the first normal reconciliation run. TimingNode functional state is a
 available as CLOSED/no-location while operational state may still be INIT. LogBook
 recovery health does not replace functional state and does not participate in the
 inventory calculation. Later committed TimingNode property changes emit
-PROPERTIES_CHANGED and wake another reconciliation; the later run still derives
+PROPERTIES.CHANGED and wake another reconciliation; the later run still derives
 inventory only from current functional state.
 
 Tag events and individual antenna commands do not pass through either
@@ -1487,9 +1487,10 @@ antennaManager.tagObservedEvent(antennaId)
 For current component properties, TimingNode uses the generic
 `Property<T>` + `PropertyContainer` mechanism. The four node-owned values
 (functional state, operational state, LocationId and operational problem) remain separate
-properties. One `PROPERTIES_CHANGED` source reports a committed container change and
-identifies the properties that changed. Related values such as OPEN + LocationId are
-committed together before that notification is published.
+properties. `PropertyContainer.CHANGED` is the normal `EventSource<Property<?>>`;
+after an update has been fully committed it emits the properties that actually changed.
+Related values such as OPEN + LocationId are committed together before those notifications
+are published.
 
 Other semantic facts still use named `EventSource` ports such as
 `TIMING_DATA_COMMITTED` and `NEW_DATA_ENTRY`. Method-based event
@@ -2088,7 +2089,7 @@ self-test PASS + `INACTIVE`, not artificially `READY`.
 SI01-REQ-053 uses one system-scoped inventory demand:
 
 ```text
-TimingNode A/B/... PROPERTIES_CHANGED
+TimingNode A/B/... PROPERTIES.CHANGED
        |
        v
 wake domain.system.TimingSystemConductor control task
@@ -2755,7 +2756,7 @@ TimingNode
   operationalState()
   locationId()
   operationalProblem()
-  PROPERTIES_CHANGED
+  PROPERTIES.CHANGED
   TIMING_DATA_COMMITTED
 
   X runtimeMetrics()
@@ -3346,8 +3347,9 @@ The important guarantees are:
 
 TimingNode keeps functional state, operational state, LocationId and operational problem
 as separate generic `Property<T>` values in one `PropertyContainer`; there is no
-Domain `Status` object in TimingNode. Subscribers use the container change source rather
-than one event implementation per property.
+Domain `Status` object in TimingNode. Consumers use the container's normal
+`EventSource<Property<?>>` change source rather than one Event implementation per
+property.
 
 Functional state starts CLOSED with no LocationId. Operational state starts INIT and
 moves independently to OK or ERROR. Persisted or newly committed NODE_OPEN/NODE_CLOSE
@@ -3537,9 +3539,10 @@ Data Lane
 Delivery is synchronous on the emitting thread and `Event<T>` does not serialize
 concurrent `emit(...)` calls. The completed listener graph is read-only during runtime.
 Committed-TimingData events originate from the Data Lane after durable commit.
-TimingNode `PROPERTIES_CHANGED` originates after a committed property update. One
-notification may identify several properties, for example LocationId + functional state
-for OPEN. Operational-state/problem updates use the same source.
+TimingNode `PROPERTIES.CHANGED` originates after a committed property update. An update
+may therefore emit more than one changed property; for OPEN, LocationId and functional
+state are both current before either notification is delivered. Operational-state/problem
+updates use the same source.
 
 Ordinary listener RuntimeExceptions are isolated and reported in the delivery report so
 one failing listener does not prevent later listeners from seeing the fact. Fatal Errors
