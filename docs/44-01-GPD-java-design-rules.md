@@ -549,7 +549,7 @@ TimingNode.activate()
 Data Lane recovery
         |
         +--> read/validate persisted TimingData
-        +--> rebuild LogBook history
+        +--> rebuild committed LogBook TimingData
         +--> publish loaded-data fact to Task-owned derived views
         +--> report recovery failure separately when needed
         +--> does not define or reconstruct TimingNode functional state
@@ -599,7 +599,7 @@ appearing later as a timeout.
 - allowing same-lane result-bearing reentrancy to wait until timeout;
 - giving a property its own executor/coalescing loop when the owning component already has one.
 
-Not every event should be coalesced. TimingData records, registrations and other history
+Not every event should be coalesced. TimingData records, registrations and other records
 that must be preserved are different: there the individual event itself matters.
 
 ---
@@ -806,12 +806,17 @@ architecture, without first knowing the implementation mechanism.
 | Queue cannot accept more work | `QUEUE_FULL` | bare `FULL` outside the queue primitive |
 | Execute serially and return the result | `executeOnDataLaneAndWait(...)` | generic `run(...)` when waiting is important |
 | Active component that owns LogBook behaviour | `LogBook` | `LogBookProcessor` when it is more than a processor |
-| Passive committed history | `LogBookData` | another active-sounding `LogBook` |
+| Passive committed TimingData | `LogBookData` | another active-sounding `LogBook` |
 | Node Task Lane service | `NodeService` | `NodeTaskRunner` when it owns domain state as well |
 | Actual input-processing component | `TagProcessor` | renaming merely for suffix consistency |
 | Registration being matched for revoke | `activeRegistration` | `candidate` |
 | Team ID read from static EventData | `configuredTeamId` | `fixed` |
 | Guard that throws when a runtime condition holds | `failIfInactive()` | `requireActive()` when the throw behaviour is otherwise hidden |
+
+For LogBook data, name the concrete thing being handled. Prefer `TimingData record`,
+`registration`, `committed TimingData` or `persisted TimingData` as appropriate. Avoid the
+generic word `history` for LogBook data because it hides which records or registrations the
+code actually owns.
 
 Use `Runner` for an execution mechanism that runs work, such as
 `SerialTaskRunner` or `YieldingTaskRunner`. Do not use `Runner` for a component
@@ -978,7 +983,7 @@ Keep these distinctions:
 ```text
 activate / deactivate       software component lifecycle
 OPEN / CLOSED               TimingNode state
-LogBook failure diagnostics  persistence/history problem reporting
+LogBook failure diagnostics  TimingData persistence/commit problem reporting
 initialize                  prepare antenna provider
 startInventory              start tag inventory
 shutdown                    release antenna/provider resources
@@ -1812,7 +1817,7 @@ public RegistrationResult addManualRegistration(...) throws OperationException {
 }
 ```
 
-Do not add an `OperationException` merely because a fire-and-forget diagnostic/history
+Do not add an `OperationException` merely because a fire-and-forget LogBook
 submission can fail later; that later failure has no synchronous caller result.
 
 If a component really owns failure-specific cleanup, keep that policy named and use the

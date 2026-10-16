@@ -277,8 +277,8 @@ domain/
       LogBookAccessor.java              intentional external/internal access boundary
       LogBookDataLane.java              LogBook-specific ordered execution/wait adapter
       LogBookOperations.java            state-changing operations + TimingData commit/recovery
-      LogBookState.java                 passive node/logbook facts + committed-history owner
-      LogBookData.java                  passive committed TimingData history
+      LogBookState.java                 passive node/logbook facts + committed-TimingData owner
+      LogBookData.java                  passive committed TimingData records
       persistence/
         TimingDataPersistence.java      TimingData load/append domain port
         DefaultTimingDataPersistence.java codec/node/sequence mapping to I/O storage
@@ -474,7 +474,7 @@ The ownership rule is responsibility-based:
 - `LogBookSync` owns TIMING_DATA replay cursor/batch coordination during
   Data Lane upstream turns. It uses the same `LogBookAccessor` contract as
   other LogBook consumers: CURRENT head reads use `LogBookQuery`, while
-  bounded history batches use an ORDERED `timingDataRange(...)` query. It
+  bounded TimingData batches use an ORDERED `timingDataRange(...)` query. It
   never receives direct access to mutable `LogBookData`.
 - `UpstreamStream` remains an I/O/messaging boundary. `send` only hands a
   semantic message to the local transport mailbox; Domain code does not perform
@@ -812,7 +812,7 @@ domain/application-specific exception such as `OperationException(UNAVAILABLE)`;
 lifecycle package therefore remains independent from TimingNode-specific exception types.
 
 Functional state is immediately available as CLOSED with no LocationId. The Data Lane
-separately loads persisted TimingData and rebuilds LogBookData/history. Recovery never
+separately loads persisted TimingData and rebuilds LogBookData. Recovery never
 defines or reconstructs functional OPEN/CLOSED state.
 
 LogBook queries expose two explicit consistency modes:
@@ -854,12 +854,12 @@ sees CLOSED and is rejected. Antenna inventory may stop asynchronously after
 CLOSED without requiring a CLOSING state or a second registration-block flag.
 
 TimingNode republishes LogBook `NEW_DATA_ENTRY` as the node-level
-`TIMING_DATA_COMMITTED` fact, but that event remains a durable-history fact only.
-Queue rejection or later lifecycle-record persistence failure does not reverse
+`TIMING_DATA_COMMITTED` event, but that event reports only committed TimingData.
+Queue rejection or later NODE_OPEN/NODE_CLOSE record persistence failure does not reverse
 current functional TimingNode state. A direct LogBook lifecycle command or persisted
-startup history likewise does not mutate functional OPEN/CLOSED state or LocationId.
-LogBook owns committed TimingData history/recovery facts; TimingNode owns its separate
-functional and operational runtime state.
+TimingData load likewise does not mutate functional OPEN/CLOSED state or LocationId.
+LogBook owns committed TimingData and recovery state; TimingNode owns its separate
+functional runtime state.
 
 State-changing `process(command)` remains non-reentrant: a command may not synchronously
 re-enter the same Data Lane behind itself. ORDERED queries are different. If the caller is
@@ -905,7 +905,7 @@ an Application-layer boundary object, not a second owner of TimingNode state.
 Functional state publication remains owned by TimingNode. LogBook publishes one
 committed TimingData fact after durable commit and publishes its failures separately.
 TimingNode republishes the committed data as `TIMING_DATA_COMMITTED`;
-NODE_OPEN/NODE_CLOSE history never drives functional state.
+NODE_OPEN/NODE_CLOSE TimingData records never drive functional state.
 
 `TimingNodeProxy.status()` returns one client-facing `TimingNodeStatus` containing
 NodeId, LocationId and `CLOSED`/`OPEN` state. IF-03 maps those values directly to
@@ -1043,7 +1043,7 @@ Detailed Domain composition for LogBook/TimingData ownership, shared UpstreamDat
 semantics and routing boundaries.
 
 `TimingNode` contains the active `LogBook` component and its passive
-`LogBookData` history as part of the TimingNode aggregate. `LogBookData` keeps
+`LogBookData` committed records as part of the TimingNode aggregate. `LogBookData` keeps
 0..N committed `TimingData` values. The current
 design deliberately avoids a second logbook-specific record type because there
 is no different domain shape that needs one.
@@ -1421,13 +1421,13 @@ validated effective configuration
 TimingNode current state:
   -> functionalState starts CLOSED with no LocationId
   -> open()/close() update functionalState + LocationId directly
-  -> NODE_OPEN/NODE_CLOSE records remain history and never drive current state
-  -> persisted history is not replayed to reconstruct functional state
+  -> NODE_OPEN/NODE_CLOSE TimingData records never drive current state
+  -> persisted TimingData is not replayed to reconstruct functional state
 
 TimingNode initial persisted-data load:
   -> read/validate persisted TimingData on the Data Lane
-  -> rebuild LogBook committed history
-  -> publish initial loaded TimingData fact to Task-owned derived views
+  -> rebuild LogBook committed TimingData
+  -> publish initially loaded TimingData to Task-owned derived views
 
 system control run:
   -> read functionalState of every TimingNode directly
@@ -2922,7 +2922,7 @@ TimingNode
   ├── Data Lane  -> LogBook facade
   │                ├── LogBookDataLane -> SerialLane ordering/wait/rejection mapping
   │                ├── LogBookOperations -> commands, TimingData creation, persistence + commit
-  │                └── LogBookState -> recovery facts + LogBookData history
+  │                └── LogBookState -> recovery state + LogBookData records
   └── Task Lane  -> NodeService
                    -> NodeServiceState, RaceDataState,
                       TeamAssignments, StageStartTimes,
@@ -2936,10 +2936,10 @@ The **Data Lane** is the sole writer for the append-only TimingData source.
 `OperationException` mapping) without creating another queue or thread model.
 `LogBookOperations` owns state-changing domain operations, TimingData creation,
 time capture, durable append, startup reconstruction and commit metrics/logging.
-`LogBookState` contains only passive mutable facts and committed in-memory history,
+`LogBookState` contains only passive mutable state and committed in-memory TimingData.
 The persisted TimingData load runs as the first ordered Data Lane task. A successful
-load publishes an immutable initial-history fact; each later successful commit publishes
-an immutable committed-TimingData fact. TimingNode republishes those history facts but
+load publishes the immutable initially loaded TimingData; each later successful commit
+publishes the committed TimingData record. TimingNode republishes those records but
 does not use NODE_OPEN/NODE_CLOSE commits to drive functional state. Functional state is
 changed directly by `open()`/`close()`; LogBook failures are reported separately and do not
 change functional state or LocationId.
@@ -2987,7 +2987,7 @@ node.logBook().execute(
 // LogBook is the Data Lane component boundary.
 // LogBookDataLane owns LogBook-specific lane execution mechanics.
 // LogBookOperations owns state-changing command/commit work.
-// LogBookState owns passive facts/history; LogBookStatus owns published status.
+// LogBookState owns passive state and committed TimingData; LogBookStatus owns published status.
 // NodeService owns Task Lane service/lifecycle/orchestration.
 // NodeServiceState owns passive RaceData/derived timing state.
 // UpstreamHandler consumes only the narrow UpstreamTaskState port.
@@ -3086,7 +3086,7 @@ TimingData commit command
   default caller wait guard: 5000 ms
 
 ORDERED LogBook query
-  history/count/range/recovery reads that enter the Data Lane
+  count/range/recovery reads that enter the Data Lane
   default caller wait guard: 2000 ms
 
 CURRENT LogBook query
@@ -3348,8 +3348,8 @@ than one Event implementation per property.
 
 Functional state starts CLOSED with no LocationId. Persisted or newly committed
 NODE_OPEN/NODE_CLOSE TimingData does not update functional state. TimingNode lifecycle
-operations apply functional state independently from whether the separate lifecycle-history
-record later commits successfully.
+operations apply functional state independently from whether the separate NODE_OPEN/NODE_CLOSE
+TimingData record later commits successfully.
 
 Functional state/LocationId are intentionally not restart-durable in the current design.
 A later design may reconstruct or persist them separately; that is a separate architecture
