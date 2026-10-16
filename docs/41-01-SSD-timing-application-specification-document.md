@@ -138,7 +138,6 @@ problem. It shall not roll back or reverse the already applied functional state.
 :::{req} Reject opening when operational errors are blocking  
 :id: SI01-REQ-074  
 :status: D  
-:specifies: UC-001  
 :depends_on: SI01-REQ-024, SI01-REQ-049, SI01-REQ-052  
 
 When a detected operational error prevents safe registration at the selected
@@ -311,8 +310,7 @@ and mapping tables remain behind the provider boundary.
 :status: R  
 :specifies: UC-001, UC-002, UC-009, UC-020  
 
-For each configured TimingNode, SI-01 shall provide these independently queryable
-current values:
+For each configured TimingNode, SI-01 shall provide these current values:
 
 - the `NodeId`;
 - functional state `CLOSED` or `OPEN`;
@@ -320,7 +318,11 @@ current values:
 - operational state `INIT`, `OK` or `ERROR`;
 - relevant machine-readable operational problem details when present.
 
-Functional state and operational state are separate TimingNode-owned values.
+For the normal operator OPEN/CLOSE flow in UC-001 and UC-002, functional state and
+LocationId form one useful current view: for example `OPEN` at LocationId 24.
+Operational state and problem details support status and diagnostic use cases such
+as UC-020. They remain independent from functional OPEN/CLOSED state.
+
 Functional state determines whether participant registrations may be admitted.
 Operational state reports whether the TimingNode and its required components are
 healthy; it does not replace or erase functional OPEN/CLOSED state.

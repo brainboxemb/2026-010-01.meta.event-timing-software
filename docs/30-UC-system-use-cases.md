@@ -159,15 +159,9 @@ registration at a chosen location.
   confirm the current state.
 - **Invalid location:** the cabinet rejects the requested location and remains
   `CLOSED`.
-- **Software errors:** the cabinet software has detected errors. The operator
-  sees the relevant errors and current state; opening is refused when an error
-  prevents safe operation.
 - **Open not confirmed or connection lost:** the operator does not assume
   registration is open until the resulting state can be confirmed. Reconnecting
   must show the cabinet's actual current state.
-- **Lifecycle history recording problem:** a failure to record the OPEN transition
-  in the LogBook is reported as a separate software/data problem. It does not by
-  itself undo an OPEN state that the cabinet has already applied.
 
 **Postcondition:** if opening succeeds, registration is `OPEN` for the selected
 location. Closing the browser or losing the iPad connection does not itself

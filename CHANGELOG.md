@@ -10,7 +10,7 @@ The repository is currently in its planning and research phase.
 
 - Remove stale detailed-design wording that still treated a combined TimingNode Status or NODE_OPEN/NODE_CLOSE LogBook commits as the owner of current state; document the separate functional, operational, location and problem values consistently.
 
-- Clarify the node/application status boundary: `TimingNodeProxy` exposes functional state, operational state, location and problem detail separately; any combined node status value is only a presentation snapshot. Record system-level health aggregation as a separate design topic instead of folding it into TimingNode functional state.
+- Clarify client status around the real operator flow: `TimingNodeProxy.status()` returns one current TimingNode view containing OPEN/CLOSED, LocationId and operational information, while TimingNode still changes functional state and operational health independently. Keep UC-001 focused on opening; diagnostic problems remain separate behaviour.
 
 - Extend DR-04 with the private Event backing-field convention: lowerCamelCase names ending in `Event`, distinct from the public semantic `EventSource` name and `onXxx(...)` handler name.
 
