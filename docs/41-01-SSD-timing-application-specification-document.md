@@ -136,17 +136,16 @@ second TimingNode health-state value for it.
 
 :::
 
-:::{req} Reject opening when operational errors are blocking  
+:::{req} Reject opening when a required capability is unavailable  
 :id: SI01-REQ-074  
 :status: D  
 :depends_on: SI01-REQ-024, SI01-REQ-049, SI01-REQ-052  
 
-When a detected operational error prevents safe registration at the selected
-registration point, SI-01 shall reject an OPEN request and make the relevant
-problem and resulting state observable. A non-blocking problem may be reported
-without rejecting OPEN; the distinction shall follow the registration-point
-operational policy rather than treating every diagnostic warning as blocking.
-An unsuccessful OPEN shall not be reported as an OPEN transition.
+When a capability required for safe registration at the selected registration
+point is unavailable, SI-01 shall reject the OPEN request through the normal
+operation-failure contract. A diagnostic warning that does not prevent safe
+registration shall not by itself block OPEN. An unsuccessful OPEN shall not be
+reported as an OPEN transition.
 :::
 
 :::{req} Registration lifecycle independent of operator sessions  
@@ -908,10 +907,9 @@ interface version or a separately specified migration contract.
 The first registration baseline uses the following TimingNode lifecycle semantics:
 
 - at least one configured TimingNode is represented;
-- functional `OPEN`/`CLOSED` and operational `INIT`/`OK`/`ERROR` are
-  independent TimingNode values;
-- a TimingNode recovery problem is represented by operational `ERROR` without
-  replacing its functional state;
+- functional `OPEN`/`CLOSED` and current LocationId are the TimingNode's
+  current operator-facing values;
+- recovery or LogBook failure does not replace or reconstruct functional state;
 - explicit LocationId assignment is allowed only while CLOSED;
 - normal OPEN carries the requested valid LocationId and applies that LocationId
   together with the CLOSED-to-OPEN transition as one ordered operation;
@@ -935,7 +933,7 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-030/031 | UC-009/014/015/016; SSSD interface/testability separation | shared application boundary |
 | SI01-REQ-032 | IF03-REQ-002/009 | API binding/configuration |
 | SI01-REQ-033 | IF03-REQ-010 | interface compatibility/evolution |
-| SI01-REQ-040/072/073/074 | UC-001/002/009 | OPEN/CLOSE runtime state transitions, session independence and blocking-error policy |
+| SI01-REQ-040/072/073/074 | UC-001/002/009 | OPEN/CLOSE runtime state transitions, session independence and required-capability failure policy |
 | SI01-REQ-087 | UC-001/002/009 + SI01-REQ-046 | lifecycle TimingData recording ordered with registration admission, without owning runtime state |
 | SI01-REQ-041/043 | UC-003/009 | TimingNode accepted-registration operation + IF-03 engineering control |
 | SI01-REQ-042/044 | UC-003/009/011 | LogBook/TimingData event + IF-03 bounded history/event delivery |
@@ -943,7 +941,7 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-046 | UC-003/012 | local TimingData commit ordering |
 | SI01-REQ-047 | UC-013 + IF05-REQ-002/003/007 | startup TimingData recovery |
 | SI01-REQ-048 | UC-013 + 33-05-IDD | reference-store recovery validation |
-| SI01-REQ-049 | UC-020 + SI01-REQ-021/022 + IF03-REQ-017 | degraded TimingNode containment + diagnostic status |
+| SI01-REQ-049 | UC-020 + SI01-REQ-021/022 | recovery-failure containment without redefining TimingNode current state |
 | SI01-REQ-050 | UC-003 | RFID passage aggregation + strongest-observation selection |
 | SI01-REQ-051 | UC-003/012 | local registration independent from presentation, diagnostic logging and upstream delivery |
 | SI01-REQ-052 | UC-003/004 | per-antenna startup/runtime failure containment + observable antenna status |
@@ -1005,7 +1003,7 @@ Representative architecture-validation scenarios include:
 1. start the **Timing Point Application** (SI-01), load configuration, expose version/status and shut down cleanly;
 2. accept an operator command through local or network presentation and route it to the correct logical TimingNode;
 3. accept a device observation from an external callback without allowing that callback thread to change application state directly;
-4. persist accepted operational state and recover it after restart;
+4. persist accepted TimingData and rebuild LogBook-owned history after restart;
 5. continue local operation while a GUI/test client or upstream connection is unavailable;
 6. host several independent TimingSystems, each with one or more TimingNodes, in a development/simulation composition without state leakage;
 7. substitute public stubs for production devices/transports while exercising the same application/domain paths;
@@ -1368,7 +1366,7 @@ Shared Domain contracts
 
 One `domain.system.TimingSystemConductor` belongs to each TimingSystem. It
 coordinates that system's 1..N `TimingNode` components and owns their lifecycle.
-It reads their OPEN/CLOSED/ERROR states and publishes the required inventory intent
+It reads their OPEN/CLOSED functional states and publishes the required inventory intent
 through the shared `AntennaSettings`: inventory is enabled while at least one
 TimingNode is OPEN and disabled when none is OPEN. `AntennaManager` owns hardware
 power, self-test, initialization, multiplexing and inventory reconciliation. The
