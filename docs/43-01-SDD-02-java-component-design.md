@@ -277,7 +277,6 @@ domain/
       LogBookDataLane.java              LogBook-specific ordered execution/wait adapter
       LogBookOperations.java            state-changing operations + TimingData commit/recovery
       LogBookState.java                 passive node/logbook facts + committed-history owner
-      LogBookStatus.java                CURRENT status publication + status-change event
       LogBookData.java                  passive committed TimingData history
       persistence/
         TimingDataPersistence.java      TimingData load/append domain port
@@ -661,10 +660,9 @@ InventoryTask
 
 Each TimingSystem `Conductor` uses `SerialTaskRunner` and
 `CooperativeTaskController` for event-triggered reconciliation.
-`TimingNode.statusChangedEvent(Status)` is emitted for the first post-recovery Status
-publication and for later effective Status changes. For SystemConductor it only wakes
-the existing control task.
-The later run reads each TimingNode's published CURRENT status. It computes
+`TimingNode.STATUS_CHANGED` is emitted for effective OPEN/CLOSED Status changes. For
+TimingSystemConductor it only wakes the existing control task. The later run reads each
+TimingNode's current Status directly. It computes
 `inventoryEnabled = any node OPEN` as a local boolean and publishes the
 desired result directly to the shared `AntennaSettings`; no cached
 `SourceProperty` or `DerivedProperty` is needed.
@@ -803,11 +801,10 @@ explicit read model. The snapshot is unavailable while the initial persisted-dat
 TimingNode activation uses `ComponentLifecycleManager`: it starts the Task Lane,
 then activates LogBook so the Data Lane can queue persisted TimingData
 loading as its first ordered task, and finally starts TagProcessor ingress. Task
-Lane activation does not depend on LogBook state. The call does not wait for file
-I/O. The Data Lane loads TimingData and rebuilds LogBookData/state, then publishes the first
-immutable status with safe cross-thread visibility and emits the status event.
-Deactivation makes CURRENT status unavailable; reactivation performs a fresh
-persisted-data load and later publishes a fresh snapshot.
+Lane activation does not depend on LogBook state. The call does not wait for file I/O. TimingNode Status is independent runtime state and is available as
+CLOSED/no-location without waiting for LogBook recovery. The Data Lane separately loads
+persisted TimingData and rebuilds LogBookData/history. Recovery does not define or
+reconstruct TimingNode OPEN/CLOSED state.
 
 LogBook queries expose two explicit consistency modes:
 
@@ -824,12 +821,18 @@ when that LogBookQuery explicitly supports it. Status and the published LogBook
 head support CURRENT; count and record/range reads remain ORDERED. Task-owned
 queries such as StageTiming are separate and execute on NodeService.
 
-State-changing commands still execute on the Data Lane. After a command
-completes its domain mutation, LogBook builds and publishes the immutable after-Status
-before emitting `statusChangedEvent(after)` when the effective status changed. A CURRENT
-status reader therefore observes only completed published transitions.
+State-changing TimingData commands still execute on the Data Lane. After durable append and
+in-memory commit, LogBook publishes one immutable committed-TimingData fact through
+`NEW_DATA_ENTRY`.
 
-The active LogBook owns mutable TimingNode state and does not expose `LogBookData` directly.
+TimingNode owns OPEN/CLOSED and current LocationId as transient runtime operation state.
+It consumes the normal LogBook committed-TimingData fact, applies any NODE_OPEN/NODE_CLOSE
+effect to that state, republishes the node-level `TIMING_DATA_COMMITTED` fact, and only
+then publishes `STATUS_CHANGED` when the operation state changed. This also covers a
+command that was accepted but completed after its waiting caller timed out. LogBook
+therefore owns committed TimingData history and recovery facts, not TimingNode operation
+state or TimingNode-specific before/after sequencing events.
+
 State-changing `process(command)` remains non-reentrant: a command may not synchronously
 re-enter the same Data Lane behind itself. ORDERED queries are different. If the caller is
 already executing on the Data Lane, earlier queued work has already run before the current
@@ -870,12 +873,13 @@ context for node status, commands, queries and events. The architectural composi
 contains **one TimingNodeProxy per composed TimingNode (1..N)**. The default executable currently has one because the executable still composes one TimingNode. A proxy is
 an Application-layer boundary object, not a second owner of TimingNode state.
 
-Status-change detection remains owned by the TimingNode serial boundary. A
-state-changing command compares authoritative status before and after the domain
-operation on that Data Lane. A real difference emits the TimingNode status
-event before the result leaves ordered command execution. `TimingNodeProxy` maps
-that fact to the node-scoped Application-layer `TimingNodeStatus`; it does not perform a second before/after query
-outside the ordered boundary.
+Status publication remains owned by TimingNode. LogBook publishes one committed
+TimingData fact after durable commit. TimingNode consumes it, updates its current runtime
+status for NODE_OPEN/NODE_CLOSE, publishes `TIMING_DATA_COMMITTED` to node-level
+consumers, and then emits `STATUS_CHANGED`. The same path also observes accepted
+operations that complete after a synchronous caller timeout. `TimingNodeProxy` exposes
+the node-level committed-data source and maps the status fact to Application-layer
+`TimingNodeStatus`; it does not own or reconstruct operation state.
 
 The visible Domain component boundary uses typed commands and queries rather than
 mirroring every `LogBook` method:
@@ -891,14 +895,11 @@ logBook.execute(
                 registrationId,
                 time));
 
-TimingNodeTypes.Status currentStatus =
-        logBook.query(
-                LogBookQueries.status(),
-                LogBookQuery.ReadConsistency.CURRENT);
+TimingNodeTypes.Status currentStatus = node.status();
 
-TimingNodeTypes.Status orderedStatus =
-        logBook.query(
-                LogBookQueries.status(),
+LogBookRecoveryStatus recovery =
+        logBook.process(
+                LogBookQueries.recoveryStatus(),
                 LogBookQuery.ReadConsistency.ORDERED);
 ```
 
@@ -913,8 +914,8 @@ node.applyAutomaticRegistration(
         AutomaticRegistrationAction.ADD,
         registrationId,
         time);
-node.statusChangedEvent().subscribe(statusListener);
-node.newDataEntryEvent().subscribe(timingDataListener);
+node.STATUS_CHANGED.subscribe(statusListener);
+node.NEW_DATA_ENTRY.subscribe(timingDataListener);
 ```
 
 `process(command)` is the result-bearing path: presentation/application callers wait
@@ -1379,16 +1380,19 @@ validated effective configuration
             -> wake first control run
   -> PresentationRuntime.activate()
 
+TimingNode runtime status:
+  -> exists independently as CLOSED with no LocationId
+  -> NODE_OPEN/NODE_CLOSE commits update it during the running process
+  -> persisted history is not replayed to reconstruct it
+
 TimingNode initial persisted-data load:
   -> read/validate persisted TimingData on the Data Lane
-  -> rebuild LogBookData / node state derived from committed history
+  -> rebuild LogBook committed history
   -> publish initial loaded TimingData fact to Task-owned derived views
-  -> publish first CURRENT Status
-  -> emit statusChangedEvent as a wake signal
+  -> report recovery failure separately from TimingNode Status
 
 system control run:
-  -> read CURRENT status of every TimingNode
-  -> if any node is not ready yet: publish no partial inventory decision and return
+  -> read the current Status of every TimingNode directly
   -> calculate whether any node is OPEN
   -> atomically publish desired inventory through AntennaSettings
   -> AntennaManager wakes and reconciles hardware asynchronously
@@ -1422,11 +1426,10 @@ deactivates them in reverse order. `ApplicationConductor` only orchestrates
 complete TimingSystems and does not need a coordination lane. TimingNode and
 TimingSystemConductor activation establish execution context and
 return without waiting for persisted TimingData loading. The TimingSystemConductor activation
-hook wakes the first normal reconciliation run. A TimingNode whose CURRENT status
-is still unavailable because its initial load has not published yet is treated as
-**not ready**, not as CLOSED and not as a control failure; the TimingSystemConductor
-publishes no partial inventory decision. The TimingNode's first status publication then wakes a later reconciliation. Once a node has published current state,
-unexpected CURRENT failure remains an explicit fault rather than a guessed value.
+hook wakes the first normal reconciliation run. TimingNode Status is already available as
+CLOSED/no-location. LogBook recovery readiness/failure is a separate persistence concern
+and does not participate in the inventory calculation. Later effective OPEN/CLOSED changes
+emit STATUS_CHANGED and wake another reconciliation.
 
 Tag events and individual antenna commands do not pass through either
 Conductor. Runtime resolves the configured antenna-to-node mapping as pure
@@ -1441,11 +1444,11 @@ antennaManager.tagObservedEvent(antennaId)
     .subscribe(timingNode::onTagObserved);
 ```
 
-For semantic local events, accessor names describe the fact that happened and end in
-`Event`, matching existing names such as `statusChangedEvent()` and
-`timingDataCommittedEvent()`. The antenna APIs therefore use
-`tagObservedEvent()` / `tagObservedEvent(AntennaId)`; a plural collection-like name such
-as `observations()` is not used for an `EventSource`. `TagObservation` remains the
+For semantic local events, concrete producers expose named `EventSource` ports such as
+`STATUS_CHANGED`, `TIMING_DATA_COMMITTED` and `NEW_DATA_ENTRY`. Method-based event
+access remains only where an abstraction contract requires dispatch. The antenna boundary
+may still use `tagObservedEvent(AntennaId)` because the selected AntennaId determines the
+source instance. `TagObservation` remains the
 immutable event value and does not need an `AntennaId` field merely for routing because
 the configured source identity is already known at the subscription point.
 
@@ -2032,13 +2035,13 @@ self-test PASS + `INACTIVE`, not artificially `READY`.
 SI01-REQ-053 uses one system-scoped inventory demand:
 
 ```text
-TimingNode A/B/... statusChangedEvent(Status)
+TimingNode A/B/... STATUS_CHANGED
        |
        v
-wake domain.system.SystemConductor control task
+wake domain.system.TimingSystemConductor control task
        |
        v
-read CURRENT Status for all nodes
+read node.status() for all nodes
        |
        v
 inventoryRequired = any node OPEN
@@ -2693,11 +2696,11 @@ The normal public Domain component contract does not expose runtime measurements
 
 ```text
 TimingNode
-  execute(...)
-  offer(...)
-  query(...)
-  statusChangedEvent()
-  timingDataCommittedEvent()
+  open(...)
+  close()
+  status()
+  STATUS_CHANGED
+  TIMING_DATA_COMMITTED
 
   X runtimeMetrics()
 ```
@@ -2859,11 +2862,11 @@ hierarchy. One TimingNode owns two logically independent bounded serial lanes:
 
 ```text
 TimingNode
+  ├── Status -> transient OPEN/CLOSED + current LocationId
   ├── Data Lane  -> LogBook facade
   │                ├── LogBookDataLane -> SerialLane ordering/wait/rejection mapping
   │                ├── LogBookOperations -> commands, TimingData creation, persistence + commit
-  │                ├── LogBookStatus -> published CURRENT status + status-change event
-  │                └── LogBookState -> passive lifecycle/location facts + LogBookData history
+  │                └── LogBookState -> recovery facts + LogBookData history
   └── Task Lane  -> NodeService
                    -> NodeServiceState, RaceDataState,
                       TeamAssignments, StageStartTimes,
@@ -2878,10 +2881,10 @@ The **Data Lane** is the sole writer for the append-only TimingData source.
 `LogBookOperations` owns state-changing domain operations, TimingData creation,
 time capture, durable append, startup reconstruction and commit metrics/logging.
 `LogBookState` contains only passive mutable facts and committed in-memory history,
-while `LogBookStatus` owns the safely published CURRENT status snapshot and
-status-change publication. The persisted TimingData load runs as the first ordered
-Data Lane task. A successful load publishes an immutable initial-history fact; each
-later successful commit publishes an immutable committed-TimingData fact.
+The persisted TimingData load runs as the first ordered Data Lane task. A successful
+load publishes an immutable initial-history fact; each later successful commit publishes
+an immutable committed-TimingData fact. TimingNode consumes committed NODE_OPEN/NODE_CLOSE
+facts to update its own transient Status and then emits STATUS_CHANGED.
 
 The **Task Lane** is the sole writer for live RaceData and its derived timing
 state. `NodeServiceState` owns `RaceDataState`, `TeamAssignments`,
@@ -3236,13 +3239,15 @@ The important guarantees are:
 - read strategy is selected from measured CPU, allocation/GC and lane-occupancy
   behaviour rather than convenience alone.
 
-TimingNode Status supports an explicit CURRENT query backed by a safely published immutable
-snapshot because it is current state, not a mutable LogBook traversal. The same status query
-also supports ORDERED when a caller deliberately needs a read after earlier accepted node
-work. The first publication occurs when the asynchronous persisted-data load completes;
-later publications occur after completed command transitions. In both cases the snapshot is
-published before the corresponding status event. This read model does not permit direct access to
-LogBook-owned or LogBook mutable state.
+TimingNode Status is a small immutable snapshot of TimingNode-owned runtime state:
+OPEN/CLOSED plus the current LocationId. It exists independently from LogBook recovery and
+starts as CLOSED with no LocationId. Persisted NODE_OPEN/NODE_CLOSE history is deliberately
+not used to reconstruct it. Later committed NODE_OPEN/NODE_CLOSE facts update the snapshot
+during the running process.
+
+This runtime state is intentionally not restart-durable in the current design. A later
+design may reconstruct it from LogBook history or persist it separately; that is a separate
+architecture decision rather than an implicit recovery responsibility.
 
 ### Node data persistence boundary
 

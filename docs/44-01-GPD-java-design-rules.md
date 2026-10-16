@@ -249,7 +249,7 @@ published the event and can accidentally propagate downstream problems back into
 For SystemConductor, a TimingNode status event is only a short wake signal:
 
 ```java
-timingNode.statusChangedEvent()
+timingNode.STATUS_CHANGED
         .subscribe(
                 status -> systemConductor.onTimingNodeStatusChanged(timingNode, status));
 ```
@@ -268,7 +268,7 @@ second registration style such as `onChange(Consumer<T>)`, `addListener(...)` or
 Use these naming roles consistently:
 
 ```text
-statusChangedEvent()          EventSource: first available Status + later effective changes
+STATUS_CHANGED               EventSource: effective TimingNode Status changes
 onTimingNodeStatusChanged()   listener/handler method that reacts to the fact
 ```
 
@@ -481,6 +481,10 @@ without an event queue or second property scheduler.
 Good startup flow:
 
 ```text
+TimingNode construction
+        |
+        +--> Status = CLOSED / no LocationId
+
 TimingNode.activate()
         |
         +--> start Task Lane
@@ -488,21 +492,17 @@ TimingNode.activate()
         +--> start TagProcessor ingress
         +--> return
 
-Data Lane
+Data Lane recovery
         |
         +--> read/validate persisted TimingData
-        +--> rebuild LogBook/current node state
-        +--> publish initial loaded-data fact to Task-owned derived views
-        +--> publish immutable currentStatus
-        +--> statusChangedEvent() wake
+        +--> rebuild LogBook history
+        +--> publish loaded-data fact to Task-owned derived views
+        +--> report recovery failure separately when needed
+        +--> does not define or reconstruct TimingNode Status
 
 SystemConductor control run
         |
-        +--> CURRENT unavailable while persisted-data load is pending
-        |       -> publish no partial decision; return
-        |
-        v
-TimingNode.query(status, CURRENT)
+        +--> read TimingNode.status() directly
         |
         v
 derive inventoryRequired = any TimingNode OPEN
@@ -511,7 +511,7 @@ derive inventoryRequired = any TimingNode OPEN
 Good runtime flow:
 
 ```text
-TimingNode.statusChangedEvent(Status)
+TimingNode.STATUS_CHANGED
         |
         v
 CooperativeTaskController.wake()
@@ -975,13 +975,11 @@ For Conductor:
   Data Lane;
 - Task Lane activation is independent of LogBook state and does not require a preflight
   against the Data Lane;
-- the initial Data Lane load publishes CURRENT status only after LogBook/current
-  state is complete;
-- the first Conductor run may observe startup UNAVAILABLE and then publishes no
-  partial Settings decision;
-- the initial status event wakes a later reconciliation after persisted-data loading completes;
+- TimingNode Status is readable as CLOSED/no-location independently from LogBook recovery;
+- a persistence command waits for ordered LogBook recovery before it can commit;
+- a recovery failure is reported separately and does not redefine OPEN/CLOSED Status;
 - a status event only wakes the control task and does not publish Settings itself;
-- every ready-state control run reads CURRENT TimingNode status before deriving desired inventory;
+- every control run reads current TimingNode Status before deriving desired inventory;
 - rapid state changes converge to the final desired inventory while control wakes coalesce;
 - one OPEN node among several nodes keeps shared inventory desired state enabled;
 - CURRENT-state failure after readiness is explicit and is never interpreted as CLOSED;
@@ -1625,6 +1623,65 @@ API for the child.
 
 ---
 
+### DR-22 — Keep small immutable data carriers simple
+
+**Rule**
+
+Java 8 has no `record` or `struct` language construct. When a type is only a small,
+fixed immutable bundle of data and its fields are intentionally the complete public
+contract, prefer a `final class` with `public final` fields and a validating constructor.
+
+Do not add private fields plus one-line getters merely to imitate encapsulation when there
+is no hidden representation, behaviour or evolution boundary to protect.
+
+**Example**
+
+For TimingNode status:
+
+```java
+public final class Status {
+    public final State state;
+    public final LocationId locationId;
+
+    public Status(State state, LocationId locationId) {
+        checkArgument(state != null, "state must not be null");
+        this.state = state;
+        this.locationId = locationId;
+    }
+}
+```
+
+Callers then read the data directly:
+
+```java
+if (node.status().state == State.OPEN) {
+    use(node.status().locationId);
+}
+```
+
+Keep the class immutable: fields remain `final`, no setters are added, and mutable
+collections/objects are not exposed this way unless their mutability is itself part of the
+contract.
+
+Use private fields and methods when the type owns behaviour, hides a representation,
+computes derived values, needs controlled mutation, or has an abstraction boundary that
+must remain free to change independently of its storage layout.
+
+**Avoid**
+
+```java
+private final State state;
+
+public State state() {
+    return state;
+}
+```
+
+when the type is nothing more than a two-field immutable data carrier and the method adds
+no semantic contract beyond returning that field.
+
+---
+
 ## Pull-request review check
 
 For Java component changes, a reviewer can use this short check:
@@ -1649,7 +1706,8 @@ For Java component changes, a reviewer can use this short check:
 17. **Lifecycle reuse** — Can an ordinary component activate again after clean deactivation?
 18. **State synchronization** — Are lifecycle checks and their state transitions protected by the same synchronization boundary?
 19. **Production API** — Does each public member serve a production boundary, and are intentional test-only seams explicit?
-20. **Tests** — Is the risky behaviour tested, not only the happy path?
+20. **Data carriers** — Is a small immutable Java-8 value kept simple instead of wrapped in getter boilerplate without a reason?
+21. **Tests** — Is the risky behaviour tested, not only the happy path?
 
 A review can cite a rule such as `DR-05`, but the rule text and example should remain
 clear enough that the identifier is not required to understand the review comment.
