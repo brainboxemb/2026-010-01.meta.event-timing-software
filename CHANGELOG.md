@@ -8,9 +8,9 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
-- Remove stale detailed-design wording that still treated a combined TimingNode Status or NODE_OPEN/NODE_CLOSE LogBook commits as the owner of current state; document the separate functional, operational, location and problem values consistently.
+- Keep TimingNode current state as four separate generic properties (functional state, operational state, LocationId and operational problem) in one PropertyContainer. The container publishes one change for a committed property update; TimingNode contains no combined Status object.
 
-- Clarify client status around the real operator flow: `TimingNodeProxy.status()` returns one current TimingNode view containing OPEN/CLOSED, LocationId and operational information, while TimingNode still changes functional state and operational health independently. Keep UC-001 focused on opening; diagnostic problems remain separate behaviour.
+- Define the client-facing TimingNodeStatus above the Domain node as four values: id, location, OPEN/CLOSED state and INIT/OK/ERROR operational state. IF-03 maps them to compact `id`, `locId`, `state` and `opState`; problem details remain separate.
 
 - Extend DR-04 with the private Event backing-field convention: lowerCamelCase names ending in `Event`, distinct from the public semantic `EventSource` name and `onXxx(...)` handler name.
 
