@@ -2938,7 +2938,8 @@ The persisted TimingData load runs as the first ordered Data Lane task. A succes
 load publishes an immutable initial-history fact; each later successful commit publishes
 an immutable committed-TimingData fact. TimingNode republishes those history facts but
 does not use NODE_OPEN/NODE_CLOSE commits to drive functional state. Functional state is
-changed directly by `open()`/`close()`; LogBook failure affects operational health.
+changed directly by `open()`/`close()`; LogBook failures are reported separately and do not
+change functional state or LocationId.
 
 The **Task Lane** is the sole writer for live RaceData and its derived timing
 state. `NodeServiceState` owns `RaceDataState`, `TeamAssignments`,
