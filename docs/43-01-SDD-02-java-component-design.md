@@ -780,10 +780,8 @@ but it is a composition/lifecycle facade rather than a serial-execution owner.
 It composes `LogBook`, `NodeService` and its node-local
 `TagProcessor`. `LogBook` owns Data Lane queueing, command/query
 execution, persisted TimingData startup loading, durable TimingData commit and
-post-commit TimingData publication. TimingNode itself owns three independent
-current values: functional OPEN/CLOSED state, operational INIT/OK/ERROR state
-and current LocationId. Operational problem details are kept separately from
-those enum values.
+post-commit TimingData publication. TimingNode itself owns two current values: functional OPEN/CLOSED state and
+current LocationId.
 `NodeService` owns Task Lane semantic orchestration. Its package-private
 `NodeTaskLane` adapts the Runtime-supplied `SerialLane` for Task Lane
 lifecycle, current-thread checks and result-bearing wait/error mapping; it does
@@ -806,11 +804,9 @@ TimingNode extends `LifecycleComponent`; its protected lifecycle hook uses
 Lane can queue persisted TimingData loading as its first ordered task, and finally
 TagProcessor ingress. No public TimingNode activate/deactivate API is exposed.
 
-Functional state is immediately available as CLOSED with no LocationId. Operational
-state starts INIT and changes to OK after successful node startup/recovery or ERROR
-when a required node-local capability fails. The Data Lane separately loads persisted
-TimingData and rebuilds LogBookData/history. Recovery never defines or reconstructs
-functional OPEN/CLOSED state.
+Functional state is immediately available as CLOSED with no LocationId. The Data Lane
+separately loads persisted TimingData and rebuilds LogBookData/history. Recovery never
+defines or reconstructs functional OPEN/CLOSED state.
 
 LogBook queries expose two explicit consistency modes:
 
@@ -831,16 +827,16 @@ State-changing TimingData commands still execute on the Data Lane. After durable
 in-memory commit, LogBook publishes one immutable committed-TimingData fact through
 `NEW_DATA_ENTRY`.
 
-TimingNode owns functional OPEN/CLOSED state, operational INIT/OK/ERROR state,
-current LocationId and operational problem as separate `Property<T>` values in one
-`PropertyContainer`. Its `open()` and `close()` methods commit functional
-state/LocationId together and publish one `PROPERTIES.CHANGED` notification; they do
-not wait for lifecycle TimingData persistence.
+TimingNode owns functional OPEN/CLOSED state and current LocationId as separate
+`Property<T>` values in one `PropertyContainer`. `open()` and `close()` set the
+typed properties and then call `PropertyContainer.update()`. The container compares
+against its previous baseline and publishes one `PropertyUpdate` containing all
+properties that changed in that logical update.
 
-Operational state changes independently through the same property container. LogBook recovery/commit failure changes the
-TimingNode operational state to ERROR and records problem detail, but does not rewrite
-functional state. Optional raw-observation diagnostic persistence is outside this health
-decision and does not by itself put a TimingNode in operational ERROR.
+Lifecycle deactivation resets the transient values to CLOSED/no-location and calls
+`PropertyContainer.sync()`, so teardown does not emit a normal runtime state-change
+event. LogBook recovery/commit failures remain owned by LogBook/diagnostic behaviour and
+do not create a second TimingNode health-state model.
 
 The runtime transition and lifecycle-record submission share the same short
 TimingNode state/admission lock used by automatic-registration admission. The
@@ -899,15 +895,14 @@ context for node status, commands, queries and events. The architectural composi
 contains **one TimingNodeProxy per composed TimingNode (1..N)**. The default executable currently has one because the executable still composes one TimingNode. A proxy is
 an Application-layer boundary object, not a second owner of TimingNode state.
 
-Functional and operational state publication remains owned by TimingNode. LogBook
-publishes one committed TimingData fact after durable commit and publishes node-local
-LogBook failures separately. TimingNode republishes the committed data as
-`TIMING_DATA_COMMITTED`; NODE_OPEN/NODE_CLOSE history never drives functional state.
+Functional state publication remains owned by TimingNode. LogBook publishes one
+committed TimingData fact after durable commit and publishes its failures separately.
+TimingNode republishes the committed data as `TIMING_DATA_COMMITTED`;
+NODE_OPEN/NODE_CLOSE history never drives functional state.
 
 `TimingNodeProxy.status()` returns one client-facing `TimingNodeStatus` containing
-NodeId, LocationId, `CLOSED`/`OPEN` state and `INIT`/`OK`/`ERROR`
-operational state. IF-03 maps those four values directly to `id`, `locId`,
-`state` and `opState`. Operational problem detail remains separate.
+NodeId, LocationId and `CLOSED`/`OPEN` state. IF-03 maps those values directly to
+`id`, `locId` and `state`.
 
 The visible Domain component boundary uses typed commands and queries rather than
 mirroring every `LogBook` method:
@@ -927,7 +922,6 @@ logBook.execute(
                 TimingData.AutomaticTimeSource.API));
 
 TimingNodeTypes.FunctionalState functionalState = node.functionalState();
-TimingNodeTypes.OperationalState operationalState = node.operationalState();
 LocationId currentLocation = node.locationId();
 
 LogBookRecoveryStatus recovery =
@@ -1417,9 +1411,7 @@ validated effective configuration
 
 TimingNode current state:
   -> functionalState starts CLOSED with no LocationId
-  -> operationalState starts INIT
   -> open()/close() update functionalState + LocationId directly
-  -> LogBook recovery updates operationalState to OK or ERROR
   -> NODE_OPEN/NODE_CLOSE records remain history and never drive current state
   -> persisted history is not replayed to reconstruct functional state
 
@@ -1427,7 +1419,6 @@ TimingNode initial persisted-data load:
   -> read/validate persisted TimingData on the Data Lane
   -> rebuild LogBook committed history
   -> publish initial loaded TimingData fact to Task-owned derived views
-  -> update operationalState independently from functionalState
 
 system control run:
   -> read functionalState of every TimingNode directly
@@ -1464,10 +1455,9 @@ deactivates them in reverse order. `ApplicationConductor` only orchestrates
 complete TimingSystems and does not need a coordination lane. TimingNode and
 TimingSystemConductor activation establish execution context and
 return without waiting for persisted TimingData loading. The TimingSystemConductor activation
-hook wakes the first normal reconciliation run. TimingNode functional state is already
-available as CLOSED/no-location while operational state may still be INIT. LogBook
-recovery health does not replace functional state and does not participate in the
-inventory calculation. Later committed TimingNode property changes emit
+hook wakes the first normal reconciliation run. TimingNode functional state is already available as CLOSED/no-location while LogBook
+recovery may still be running. Recovery does not replace functional state and does not
+participate in the inventory calculation. Later committed TimingNode property changes emit
 PROPERTIES.CHANGED and wake another reconciliation; the later run still derives
 inventory only from current functional state.
 
@@ -1485,12 +1475,11 @@ antennaManager.tagObservedEvent(antennaId)
 ```
 
 For current component properties, TimingNode uses the generic
-`Property<T>` + `PropertyContainer` mechanism. The four node-owned values
-(functional state, operational state, LocationId and operational problem) remain separate
-properties. `PropertyContainer.CHANGED` is the normal `EventSource<List<Property<?>>>`. After an
-update has been fully committed it emits one event containing the properties that actually
-changed. Related values such as OPEN + LocationId are committed together and therefore
-arrive in one change event.
+`Property<T>` + `PropertyContainer` mechanism. Functional state and LocationId are
+separate strongly typed properties. After the owner changes one or more values it calls
+`PropertyContainer.update()`; the container detects changed properties and emits one
+`PropertyUpdate` through its normal `EventSource<PropertyUpdate>`.
+Related values such as OPEN + LocationId therefore arrive in one update message.
 
 Other semantic facts still use named `EventSource` ports such as
 `TIMING_DATA_COMMITTED` and `NEW_DATA_ENTRY`. Method-based event
@@ -1524,6 +1513,7 @@ timing-point-core.jar
     property/
       Property.java
       PropertyContainer.java
+      PropertyUpdate.java
 
   io.github.brainboxemb.eventtiming.timingpoint.application/
     ApplicationConductor.java
@@ -2753,9 +2743,7 @@ TimingNode
   open(...)
   close()
   functionalState()
-  operationalState()
   locationId()
-  operationalProblem()
   PROPERTIES.CHANGED
   TIMING_DATA_COMMITTED
 
@@ -2921,9 +2909,7 @@ hierarchy. One TimingNode owns two logically independent bounded serial lanes:
 TimingNode
   ├── PropertyContainer
   │     ├── functionalState -> transient CLOSED / OPEN
-  │     ├── operationalState -> INIT / OK / ERROR
-  │     ├── locationId -> current LocationId or none
-  │     └── operationalProblem -> optional problem detail
+  │     └── locationId -> current LocationId or none
   ├── Data Lane  -> LogBook facade
   │                ├── LogBookDataLane -> SerialLane ordering/wait/rejection mapping
   │                ├── LogBookOperations -> commands, TimingData creation, persistence + commit
@@ -3351,11 +3337,10 @@ Domain `Status` object in TimingNode. Consumers use the container's normal
 `EventSource<List<Property<?>>>` change source rather than one Event implementation per
 property.
 
-Functional state starts CLOSED with no LocationId. Operational state starts INIT and
-moves independently to OK or ERROR. Persisted or newly committed NODE_OPEN/NODE_CLOSE
-TimingData does not update functional state. TimingNode lifecycle operations apply
-functional state independently from whether the separate lifecycle-history record later
-commits successfully.
+Functional state starts CLOSED with no LocationId. Persisted or newly committed
+NODE_OPEN/NODE_CLOSE TimingData does not update functional state. TimingNode lifecycle
+operations apply functional state independently from whether the separate lifecycle-history
+record later commits successfully.
 
 Functional state/LocationId are intentionally not restart-durable in the current design.
 A later design may reconstruct or persist them separately; that is a separate architecture
@@ -3539,10 +3524,10 @@ Data Lane
 Delivery is synchronous on the emitting thread and `Event<T>` does not serialize
 concurrent `emit(...)` calls. The completed listener graph is read-only during runtime.
 Committed-TimingData events originate from the Data Lane after durable commit.
-TimingNode `PROPERTIES.CHANGED` originates after a committed property update. One update
-emits one change event with the complete list of changed properties. For OPEN, LocationId
-and functional state are both current and are reported together in that event.
-Operational-state/problem updates use the same source.
+TimingNode `PROPERTIES.CHANGED` originates from `PropertyContainer.update()`. One
+logical update emits one `PropertyUpdate` containing the complete list of changed
+properties. For OPEN, LocationId and functional state are both current and are reported
+together in that message.
 
 Ordinary listener RuntimeExceptions are isolated and reported in the delivery report so
 one failing listener does not prevent later listeners from seeing the fact. Fatal Errors
