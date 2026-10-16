@@ -1755,26 +1755,61 @@ while the component keeps ownership of the actual recovery decision.
 
 **Example**
 
-Prefer:
+Prefer an explicit component-level contract:
 
 ```java
 public CloseResult close() throws OperationException {
 
-    ...
-    Runnable commitClose = () -> logBook.process(...);
-    SafeExecute.runOrRethrow(
-            commitClose,
-            this::restoreRegistrationsAfterDefiniteCloseFailure);
+    logBook.process(LogBookCommands.commitNodeClose(locationId));
     return CloseResult.CLOSED;
 }
 ```
 
-over a method whose main flow is dominated by several catch blocks that all rethrow the
-same failure.
+If a component really owns failure-specific cleanup, keep that policy named and use the
+shared execution/failure guard rather than repeating catch-and-rethrow mechanics.
 
 This does not mean every possible programming exception belongs in a `throws` clause.
 Ordinary argument/precondition failures remain documented where useful. The rule applies
 to intentional caller-visible operation failure contracts.
+
+---
+
+### DR-24 — Log operational failures at their owning boundary
+
+**Rule**
+
+When an execution boundary converts a technical failure into a stable caller-visible
+operation failure, emit the operational log record at that same boundary.
+
+The record must contain enough context to identify the failed operation without requiring
+the caller to reconstruct it. For TimingNode/LogBook operations this means at least the
+NodeId, stable operation name and failure category. A wait timeout must also report the
+effective timeout duration and that the final outcome may still be unknown.
+
+Use severity consistently:
+
+- `TIMEOUT` and execution/commit `FAILED`: ERROR;
+- `BUSY`, `UNAVAILABLE` and `INTERRUPTED`: WARN or higher.
+
+Do not catch and re-log the same operation failure in forwarding layers merely because
+they translate it to HTTP, terminal or another presentation result. The component that
+creates the stable operation failure owns its operational log.
+
+A lower-level owner may emit one additional root-cause record when it adds materially
+different diagnostic context. For example, TimingData persistence may log sequence,
+record type and location before the Data Lane reports the resulting command failure.
+Do not duplicate the same message and stack trace at every layer.
+
+**Why**
+
+Returning an exception to one caller is not durable diagnostics. Field failures such as a
+stalled commit, unavailable Data Lane or persistence error must remain visible after the
+client disconnects.
+
+Logging only at presentation boundaries also creates inconsistent diagnostics: HTTP may
+record a failure while a terminal or internal caller does not. Logging at the operation
+owner gives every caller the same retained evidence while avoiding repeated catch/log/rethrow
+boilerplate.
 
 ---
 
@@ -1805,6 +1840,7 @@ For Java component changes, a reviewer can use this short check:
 20. **Data carriers** — Is a small immutable Java-8 value kept simple instead of wrapped in getter boilerplate without a reason?
 21. **Tests** — Is the risky behaviour tested, not only the happy path?
 22. **Failure contract** — Do result-bearing public operations explicitly declare intentional caller-visible operation exceptions, and is catch/rethrow boilerplate kept out of the normal flow?
+23. **Failure logging** — Is an operational failure logged once at its owning boundary with stable identity, operation and reason, without forwarding-layer duplicates?
 
 A review can cite a rule such as `DR-05`, but the rule text and example should remain
 clear enough that the identifier is not required to understand the review comment.
