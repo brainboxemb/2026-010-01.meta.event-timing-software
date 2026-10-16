@@ -829,18 +829,24 @@ in-memory commit, LogBook publishes one immutable committed-TimingData fact thro
 `NEW_DATA_ENTRY`.
 
 TimingNode owns OPEN/CLOSED and current LocationId as transient runtime operation state.
-A successful `open()` or `close()` first waits for the corresponding lifecycle
-TimingData command to commit. When that result returns successfully, TimingNode updates
-its own runtime Status and publishes `STATUS_CHANGED` directly. The generic committed
-TimingData event is not used to drive lifecycle state.
+Its `open()` and `close()` methods apply that state directly and publish
+`STATUS_CHANGED`; they do not wait for lifecycle TimingData persistence.
+
+The runtime transition and lifecycle-record submission share the same short
+TimingNode state/admission lock used by automatic-registration admission. The
+transition is applied first, then the corresponding NODE_OPEN/NODE_CLOSE command
+is submitted to LogBook before the lock is released. A registration admitted
+before CLOSE is therefore already queued before NODE_CLOSE; a later registration
+sees CLOSED and is rejected. Antenna inventory may stop asynchronously after
+CLOSED without requiring a CLOSING state or a second registration-block flag.
 
 TimingNode republishes LogBook `NEW_DATA_ENTRY` as the node-level
 `TIMING_DATA_COMMITTED` fact, but that event remains a durable-history fact only.
-A direct LogBook lifecycle command, persisted startup history, or a lifecycle record that
-commits after the original caller wait timed out does not by itself mutate current
-TimingNode OPEN/CLOSED + LocationId state. LogBook therefore owns committed TimingData
-history and recovery facts, while TimingNode remains authoritative for current runtime
-lifecycle state.
+Queue rejection or later lifecycle-record persistence failure does not reverse
+current TimingNode state. A direct LogBook lifecycle command or persisted startup
+history likewise does not mutate current TimingNode OPEN/CLOSED + LocationId state.
+LogBook owns committed TimingData history and recovery facts; TimingNode owns current
+runtime lifecycle state.
 
 State-changing `process(command)` remains non-reentrant: a command may not synchronously
 re-enter the same Data Lane behind itself. ORDERED queries are different. If the caller is
@@ -3301,8 +3307,9 @@ The important guarantees are:
 TimingNode Status is a small immutable snapshot of TimingNode-owned runtime state:
 OPEN/CLOSED plus the current LocationId. It exists independently from LogBook recovery and
 starts as CLOSED with no LocationId. Persisted or newly committed NODE_OPEN/NODE_CLOSE
-TimingData does not itself update this snapshot. Only successful TimingNode lifecycle
-operations apply the corresponding current runtime state.
+TimingData does not itself update this snapshot. TimingNode lifecycle operations apply
+the corresponding runtime state independently from whether the separate lifecycle-history
+record later commits successfully.
 
 This runtime state is intentionally not restart-durable in the current design. A later
 design may reconstruct it from LogBook history or persist it separately; that is a separate
