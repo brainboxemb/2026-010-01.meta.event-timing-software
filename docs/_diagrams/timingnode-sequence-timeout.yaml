@@ -1,11 +1,11 @@
 diagram:
   id: timingnode-sequence-timeout
   type: sequence
-  title: Figure SDD01-TD09 — Timeout and state re-query
+  title: Figure SDD01-TD09 — Lifecycle-history failure does not roll back runtime state
   width: 1360
   height: 1110
-  description: A caller stops waiting before queued OPEN finishes. Accepted work is not automatically cancelled, so the caller later re-queries TimingNode state.
-  note: Timeout reports an unknown outcome to that caller. It is not OpenResult.REJECTED and does not imply rollback.
+  description: TimingNode applies OPEN, but the separately submitted NODE_OPEN history record later fails to commit.
+  note: The persistence failure is reported separately. It does not change the already applied OPEN runtime state.
 
 participants:
   - {id: client, label: Operator / Development Client, kind: client}
@@ -15,14 +15,11 @@ participants:
 messages:
   - {from: client, to: api, label: OPEN, kind: call}
   - {from: api, to: node, label: "open(locationId)", kind: call}
-  - {from: node, to: node, label: "queue OPEN work + hidden Future", kind: async}
-  - {from: node, to: api, label: "TimingNodeTimeoutException", kind: return}
-  - {from: api, to: client, label: "timeout — outcome unknown", kind: return}
-  - {from: node, to: node, label: "worker later executes OPEN", kind: call}
-  - {from: node, to: node, label: "state = OPEN; Future completes", kind: call}
+  - {from: node, to: node, label: "admission lock: state = OPEN + submit NODE_OPEN", kind: call}
+  - {from: node, to: api, label: "OpenResult.OPENED", kind: return}
+  - {from: api, to: client, label: OPENED, kind: return}
+  - {from: node, to: node, label: "LogBook persistence later fails; report problem", kind: async}
   - {from: client, to: api, label: STATUS, kind: call}
   - {from: api, to: node, label: "status()", kind: call}
-  - {from: node, to: node, label: "queue consistency-sensitive read", kind: async}
-  - {from: node, to: node, label: "worker captures current state = OPEN", kind: call}
   - {from: node, to: api, label: "TimingNodeStatus.OPEN", kind: return}
   - {from: api, to: client, label: OPEN, kind: return}
