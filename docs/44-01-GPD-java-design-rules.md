@@ -813,6 +813,11 @@ architecture, without first knowing the implementation mechanism.
 | Team ID read from static EventData | `configuredTeamId` | `fixed` |
 | Guard that throws when a runtime condition holds | `failIfInactive()` | `requireActive()` when the throw behaviour is otherwise hidden |
 
+For LogBook data, name the concrete thing being handled. Prefer `TimingData record`,
+`registration`, `committed TimingData` or `persisted TimingData` as appropriate. Avoid the
+generic word `history` for LogBook data because it hides which records or registrations the
+code actually owns.
+
 Use `Runner` for an execution mechanism that runs work, such as
 `SerialTaskRunner` or `YieldingTaskRunner`. Do not use `Runner` for a component
 that also owns domain state, protocol state or business decisions.
