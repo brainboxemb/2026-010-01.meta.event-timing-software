@@ -3348,7 +3348,7 @@ The important guarantees are:
 TimingNode keeps functional state, operational state, LocationId and operational problem
 as separate generic `Property<T>` values in one `PropertyContainer`; there is no
 Domain `Status` object in TimingNode. Consumers use the container's normal
-`EventSource<Property<?>>` change source rather than one Event implementation per
+`EventSource<List<Property<?>>>` change source rather than one Event implementation per
 property.
 
 Functional state starts CLOSED with no LocationId. Operational state starts INIT and
