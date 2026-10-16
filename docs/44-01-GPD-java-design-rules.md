@@ -586,7 +586,10 @@ CooperativeTaskController.wake()
 query current functionalState + derive inventoryRequired
         |
         v
-AntennaSettings.update(edit -> edit.inventoryEnabled(inventoryRequired))
+AntennaSettings.update(
+        edit -> edit.set(
+                AntennaSettings.INVENTORY_ENABLED,
+                Boolean.valueOf(inventoryRequired)))
         |
         v
 apply current inventory intent
