@@ -903,11 +903,11 @@ publishes one committed TimingData fact after durable commit and publishes node-
 LogBook failures separately. TimingNode republishes the committed data as
 `TIMING_DATA_COMMITTED`; NODE_OPEN/NODE_CLOSE history never drives functional state.
 
-`TimingNodeProxy.status()` returns one current `TimingNodeStatus` for presentation
-clients. It combines the node's functional state, LocationId, operational state and
-optional problem detail so a client can render one coherent current view. This does not
-mean those values change together inside `TimingNode`: functional state and operational
-health remain independent there.
+`TimingNodeProxy.status()` returns the normal operator-facing `TimingNodeStatus`:
+TimingNodeId, `CLOSED`/`OPEN` state and current LocationId. Operational
+`INIT`/`OK`/`ERROR` and problem detail remain separate queries/events on the proxy.
+An engineering interface such as IF-03 may put both kinds of information in one response
+without turning them into one Java status object.
 
 The visible Domain component boundary uses typed commands and queries rather than
 mirroring every `LogBook` method:
@@ -1807,12 +1807,11 @@ next event and requests close code 1013. This bounds application-driven growth o
 library's otherwise unbounded outbound queue without blocking, retrying or moving
 backpressure onto TimingNode. Reconnect recovery uses `STATUS_SNAPSHOT` plus LogBook queries.
 
-`WebSocketEndpoint` keeps the complete current TimingNode status needed for
-`STATUS_SNAPSHOT` and `STATUS_CHANGED`. When Presentation starts, it reads
-the current status of every composed `TimingNodeProxy` once and stores the
-result by `NodeId`. A later node-status event replaces only that node's cached
-entry and broadcasts the complete cached status. The event callback does not
-query TimingNodes, so it does not wait on another Data Lane.
+`WebSocketEndpoint` sends the complete current IF-03 status for
+`STATUS_SNAPSHOT` and `STATUS_CHANGED`. Functional-status and operational-health
+events both trigger a new complete response. Building that response reads only the
+safely published current values exposed by `TimingNodeProxy`; it does not enter or
+wait on a Data Lane.
 
 A browser-based engineering client, if added, should consume the API like any other external client. It does not require a separate SI-01 `presentation.web` package.
 
