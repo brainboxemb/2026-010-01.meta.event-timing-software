@@ -140,9 +140,11 @@ behaviour.
 
 Internal software-component lifecycle is infrastructure, not functional component API.
 Components that participate in generic lifecycle extend `LifecycleComponent` and implement
-protected `onActivate()` / `onDeactivate()` hooks. The package-private lifecycle driver is
-owned by `infra.lifecycle`; callers do not invoke public `activate()/deactivate()` methods on
-TimingNode, LogBook, NodeService, TagProcessor, AntennaManager or TimingSystem.
+protected `onActivate()` / `onDeactivate()` hooks. `LifecycleComponent` owns the generic
+active/inactive fact; concrete components do not duplicate it with another `active` field.
+The package-private lifecycle driver is owned by `infra.lifecycle`; callers do not invoke
+public `activate()/deactivate()` methods on TimingNode, LogBook, NodeService, TagProcessor,
+AntennaManager or TimingSystem.
 
 A real process/runtime boundary may still expose an explicit public start/stop operation.
 Functional operations such as `requestEnableInventory()` remain normal component API.
@@ -798,6 +800,7 @@ architecture, without first knowing the implementation mechanism.
 | Actual input-processing component | `TagProcessor` | renaming merely for suffix consistency |
 | Registration being matched for revoke | `activeRegistration` | `candidate` |
 | Team ID read from static EventData | `configuredTeamId` | `fixed` |
+| Guard that throws when a runtime condition holds | `failIfInactive()` | `requireActive()` when the throw behaviour is otherwise hidden |
 
 Use `Runner` for an execution mechanism that runs work, such as
 `SerialTaskRunner` or `YieldingTaskRunner`. Do not use `Runner` for a component
@@ -1247,6 +1250,12 @@ branch is to enforce a contract.
 
 Keep normal business decisions as ordinary control flow. A precondition helper must not
 hide a recoverable condition, device result or normal application branch.
+
+When a recoverable runtime guard intentionally throws a caller-visible operation exception,
+name the helper for that effect, for example `failIfInactive()`. Avoid ambiguous names such
+as `requireActive()` when the important consequence is the exception. Generic lifecycle
+state itself remains owned by `LifecycleComponent`; the component-specific guard only maps
+that state to the caller's domain/application failure contract.
 
 **Why**
 
