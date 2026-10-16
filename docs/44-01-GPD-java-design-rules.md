@@ -479,12 +479,14 @@ as commands.
 
 If the authoritative owner has several related current values, keep them as separate typed
 properties and use one generic property container when consumers need change notification.
-Subscribers attach to the container and receive one post-commit change describing which
-properties changed. Do not create one bespoke Event field per property.
+The container exposes the normal project `EventSource<Property<?>>`; do not invent a
+second callback/subscription mechanism and do not create one bespoke Event field per
+property.
 
-A component may commit several related property values before publishing the container
-change. For example, TimingNode commits LocationId + OPEN together, then publishes one
-change. Operational state is a separate property and can change independently.
+A component may commit several related property values before publishing the changed
+properties. For example, TimingNode commits LocationId + OPEN together first and only then
+publishes the LocationId/state property notifications. Operational state is a separate
+property and can change independently.
 
 A current-state controller may use the container change only to wake a reconciliation run.
 The reconciliation then reads the owner's current values explicitly. This keeps event
@@ -547,7 +549,7 @@ derive inventoryRequired = any TimingNode OPEN
 Good runtime flow:
 
 ```text
-TimingNode.PROPERTIES_CHANGED
+TimingNode.PROPERTIES.CHANGED
         |
         v
 CooperativeTaskController.wake()
