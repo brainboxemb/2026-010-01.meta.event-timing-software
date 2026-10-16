@@ -135,13 +135,22 @@ because its value can change asynchronously.
 
 **Rule**
 
-A constructor creates and validates an object. Runtime behaviour starts through an
-explicit operation such as `activate()`, `requestEnableInventory()` or `requestDisableInventory()`.
+A constructor creates and validates an object. Construction must not start runtime
+behaviour.
 
-For an active component, `activate()` primarily establishes lifecycle/execution context.
+Internal software-component lifecycle is infrastructure, not functional component API.
+Components that participate in generic lifecycle extend `LifecycleComponent` and implement
+protected `onActivate()` / `onDeactivate()` hooks. The package-private lifecycle driver is
+owned by `infra.lifecycle`; callers do not invoke public `activate()/deactivate()` methods on
+TimingNode, LogBook, NodeService, TagProcessor, AntennaManager or TimingSystem.
+
+A real process/runtime boundary may still expose an explicit public start/stop operation.
+Functional operations such as `requestEnableInventory()` remain normal component API.
+
+For an active component, `onActivate()` primarily establishes lifecycle/execution context.
 If the component owns a serial lane and startup requires potentially blocking persisted-data
-loading or state reconstruction, start the lane, admit that work to the owning lane and return rather
-than performing or awaiting the work on the caller thread. Readiness is a separate fact
+loading or state reconstruction, start the lane, admit that work to the owning lane and return
+rather than performing or awaiting the work on the caller thread. Readiness is a separate fact
 from lifecycle activation.
 
 A data dependency is not automatically a lifecycle dependency. If one sibling component
@@ -155,11 +164,18 @@ consumer lane before enabling a producer that may immediately emit work to it. T
 `ComponentLifecycleManager` owns that order, rollback and reverse deactivation; sibling
 components do not coordinate each other's internal lifecycle state.
 
-If components deliberately do not implement one shared lifecycle interface, do not recreate
-that interface dynamically with reflection. Register lifecycle actions explicitly with
-compile-time method references so renamed or missing lifecycle methods fail during compilation.
-Deriving a diagnostic component name from the registered instance is fine; discovering
-`activate()` or `deactivate()` by method-name lookup is not.
+Use the shared `LifecycleComponent` base and register the component itself:
+
+```java
+lifecycle.register(nodeService);
+lifecycle.register(logBook);
+lifecycle.register(tagProcessor);
+```
+
+Do not repeat lifecycle method references at every composition site and do not discover
+lifecycle methods with reflection. The base class gives `ComponentLifecycleManager` one
+compile-time lifecycle contract while keeping lifecycle driver methods out of the public
+functional API.
 
 **Why**
 
@@ -172,8 +188,11 @@ Good:
 
 ```java
 AntennaManager manager = new AntennaManager(...);
-manager.activate();
+lifecycle.register(manager);
 ```
+
+The owning lifecycle coordinator later activates the registered graph. The AntennaManager
+public API therefore contains antenna/control operations, not infrastructure lifecycle.
 
 **Avoid**
 
@@ -193,7 +212,7 @@ Keep different lifecycle levels separate.
 For SI-01 we use, for example:
 
 ```text
-software component      activate / deactivate
+software component      LifecycleComponent onActivate / onDeactivate
 TimingNode operation state  OPEN / CLOSED
 TimingNode failure      ErrorStatus
 antenna provider         initialize / startInventory / stopInventory / shutdown
@@ -211,16 +230,17 @@ to understand.
 
 **Avoid**
 
-Making `AntennaManager.activate()` mean both:
+Making AntennaManager lifecycle activation mean both:
 
-1. start the software component; and
+1. establish the software component execution context; and
 2. synchronously self-test all physical antennas before returning.
 
 Those are different actions and may be requested by different owners.
 
 When one owner coordinates the lifecycle of several child components, use the shared
 `ComponentLifecycleManager` for ordered activation, rollback and reverse-order
-deactivation. Do not duplicate that generic lifecycle algorithm in each component.
+deactivation. Register `LifecycleComponent` instances directly. Do not duplicate that
+generic lifecycle algorithm or expose public activate/deactivate methods in each component.
 
 ---
 
