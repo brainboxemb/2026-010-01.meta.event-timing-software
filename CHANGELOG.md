@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Add composition-time filtered `EventSource` subscriptions and typed `PropertyKey<T>` identity so consumers such as TimingSystemConductor can react only to relevant grouped property updates without adding per-property Events or string-name checks.
+
 - Move the reusable inactive-component guard into `LifecycleComponent`: the lifecycle base owns the active-state check while concrete components may supply their caller-visible failure factory without coupling lifecycle infrastructure to domain exceptions.
 
 - Keep fire-and-forget LogBook rejection handling at the LogBook execution boundary and use the shared execution/failure guard there, so TimingNode OPEN/CLOSE and registration flow stay free of repeated queue-specific `try/catch` code.
