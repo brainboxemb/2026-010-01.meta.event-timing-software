@@ -1,11 +1,11 @@
 diagram:
   id: timingnode-sequence-open
   type: sequence
-  title: Figure SDD01-TD07 — OPEN waits for processed domain result
+  title: Figure SDD01-TD07 — OPEN applies runtime state and records history separately
   width: 1220
   height: 900
-  description: A caller invokes a normal synchronous OPEN operation. TimingNode queues internal work, executes it against current state and only then returns the domain result.
-  note: A Java Future may connect the queued work to the waiting method internally; it is not exposed to TimingNodeProxy or the client.
+  description: A caller invokes OPEN. TimingNode applies OPEN at its registration-admission boundary, submits the NODE_OPEN history command, publishes status and returns without waiting for history persistence.
+  note: The LogBook record is required history but is not the owner or precondition of current OPEN/CLOSED state.
 
 participants:
   - {id: client, label: Operator / Development Client, kind: client}
@@ -15,8 +15,8 @@ participants:
 messages:
   - {from: client, to: api, label: OPEN, kind: call}
   - {from: api, to: node, label: "open(locationId)", kind: call}
-  - {from: node, to: node, label: "queue OPEN work + hidden Future", kind: async}
-  - {from: node, to: node, label: "worker: inspect current state", kind: call}
-  - {from: node, to: node, label: "CLOSED -> apply locationId + state = OPEN", kind: call}
+  - {from: node, to: node, label: "admission lock: CLOSED -> OPEN + locationId", kind: call}
+  - {from: node, to: node, label: "submit NODE_OPEN to LogBook", kind: async}
+  - {from: node, to: node, label: "publish STATUS_CHANGED(OPEN)", kind: async}
   - {from: node, to: api, label: "OpenResult.OPENED", kind: return}
   - {from: api, to: client, label: OPENED, kind: return}
