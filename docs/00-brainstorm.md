@@ -423,6 +423,29 @@ Ideas:
 
 The exact information model, generation approach, and scope are still open questions; this is not yet an implementation decision.
 
+## System status aggregation
+
+Candidate direction, not yet an approved design:
+
+- keep each `TimingNode`'s functional `OPEN`/`CLOSED`, operational `INIT`/`OK`/`ERROR`,
+  `LocationId` and operational problem as separate node-owned values;
+- introduce a system-level status/health view only when there is a concrete consumer for
+  aggregating required component health across a `TimingSystem` or the complete SI-01
+  process;
+- do not let such an aggregate redefine or contain the functional state machine of a
+  TimingNode;
+- distinguish required capability failures from optional/diagnostic failures. For example,
+  failure to retain optional raw antenna observations should not automatically make the
+  whole TimingNode or TimingSystem operationally failed while normal registration can
+  continue;
+- define aggregation rules only after the required components and failure-containment
+  semantics are explicit. Avoid inventing a `SystemStatus` class first and assigning
+  meaning afterwards.
+
+Open design questions include which component failures contribute to node, TimingSystem
+and application health; whether degraded-but-operational needs a value distinct from
+`OK`/`ERROR`; and which level IF-03 should expose once that aggregation is mature.
+
 ## Reporting and exports
 
 Still to be discussed.

@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Clarify the node/application status boundary: `TimingNodeProxy` exposes functional state, operational state, location and problem detail separately; any combined node status value is only a presentation snapshot. Record system-level health aggregation as a separate design topic instead of folding it into TimingNode functional state.
+
 - Extend DR-04 with the private Event backing-field convention: lowerCamelCase names ending in `Event`, distinct from the public semantic `EventSource` name and `onXxx(...)` handler name.
 
 - Bound each Engineering Portal headless-browser invocation so a wedged Chrome process fails the workspace verification directly instead of consuming the complete 10-minute documentation-job timeout.

@@ -903,9 +903,12 @@ publishes one committed TimingData fact after durable commit and publishes node-
 LogBook failures separately. TimingNode republishes the committed data as
 `TIMING_DATA_COMMITTED`; NODE_OPEN/NODE_CLOSE history never drives functional state.
 
-`TimingNodeProxy` reads the node's separate functional state, operational state,
-LocationId and problem detail and projects them into the presentation status read model.
-That read model is not another domain state owner.
+`TimingNodeProxy` exposes the node's functional state, operational state, LocationId and
+problem detail as separate Application-boundary queries. Where a presentation transport
+needs one immutable point-in-time value, the proxy may also project those separate values
+into a presentation status snapshot. That snapshot is a transport/read-model convenience
+only: it is not another Domain status object, not a second state owner and not the
+canonical way for Application code to represent node state.
 
 The visible Domain component boundary uses typed commands and queries rather than
 mirroring every `LogBook` method:
