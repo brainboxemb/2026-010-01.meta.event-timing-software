@@ -1702,6 +1702,82 @@ no semantic contract beyond returning that field.
 
 ---
 
+### DR-23 — Make caller-visible operation failures explicit
+
+**Rule**
+
+When a public result-bearing operation deliberately uses a runtime exception as a second
+caller-visible outcome family, make that failure contract explicit at the method boundary.
+
+For a stable project exception such as `OperationException`, declare it with `throws`
+even though Java does not require an unchecked exception to appear in the signature. Add
+a precise `@throws` description that tells the caller when it can happen and, where
+relevant, what the failure means. For example, a TIMEOUT on an accepted TimingNode
+operation means the final domain outcome is unknown.
+
+Keep normal domain results and operational execution failures distinct:
+
+```java
+public RegistrationResult addManualRegistration(...)
+        throws OperationException
+```
+
+Here `RegistrationResult` represents normal processed outcomes such as COMMITTED or
+NODE_NOT_OPEN. `OperationException` represents failure to obtain that normal result, for example because
+the operation is busy or unavailable, execution failed, the caller was interrupted, or
+waiting timed out. Do not hide the second family merely because the exception extends
+`RuntimeException`.
+
+Use the same rule through forwarding production boundaries. A proxy or accessor must not
+remove the declared failure contract merely because it delegates to another component.
+
+The public failure contract must stay at the abstraction level of the public component. Do not
+make a TimingNode caller understand whether an internal LogBook, lane or recovery task is ready.
+Internal readiness/order is owned below the boundary; the public operation either returns its
+normal domain result or reports the stable component-level operation failure.
+
+When a method only needs to run cleanup/recovery after a runtime failure and then rethrow
+the same failure, prefer the shared small execution/failure guard over repeating local
+`try/catch` boilerplate. Keep the component-specific recovery policy visible through a
+named handler. The wrapper must not swallow unrelated failures or invent another failure
+model.
+
+**Why**
+
+A return type that looks complete while a hidden runtime failure can also escape is hard
+to review and easy to misuse. Explicit unchecked `throws` declarations are documentation
+here: they make the real API shape visible without forcing recoverable execution problems
+into normal domain result enums.
+
+Repeated catch-and-rethrow blocks also obscure the normal application flow. The component
+should show the business steps; generic exception mechanics belong in the shared wrapper,
+while the component keeps ownership of the actual recovery decision.
+
+**Example**
+
+Prefer:
+
+```java
+public CloseResult close() throws OperationException {
+
+    ...
+    Runnable commitClose = () -> logBook.process(...);
+    SafeExecute.runOrRethrow(
+            commitClose,
+            this::restoreRegistrationsAfterDefiniteCloseFailure);
+    return CloseResult.CLOSED;
+}
+```
+
+over a method whose main flow is dominated by several catch blocks that all rethrow the
+same failure.
+
+This does not mean every possible programming exception belongs in a `throws` clause.
+Ordinary argument/precondition failures remain documented where useful. The rule applies
+to intentional caller-visible operation failure contracts.
+
+---
+
 ## Pull-request review check
 
 For Java component changes, a reviewer can use this short check:
@@ -1728,6 +1804,7 @@ For Java component changes, a reviewer can use this short check:
 19. **Production API** — Does each public member serve a production boundary, and are intentional test-only seams explicit?
 20. **Data carriers** — Is a small immutable Java-8 value kept simple instead of wrapped in getter boilerplate without a reason?
 21. **Tests** — Is the risky behaviour tested, not only the happy path?
+22. **Failure contract** — Do result-bearing public operations explicitly declare intentional caller-visible operation exceptions, and is catch/rethrow boilerplate kept out of the normal flow?
 
 A review can cite a rule such as `DR-05`, but the rule text and example should remain
 clear enough that the identifier is not required to understand the review comment.

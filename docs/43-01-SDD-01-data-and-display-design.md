@@ -563,17 +563,18 @@ commit/LogBook visibility boundary. They must not be collapsed into one prematur
 The LogBook and TimingData file remain authoritative. Logs are a human-readable
 operational narrative and must not be used to rebuild runtime state.
 
-The same commit boundary owns the generic `newDataEntryEvent`. It is emitted by
-`LogBookProcessor` only after durable persistence and LogBook visibility have
-succeeded. `LogBook` itself remains passive and emits no event: `LogBook.add`
-is also used while rebuilding existing history during the initial load, which must not
-be mistaken for new data. Upstream delivery, post-processing and presentation
-are optional consumers that subscribe to this event; the Data component has no
-dependency on those consumers.
+The same commit boundary owns the generic committed-TimingData event. `LogBook`
+emits that fact only after durable persistence and committed in-memory visibility have
+succeeded. Startup reconstruction does not replay persisted records through the new-data
+event; instead, `LogBook` publishes one immutable initial-history fact for consumers that
+need to rebuild derived state. Upstream delivery, post-processing and presentation remain
+optional consumers and do not participate in commit success.
 
 ### Startup flow
 
-Lifecycle activation and persisted-data loading are deliberately separate:
+Lifecycle activation and persisted-data loading are deliberately separate. TimingNode
+operation status exists independently from recovery and starts as `CLOSED` with no
+LocationId:
 
 ```text
 start process
@@ -582,14 +583,19 @@ start process
 load configuration / compose components
    |
    v
-TimingNode.activate()
+construct TimingNode
    |
-   +--> ComponentLifecycleManager activates NodeTaskProcessor
+   +--> Status = CLOSED / no LocationId
+   |
+   v
+TimingNode activation
+   |
+   +--> activate NodeService
    |       +--> start Task Lane
    |
-   +--> activate LogBookProcessor
+   +--> activate LogBook
    |       +--> start Data Lane
-   |       +--> admit persisted-TimingData load as first Data Lane task
+   |       +--> queue persisted-TimingData load as first Data Lane task
    |
    +--> activate TagProcessor
    +--> return; other components may continue activation
@@ -604,40 +610,31 @@ IF-05 records
    |
    +--> half-written final line: truncate to last complete record + report repair
    |
-   +--> corrupt complete record / duplicate / gap: load/validation error state
+   +--> corrupt complete record / duplicate / gap: record recovery failure
    |
    v
-nextSequence = last committed sequence + 1
+rebuild committed LogBook history
+   |
+   +--> publish immutable initial TimingData history to Task Lane consumers
+   |
+   +--> publish LogBook recovery result
    |
    v
-rebuild LogBook
-   |
-   +--> immutable initial TimingData snapshot
-              |
-              v
-          Task Lane
-              |
-              +--> rebuild UniqueTeamRegistrations / derived timing history
-   |
-   v
-publish first CURRENT Status
+later ordered LogBook commands continue
 ```
 
-The persisted-data load is ordered before later LogBook/Data Lane commands. Presentation or
-coordination components may already be active while the initial load is running; until
-the first Status is published they must represent the node as not ready rather
-than guessing CLOSED.
-   |
-   v
-connect/synchronise upstream when available
-```
+The persisted-data load is the first ordered Data Lane task, so later ordered commands
+naturally wait behind it. A caller does not perform a separate LogBook-readiness check.
+TimingNode Status remains readable as `CLOSED` / no LocationId during loading. If startup
+loading fails, the recovery failure is reported separately and later operations that need
+the LogBook fail through the normal TimingNode operation-failure contract.
 
 A new/empty TimingData file starts at sequence 1.
 
-Rebuilding the LogBook does **not** automatically reopen a TimingNode. For
-example, if the last historical state record says `OPEN`, a process restart must
-not start accepting new observations merely because that old record exists. The
-open/closed restart policy belongs to lifecycle/control requirements.
+Rebuilding the LogBook does **not** automatically reopen a TimingNode. Even when
+the last historical state record says `OPEN`, a process restart starts the node
+as `CLOSED` with no LocationId. New observations are not accepted for timing
+until an explicit new `open(...)` operation succeeds.
 
 If prepare-team or reference-data backup is corrupt, report that explicitly too;
 do not silently present the system as healthy.

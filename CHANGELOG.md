@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Make caller-visible operation failures explicit across the Java SDD and DR-23: result-bearing public operations declare intentional `OperationException` failures even when unchecked, normal domain results remain separate from execution failures, forwarding boundaries preserve the contract, and TimingNode startup status stays `CLOSED`/no-location independently from ordered LogBook recovery.
+
 - Clarify ORDERED LogBook query re-entry: same-Data-Lane queries read directly because ordering is already satisfied, while state-changing commands remain non-reentrant; bounded immutable range copies are allowed when the limit keeps their cost controlled.
 
 - Use `LogBookAccessor` as the single LogBook contract for internal and external consumers; remove the separate LogBookReader concept and express TIMING_DATA head/range reads as LogBook queries.
