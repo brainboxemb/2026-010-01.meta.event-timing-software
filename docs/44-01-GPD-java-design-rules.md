@@ -302,6 +302,11 @@ append `Event` merely because its backing object is an `Event<T>`.
 
 An `onXxx(...)` method is a handler name, not a subscription API.
 
+When a consumer only needs a subset of an event's values, use the normal
+`EventSource.subscribe(filter, listener)` composition path. The Event evaluates the predicate
+before listener delivery. Do not create a second Event merely to express the subset, and do not
+put consumer-specific routing policy into the event owner.
+
 `EventSource<T>` always has 0..N notification semantics. Do not introduce public
 `SingleEvent` / `MultiEvent` variants or cardinality configuration merely because a
 particular composition currently has one subscriber. When a relationship is semantically
@@ -489,6 +494,11 @@ The container compares current values with its previous baseline and exposes one
 project `EventSource<PropertyUpdate>`. One `PropertyUpdate` contains the complete list
 of properties changed by that logical update. Do not invent a second callback/subscription
 mechanism and do not create one bespoke Event field per property.
+
+Use typed immutable `PropertyKey<T>` values when another component must identify a property.
+Keep the mutable `Property<T>` handle private to its owner. A consumer that only reacts to
+selected properties should filter the existing grouped change source, for example by testing
+`update.contains(TimingNode.FUNCTIONAL_STATE)`; do not compare property-name strings.
 
 For example, TimingNode sets LocationId + OPEN and then calls `properties.update()`; one
 `PropertyUpdate` reports both properties. Lifecycle teardown may use
