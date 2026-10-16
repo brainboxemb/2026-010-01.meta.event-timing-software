@@ -684,8 +684,8 @@ hardware. AntennaManager compares requested and applied inventory, controls
 the devices asynchronously and records applied state only after success.
 Retry and recovery belong to AntennaManager, not the settings editor.
 
-Current functional state, operational state and LocationId are direct safely
-published TimingNode values and require no result-bearing cross-lane query timeout.
+Current functional state and LocationId are directly and safely published TimingNode
+values and require no result-bearing cross-lane query timeout.
 The first control run after activation reads the same current functional values
 as later wake runs.
 
@@ -3331,11 +3331,10 @@ The important guarantees are:
 - read strategy is selected from measured CPU, allocation/GC and lane-occupancy
   behaviour rather than convenience alone.
 
-TimingNode keeps functional state, operational state, LocationId and operational problem
-as separate generic `Property<T>` values in one `PropertyContainer`; there is no
-Domain `Status` object in TimingNode. Consumers use the container's normal
-`EventSource<List<Property<?>>>` change source rather than one Event implementation per
-property.
+TimingNode keeps functional state and LocationId as separate generic `Property<T>`
+values in one `PropertyContainer`; there is no Domain `Status` object in TimingNode.
+Consumers use the container's normal `EventSource<PropertyUpdate>` change source rather
+than one Event implementation per property.
 
 Functional state starts CLOSED with no LocationId. Persisted or newly committed
 NODE_OPEN/NODE_CLOSE TimingData does not update functional state. TimingNode lifecycle
