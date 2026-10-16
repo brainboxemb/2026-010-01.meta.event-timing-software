@@ -249,7 +249,8 @@ application/
 infra/
   lifecycle/
     AbstractConductor.java          reusable TimingSystem-coordinator lifecycle template
-    ComponentLifecycleManager.java  application/system activation and rollback mechanics
+    LifecycleComponent.java        hidden internal component lifecycle base
+    ComponentLifecycleManager.java  ordered activation, rollback and reverse deactivation
   setting/
     Setting.java                   passive requested/applied tracking (manager-owned)
   extension/
@@ -798,9 +799,10 @@ test-only in code.
 
 `LogBook` publishes one immutable current `Status` snapshot as an
 explicit read model. The snapshot is unavailable while the initial persisted-data load is pending.
-TimingNode activation uses `ComponentLifecycleManager`: it starts the Task Lane,
-then activates LogBook so the Data Lane can queue persisted TimingData
-loading as its first ordered task, and finally starts TagProcessor ingress. Task
+TimingNode extends `LifecycleComponent`; its protected lifecycle hook uses
+`ComponentLifecycleManager` to start the Task Lane service, then LogBook so the Data
+Lane can queue persisted TimingData loading as its first ordered task, and finally
+TagProcessor ingress. No public TimingNode activate/deactivate API is exposed. Task
 Lane activation does not depend on LogBook state. The call does not wait for file I/O. TimingNode Status is independent runtime state and is available as
 CLOSED/no-location without waiting for LogBook recovery. The Data Lane separately loads
 persisted TimingData and rebuilds LogBookData/history. Recovery does not define or
@@ -1367,17 +1369,19 @@ validated effective configuration
        -> connect AntennaManager observations to TimingNode ingress
   -> register TimingSystem with application.ApplicationConductor
   -> start physical workers
-  -> application.ApplicationConductor.activate()
-       -> domain.system.TimingSystem.activate()
-            -> AntennaManager.activate()
-            -> TimingSystemConductor.activate()
-                 -> TimingNode(s).activate()
-                 -> start Task Lane
-                 -> start Data Lane and queue persisted TimingData load as its first task
-                 -> start TagProcessor lane/ingress
-                 -> return without waiting for persisted-data load
-            -> start system coordination lane
-            -> wake first control run
+  -> application.ApplicationConductor.activate()   [application lifecycle boundary]
+       -> ComponentLifecycleManager activates TimingSystem
+            -> TimingSystem.onActivate()
+                 -> ComponentLifecycleManager activates AntennaManager
+                 -> ComponentLifecycleManager activates TimingSystemConductor
+                      -> ComponentLifecycleManager activates TimingNode(s)
+                           -> TimingNode.onActivate()
+                                -> start Task Lane
+                                -> start Data Lane and queue persisted TimingData load
+                                -> start TagProcessor lane/ingress
+                                -> return without waiting for persisted-data load
+                      -> start system coordination lane
+                      -> wake first control run
   -> PresentationRuntime.activate()
 
 TimingNode runtime status:
@@ -1540,11 +1544,12 @@ main()
        -> return composed TimingApplicationRuntime
   -> TimingApplicationRuntime.activate()
        -> RuntimeExecutors.start()
-       -> application.ApplicationConductor.activate()
-            -> AntennaManager.activate()
-            -> domain.system.SystemConductor.activate()
-                 -> TimingNode(s).activate()
-                 -> initialize node-state tracking
+       -> application.ApplicationConductor.activate()   [root boundary]
+            -> ComponentLifecycleManager activates TimingSystem
+                 -> TimingSystem.onActivate()
+                      -> ComponentLifecycleManager activates AntennaManager
+                      -> ComponentLifecycleManager activates TimingSystemConductor
+                           -> ComponentLifecycleManager activates TimingNode(s)
        -> PresentationRuntime.activate()
   -> executable waits for shutdown request and owns JVM shutdown-hook handling
 ```
@@ -1978,7 +1983,10 @@ selection rules.
 Startup self-test is one manager-owned cooperative task:
 
 ```text
-AntennaManager.activate()
+ComponentLifecycleManager
+        |
+        v
+AntennaManager.onActivate()
         |
         v
 SelfTestTask
