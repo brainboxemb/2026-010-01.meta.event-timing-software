@@ -122,61 +122,19 @@ Response shape:
     {
       "id": "TN-01",
       "locId": null,
-      "state": "CLOSED",
-      "opState": "INIT"
-    }
-  ],
-  "problems": []
-}
-```
-
-`locId` is `null` when no current location is assigned.
-`state` is `CLOSED` or `OPEN`. `opState` is `INIT`,
-`OK` or `ERROR`.
-
-During initial TimingNode recovery the node is normally `CLOSED + INIT`. Current
-status remains queryable; recovery changes only operational state to `OK` or
-`ERROR`.
-
-Problem entries use:
-
-```json
-{
-  "code": "<stable-machine-code>",
-  "severity": "WARNING|ERROR",
-  "nodeId": "TN-01",
-  "message": "<human-readable-summary>"
-}
-```
-
-`nodeId` is present for a TimingNode-scoped problem and omitted for an
-application-wide problem.
-
-A contained persisted TimingData load/validation failure is represented for example as:
-
-```json
-{
-  "nodes": [
-    {
-      "id": "TN-01",
-      "locId": null,
-      "state": "CLOSED",
-      "opState": "ERROR"
-    }
-  ],
-  "problems": [
-    {
-      "code": "TIMING_DATA_LOAD_FAILED",
-      "severity": "ERROR",
-      "nodeId": "TN-01",
-      "message": "Persisted TimingData load failed for TN-01"
+      "state": "CLOSED"
     }
   ]
 }
 ```
 
-The message is diagnostic text; clients use `state`,
-`opState`, `code` and `nodeId` for machine behaviour.
+`locId` is `null` when no current location is assigned.
+`state` is `CLOSED` or `OPEN`.
+
+This status is deliberately limited to the TimingNode's current functional state.
+Startup/recovery and LogBook failures are not folded into a second TimingNode
+health-state model in this baseline. They remain observable through operation
+failures, LogBook/recovery interfaces and diagnostic logging.
 
 When the Engineering API upstream connector is configured, status may additionally
 contain this compatible v1 branch:
@@ -787,16 +745,17 @@ change. `NO_CHANGE`, `INVALID` and `RESTART_REQUIRED` do not emit it.
 
 WebSocket listener startup does not wait for TimingNode recovery. After connection
 SI-01 sends a **complete** `STATUS_SNAPSHOT` before the client relies on subsequent
-change events. For a `role=upstream` connection, the Engineering API connector is marked operationally
-connected only after that initial snapshot is successfully sent. It then emits its
-immediate heartbeat PING and node-scoped `SYNC(stream=TIMING_DATA, seq=<LogBook head>)`
-as normal `UPSTREAM_DATA` events. The Central System Simulator answers with its
-RACE_DATA source-head SYNC and can issue TIMING_DATA REQ as required. Closing that
-WebSocket marks the connector disconnected and stops its heartbeat lifecycle without
-clearing LogBook or applied RaceData state. A TimingNode in operational `INIT`
-is included in the complete snapshot. The connection therefore does not close
-merely because persisted-data recovery is still in progress; a later
-`STATUS_CHANGED` reports `OK` or `ERROR`.
+change events. For a `role=upstream` connection, the Engineering API connector is marked
+operationally connected only after that initial snapshot is successfully sent. It then emits
+its immediate heartbeat PING and node-scoped
+`SYNC(stream=TIMING_DATA, seq=<LogBook head>)` as normal `UPSTREAM_DATA` events. The
+Central System Simulator answers with its RACE_DATA source-head SYNC and can issue
+TIMING_DATA REQ as required. Closing that WebSocket marks the connector disconnected and
+stops its heartbeat lifecycle without clearing LogBook or applied RaceData state.
+
+The TimingNode snapshot contains its current functional state and LocationId even while
+persisted-data recovery is still in progress. Recovery completion or failure does not create
+a synthetic TimingNode status transition in this baseline.
 
 ### Slow-client / outbound backlog policy
 

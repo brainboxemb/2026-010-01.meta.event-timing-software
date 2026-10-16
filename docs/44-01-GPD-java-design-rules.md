@@ -140,9 +140,11 @@ behaviour.
 
 Internal software-component lifecycle is infrastructure, not functional component API.
 Components that participate in generic lifecycle extend `LifecycleComponent` and implement
-protected `onActivate()` / `onDeactivate()` hooks. The package-private lifecycle driver is
-owned by `infra.lifecycle`; callers do not invoke public `activate()/deactivate()` methods on
-TimingNode, LogBook, NodeService, TagProcessor, AntennaManager or TimingSystem.
+protected `onActivate()` / `onDeactivate()` hooks. `LifecycleComponent` owns the generic
+active/inactive fact; concrete components do not duplicate it with another `active` field.
+The package-private lifecycle driver is owned by `infra.lifecycle`; callers do not invoke
+public `activate()/deactivate()` methods on TimingNode, LogBook, NodeService, TagProcessor,
+AntennaManager or TimingSystem.
 
 A real process/runtime boundary may still expose an explicit public start/stop operation.
 Functional operations such as `requestEnableInventory()` remain normal component API.
@@ -212,10 +214,10 @@ Keep different lifecycle levels separate.
 For SI-01 we use, for example:
 
 ```text
-software component      LifecycleComponent onActivate / onDeactivate
+software component         LifecycleComponent onActivate / onDeactivate
 TimingNode operation state  OPEN / CLOSED
-TimingNode failure      ErrorStatus
-antenna provider         initialize / startInventory / stopInventory / shutdown
+LogBook failure diagnostics logging / failure events
+antenna provider            initialize / startInventory / stopInventory / shutdown
 ```
 
 **Why**
@@ -479,14 +481,18 @@ as commands.
 
 If the authoritative owner has several related current values, keep them as separate typed
 properties and use one generic property container when consumers need change notification.
-The container exposes the normal project `EventSource<List<Property<?>>>`; do not invent
-a second callback/subscription mechanism and do not create one bespoke Event field per
-property.
+Each `Property<T>` owns one strongly typed value. The owner sets one or more properties
+and then calls `PropertyContainer.update()`.
 
-A component may commit several related property values before publishing one change event.
-For example, TimingNode commits LocationId + OPEN together and then publishes one list that
-contains both changed properties. Operational state is a separate property and can change
-independently.
+The container compares current values with its previous baseline and exposes one normal
+project `EventSource<PropertyUpdate>`. One `PropertyUpdate` contains the complete list
+of properties changed by that logical update. Do not invent a second callback/subscription
+mechanism and do not create one bespoke Event field per property.
+
+For example, TimingNode sets LocationId + OPEN and then calls `properties.update()`; one
+`PropertyUpdate` reports both properties. Lifecycle teardown may use
+`PropertyContainer.sync()` to accept a silent baseline reset without emitting a normal
+runtime change event.
 
 A current-state controller may use the container change only to wake a reconciliation run.
 The reconciliation then reads the owner's current values explicitly. This keeps event
@@ -521,7 +527,6 @@ TimingNode construction
         |
         +--> functionalState = CLOSED
         +--> locationId = none
-        +--> operationalState = INIT
 
 TimingNode.activate()
         |
@@ -795,6 +800,7 @@ architecture, without first knowing the implementation mechanism.
 | Actual input-processing component | `TagProcessor` | renaming merely for suffix consistency |
 | Registration being matched for revoke | `activeRegistration` | `candidate` |
 | Team ID read from static EventData | `configuredTeamId` | `fixed` |
+| Guard that throws when a runtime condition holds | `failIfInactive()` | `requireActive()` when the throw behaviour is otherwise hidden |
 
 Use `Runner` for an execution mechanism that runs work, such as
 `SerialTaskRunner` or `YieldingTaskRunner`. Do not use `Runner` for a component
@@ -961,7 +967,7 @@ Keep these distinctions:
 ```text
 activate / deactivate       software component lifecycle
 OPEN / CLOSED               TimingNode state
-ErrorStatus                  TimingNode failure
+LogBook failure diagnostics  persistence/history problem reporting
 initialize                  prepare antenna provider
 startInventory              start tag inventory
 shutdown                    release antenna/provider resources
@@ -1244,6 +1250,12 @@ branch is to enforce a contract.
 
 Keep normal business decisions as ordinary control flow. A precondition helper must not
 hide a recoverable condition, device result or normal application branch.
+
+When a recoverable runtime guard intentionally throws a caller-visible operation exception,
+name the helper for that effect, for example `failIfInactive()`. Avoid ambiguous names such
+as `requireActive()` when the important consequence is the exception. Generic lifecycle
+state itself remains owned by `LifecycleComponent`; the component-specific guard only maps
+that state to the caller's domain/application failure contract.
 
 **Why**
 
@@ -1773,15 +1785,18 @@ while the component keeps ownership of the actual recovery decision.
 
 **Example**
 
-Prefer an explicit component-level contract:
+Prefer an explicit caller-visible failure contract on an operation that actually waits for a result:
 
 ```java
-public CloseResult close() throws OperationException {
+public RegistrationResult addManualRegistration(...) throws OperationException {
 
-    logBook.process(LogBookCommands.commitNodeClose(locationId));
-    return CloseResult.CLOSED;
+    return logBook.process(
+            LogBookCommands.commitManualRegistration(...));
 }
 ```
+
+Do not add an `OperationException` merely because a fire-and-forget diagnostic/history
+submission can fail later; that later failure has no synchronous caller result.
 
 If a component really owns failure-specific cleanup, keep that policy named and use the
 shared execution/failure guard rather than repeating catch-and-rethrow mechanics.

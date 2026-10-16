@@ -8,9 +8,9 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
-- Keep TimingNode current state as four separate generic properties (functional state, operational state, LocationId and operational problem) in one PropertyContainer. The container uses the existing Event/EventSource mechanism and publishes one list of changed properties after the complete update is committed; TimingNode contains no combined Status object.
+- Simplify TimingNode current state to strongly typed functional-state and LocationId properties only. Remove the premature INIT/OK/ERROR operational-health model from TimingNode and IF-03.
 
-- Define the client-facing TimingNodeStatus above the Domain node as four values: id, location, OPEN/CLOSED state and INIT/OK/ERROR operational state. IF-03 maps them to compact `id`, `locId`, `state` and `opState`; problem details remain separate.
+- Define the generic property pattern as `Property<T>` + `PropertyContainer` + `PropertyUpdate`: owners set typed properties, call `update()` once, and receive one grouped change message. Lifecycle teardown may `sync()` the baseline without emitting a runtime change event.
 
 - Extend DR-04 with the private Event backing-field convention: lowerCamelCase names ending in `Event`, distinct from the public semantic `EventSource` name and `onXxx(...)` handler name.
 
