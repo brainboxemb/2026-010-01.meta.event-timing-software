@@ -636,9 +636,11 @@ later ordered LogBook commands continue
 
 The persisted-data load is the first ordered Data Lane task, so later ordered commands
 naturally wait behind it. A caller does not perform a separate LogBook-readiness check.
-TimingNode Status remains readable as `CLOSED` / no LocationId during loading. If startup
-loading fails, the recovery failure is reported separately and later operations that need
-the LogBook fail through the normal TimingNode operation-failure contract.
+TimingNode functional state remains readable as `CLOSED` with no LocationId during
+loading, while operational state remains `INIT`. Successful recovery changes only
+operational state to `OK`; failed recovery changes only operational state to `ERROR`
+with problem detail. Later operations that need the LogBook fail through the normal
+TimingNode operation-failure contract.
 
 A new/empty TimingData file starts at sequence 1.
 

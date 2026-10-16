@@ -1416,19 +1416,22 @@ validated effective configuration
                       -> wake first control run
   -> PresentationRuntime.activate()
 
-TimingNode runtime status:
-  -> exists independently as CLOSED with no LocationId
-  -> NODE_OPEN/NODE_CLOSE commits update it during the running process
-  -> persisted history is not replayed to reconstruct it
+TimingNode current state:
+  -> functionalState starts CLOSED with no LocationId
+  -> operationalState starts INIT
+  -> open()/close() update functionalState + LocationId directly
+  -> LogBook recovery updates operationalState to OK or ERROR
+  -> NODE_OPEN/NODE_CLOSE records remain history and never drive current state
+  -> persisted history is not replayed to reconstruct functional state
 
 TimingNode initial persisted-data load:
   -> read/validate persisted TimingData on the Data Lane
   -> rebuild LogBook committed history
   -> publish initial loaded TimingData fact to Task-owned derived views
-  -> report recovery failure separately from TimingNode Status
+  -> update operationalState independently from functionalState
 
 system control run:
-  -> read the current Status of every TimingNode directly
+  -> read functionalState of every TimingNode directly
   -> calculate whether any node is OPEN
   -> atomically publish desired inventory through AntennaSettings
   -> AntennaManager wakes and reconciles hardware asynchronously
@@ -2908,7 +2911,9 @@ hierarchy. One TimingNode owns two logically independent bounded serial lanes:
 
 ```text
 TimingNode
-  ├── Status -> transient OPEN/CLOSED + current LocationId
+  ├── functionalState -> transient CLOSED / OPEN
+  ├── operationalState -> INIT / OK / ERROR + optional OperationalProblem
+  ├── locationId -> current LocationId or none
   ├── Data Lane  -> LogBook facade
   │                ├── LogBookDataLane -> SerialLane ordering/wait/rejection mapping
   │                ├── LogBookOperations -> commands, TimingData creation, persistence + commit
