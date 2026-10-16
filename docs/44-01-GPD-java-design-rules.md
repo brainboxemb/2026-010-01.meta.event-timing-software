@@ -141,7 +141,8 @@ behaviour.
 Internal software-component lifecycle is infrastructure, not functional component API.
 Components that participate in generic lifecycle extend `LifecycleComponent` and implement
 protected `onActivate()` / `onDeactivate()` hooks. `LifecycleComponent` owns the generic
-active/inactive fact; concrete components do not duplicate it with another `active` field.
+active/inactive fact and the reusable inactive guard; concrete components do not duplicate
+either with another `active` field or private `failIfInactive()` implementation.
 The package-private lifecycle driver is owned by `infra.lifecycle`; callers do not invoke
 public `activate()/deactivate()` methods on TimingNode, LogBook, NodeService, TagProcessor,
 AntennaManager or TimingSystem.
@@ -1251,11 +1252,12 @@ branch is to enforce a contract.
 Keep normal business decisions as ordinary control flow. A precondition helper must not
 hide a recoverable condition, device result or normal application branch.
 
-When a recoverable runtime guard intentionally throws a caller-visible operation exception,
-name the helper for that effect, for example `failIfInactive()`. Avoid ambiguous names such
-as `requireActive()` when the important consequence is the exception. Generic lifecycle
-state itself remains owned by `LifecycleComponent`; the component-specific guard only maps
-that state to the caller's domain/application failure contract.
+When a recoverable runtime guard depends only on generic component lifecycle, keep the guard
+with `LifecycleComponent` rather than reimplementing it in each concrete component. For
+example, `LifecycleComponent.failIfInactive()` owns the active-state check. A concrete
+component may configure the caller-visible failure factory so the lifecycle package remains
+independent from domain/application exception types. Avoid a private `requireActive()` or
+`failIfInactive()` wrapper that merely repeats the lifecycle check.
 
 **Why**
 
@@ -1771,6 +1773,11 @@ the same failure, prefer the shared small execution/failure guard over repeating
 `try/catch` boilerplate. Keep the component-specific recovery policy visible through a
 named handler. The wrapper must not swallow unrelated failures or invent another failure
 model.
+
+The same applies when a fire-and-forget execution boundary deliberately contains queue
+rejection. The boundary owner should use the shared execution/failure guard and keep only
+its diagnostic policy at the call site; upstream Domain/Application code should not repeat
+the `try/catch` for a lower-level lane rejection.
 
 **Why**
 

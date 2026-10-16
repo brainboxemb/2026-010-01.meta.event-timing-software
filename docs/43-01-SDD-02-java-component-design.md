@@ -805,10 +805,11 @@ lifecycle hook uses `ComponentLifecycleManager` to start the Task Lane service, 
 LogBook so the Data Lane can queue persisted TimingData loading as its first ordered task,
 and finally TagProcessor ingress. No public TimingNode activate/deactivate API is exposed.
 
-When a public TimingNode operation must map inactive lifecycle to the node operation
-contract, it uses a small `failIfInactive()` guard backed by
-`LifecycleComponent.isActive()`. The lifecycle base remains independent from
-TimingNode-specific `OperationException` types.
+When a public component operation must reject an inactive lifecycle, the reusable
+`failIfInactive()` guard belongs to `LifecycleComponent` together with the active/inactive
+fact. A concrete component supplies the caller-visible failure factory when it needs a
+domain/application-specific exception such as `OperationException(UNAVAILABLE)`; the
+lifecycle package therefore remains independent from TimingNode-specific exception types.
 
 Functional state is immediately available as CLOSED with no LocationId. The Data Lane
 separately loads persisted TimingData and rebuilds LogBookData/history. Recovery never
@@ -954,9 +955,11 @@ node.NEW_DATA_ENTRY.subscribe(timingDataListener);
 `process(command)` is the result-bearing path: presentation/application callers wait
 for the processed domain result. `execute(command)` is the fire-and-forget path: it
 returns after the command is queued and deliberately does not wait for the later domain
-result. Queue rejection propagates immediately as `RejectedExecutionException`.
-RFID/TagProcessor-style ingress uses this form so a device callback cannot be held up by
-persistence, LogBook work or another queued TimingNode operation.
+result. Because this path has no caller result, LogBook owns queue-rejection handling:
+it records the rejection as a LogBook diagnostic and does not push lane-specific
+`RejectedExecutionException` handling into TimingNode callers. RFID/TagProcessor-style
+ingress uses this form so a device callback cannot be held up by persistence, LogBook work
+or another queued TimingNode operation.
 
 `query(query, consistency)` makes the read contract explicit. CURRENT returns a safely
 published immutable read model without entering the node lane; ORDERED executes after
