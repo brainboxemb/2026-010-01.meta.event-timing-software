@@ -629,14 +629,12 @@ TimingNode Status remains readable as `CLOSED` / no LocationId during loading. I
 loading fails, the recovery failure is reported separately and later operations that need
 the LogBook fail through the normal TimingNode operation-failure contract.
 
-Rebuilding persisted history does **not** automatically reopen a TimingNode.
-
 A new/empty TimingData file starts at sequence 1.
 
-Rebuilding the LogBook does **not** automatically reopen a TimingNode. For
-example, if the last historical state record says `OPEN`, a process restart must
-not start accepting new observations merely because that old record exists. The
-open/closed restart policy belongs to lifecycle/control requirements.
+Rebuilding the LogBook does **not** automatically reopen a TimingNode. Even when
+the last historical state record says `OPEN`, a process restart starts the node
+as `CLOSED` with no LocationId. New observations are not accepted for timing
+until an explicit new `open(...)` operation succeeds.
 
 If prepare-team or reference-data backup is corrupt, report that explicitly too;
 do not silently present the system as healthy.
