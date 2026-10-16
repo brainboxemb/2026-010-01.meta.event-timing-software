@@ -181,12 +181,13 @@ to know whether bounded work was admitted so that the callback thread can
 continue immediately. In that case `ACCEPTED` means only accepted for later
 processing.
 
-The contained state objects are passive but not globally readable. Lifecycle,
-location and LogBook mutations occur only on the Data Lane. RaceData and derived
-timing mutations occur only on the Task Lane. TimingData sequence allocation
-therefore needs no producer lock because only the Data Lane performs the commit
-step. Cross-lane information is immutable and bounded: initial-load/commit facts
-flow Data -> Task; LogBook replay requests/results flow Task -> Data.
+The contained state objects are passive but not globally readable. TimingNode
+owns current lifecycle/location state and serializes its changes with registration
+admission. LogBook mutation remains on the Data Lane. RaceData and derived timing
+mutations occur only on the Task Lane. TimingData sequence allocation therefore
+needs no producer lock because only the Data Lane performs the commit step.
+Cross-lane information is immutable and bounded: initial-load/commit facts flow
+Data -> Task; LogBook replay requests/results flow Task -> Data.
 
 ### TimingData commit and sequence
 
@@ -206,22 +207,30 @@ for submission-only device ingress there is no synchronous caller waiting for
 that later result.
 
 
-OPEN/CLOSE lifecycle TimingData follows the same ownership and commit boundary.
-For a real `CLOSED -> OPEN` transition, the TimingNode worker captures the
-requested Location ID and lifecycle effective time and prepares the OPEN record.
-For `OPEN -> CLOSED`, it captures the currently active Location ID before the
-state change and prepares the CLOSE record.
+OPEN/CLOSE runtime state and lifecycle TimingData have different ownership.
+For a real `CLOSED -> OPEN` transition, TimingNode applies the requested
+LocationId and OPEN state at its registration-admission boundary. For
+`OPEN -> CLOSED`, it applies CLOSED while retaining the current LocationId.
+That runtime transition immediately determines whether later registrations may
+be admitted.
 
-The lifecycle command is one ordered operation from the caller's perspective:
-required TimingData persistence succeeds before the operation is exposed as a
-successful state change. After durable append, the worker updates the in-memory
-lifecycle/location state and normal committed history/live-event views in one
-serial turn. A persistence failure therefore does not produce a successful
-`OPENED`/`CLOSED` result or a successful status-change notification.
+While holding the same admission boundary, TimingNode submits the corresponding
+NODE_OPEN or NODE_CLOSE command to the LogBook Data Lane. This gives one clear
+source order:
 
-`ALREADY_OPEN`, `ALREADY_CLOSED` and rejected/failed lifecycle operations
-do not allocate/commit a lifecycle record. There is no second lifecycle-event
-store or lifecycle-specific sequence owner.
+- a registration admitted before CLOSE is queued before NODE_CLOSE;
+- after CLOSED is applied, later antenna observations cannot admit a registration;
+- after OPEN is applied, the NODE_OPEN command is submitted before a later
+  automatic registration can be admitted.
+
+The lifecycle-history command is fire-and-forget from the OPEN/CLOSE caller's
+perspective. Queue rejection or later persistence/commit failure is reported as a
+LogBook/persistence problem but does not roll back the already applied runtime
+state. Consequently STATUS_CHANGED and TIMING_DATA_COMMITTED are separate facts;
+their delivery order is not used to define current lifecycle state.
+
+`ALREADY_OPEN` and `ALREADY_CLOSED` do not submit another lifecycle record.
+There is no second lifecycle-event store or lifecycle-specific sequence owner.
 
 Manual registration ADD uses the same TimingNode-owned commit path. The
 Presentation/Application caller supplies the resolved RegistrationId, effective
@@ -573,8 +582,8 @@ optional consumers and do not participate in commit success.
 ### Startup flow
 
 Lifecycle activation and persisted-data loading are deliberately separate. TimingNode
-operation status exists independently from recovery and starts as `CLOSED` with no
-LocationId:
+starts with independent values: functional state `CLOSED`, no LocationId and
+operational state `INIT`:
 
 ```text
 start process
@@ -585,7 +594,9 @@ load configuration / compose components
    v
 construct TimingNode
    |
-   +--> Status = CLOSED / no LocationId
+   +--> functionalState = CLOSED
+   +--> locationId = none
+   +--> operationalState = INIT
    |
    v
 TimingNode activation
@@ -625,9 +636,11 @@ later ordered LogBook commands continue
 
 The persisted-data load is the first ordered Data Lane task, so later ordered commands
 naturally wait behind it. A caller does not perform a separate LogBook-readiness check.
-TimingNode Status remains readable as `CLOSED` / no LocationId during loading. If startup
-loading fails, the recovery failure is reported separately and later operations that need
-the LogBook fail through the normal TimingNode operation-failure contract.
+TimingNode functional state remains readable as `CLOSED` with no LocationId during
+loading, while operational state remains `INIT`. Successful recovery changes only
+operational state to `OK`; failed recovery changes only operational state to `ERROR`
+with problem detail. Later operations that need the LogBook fail through the normal
+TimingNode operation-failure contract.
 
 A new/empty TimingData file starts at sequence 1.
 

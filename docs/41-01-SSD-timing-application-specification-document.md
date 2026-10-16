@@ -87,8 +87,13 @@ configuration, interface or platform constraint.
 
 An OPEN command for a CLOSED TimingNode shall include a valid `LocationId`.
 When the command is accepted, SI-01 shall apply that LocationId and the
-CLOSED-to-OPEN transition as one operation. The active LocationId shall remain
-unchanged while the TimingNode is OPEN.
+CLOSED-to-OPEN runtime transition as one operation. That transition determines
+whether the TimingNode accepts new registrations. The active LocationId shall
+remain unchanged while the TimingNode is OPEN.
+
+Recording the corresponding NODE_OPEN TimingData fact is specified separately
+by SI01-REQ-087. Failure to queue or commit that history record shall not by
+itself roll back an OPEN runtime state that has already been applied.
 :::
 
 :::{req} Close registration point  
@@ -97,20 +102,42 @@ unchanged while the TimingNode is OPEN.
 :specifies: UC-002  
 :depends_on: SI01-REQ-024, SI01-REQ-046  
 
-For an OPEN TimingNode, SI-01 shall provide a CLOSE operation that stops the
-acceptance of new participant registrations and changes its lifecycle to
-`CLOSED` in the same ordered operation. SI-01 shall not report a successful
-close transition unless the required lifecycle record is committed successfully.
-Previously committed registrations shall remain unchanged. Detected
-problems that still permit a safe controlled CLOSE shall not block the operation.
-A close request that cannot be applied shall have an explicit non-success or
-outcome-unknown result rather than being presented as `CLOSED` without confirmation.
+For an OPEN TimingNode, SI-01 shall provide a CLOSE operation that changes the
+runtime lifecycle state to `CLOSED` and stops acceptance of new participant
+registrations at the same registration-admission boundary. A registration
+admitted before that transition may still complete; a registration arriving
+after the transition shall be rejected even when antenna inventory is still
+stopping asynchronously.
+
+Previously committed registrations shall remain unchanged. Detected problems
+that still permit a safe controlled CLOSE shall not block the runtime transition.
+Recording the corresponding NODE_CLOSE TimingData fact is specified separately
+by SI01-REQ-087 and shall not determine whether the runtime state is CLOSED.
+:::
+
+:::{req} Record applied lifecycle transitions as TimingData
+:id: SI01-REQ-087
+:status: D
+:specifies: UC-001, UC-002, UC-009
+:depends_on: SI01-REQ-024, SI01-REQ-040, SI01-REQ-046, SI01-REQ-072
+
+For every applied CLOSED-to-OPEN or OPEN-to-CLOSED TimingNode transition,
+SI-01 shall submit exactly one corresponding NODE_OPEN or NODE_CLOSE record to
+that node's LogBook. Submission shall be ordered with automatic-registration
+admission so that a registration admitted before CLOSE is queued before the
+NODE_CLOSE record, while a registration arriving after the CLOSED transition is
+not admitted.
+
+The lifecycle record shall use the TimingData commit rules of SI01-REQ-046.
+Failure to queue, persist or commit that record shall set the TimingNode
+operational state to `ERROR` with a machine-readable LogBook/persistence
+problem. It shall not roll back or reverse the already applied functional state.
+
 :::
 
 :::{req} Reject opening when operational errors are blocking  
 :id: SI01-REQ-074  
 :status: D  
-:specifies: UC-001  
 :depends_on: SI01-REQ-024, SI01-REQ-049, SI01-REQ-052  
 
 When a detected operational error prevents safe registration at the selected
@@ -143,7 +170,8 @@ A lifecycle/location command accepted by SI-01 shall return an explicit semantic
 outcome: applied, rejected/invalid, unavailable, or outcome unknown when the
 request may have crossed a presentation boundary but current state cannot yet
 confirm its effect. Command outcome shall remain distinct from the subsequently
-observed TimingNode state.
+observed TimingNode state and from the success or failure of the separate
+lifecycle-history recording required by SI01-REQ-087.
 :::
 
 :::{req} Log result-bearing TimingNode operation failures  
@@ -277,23 +305,34 @@ and mapping tables remain behind the provider boundary.
 
 #### Operational status and client continuity
 
-:::{req} Current TimingNode operational state  
+:::{req} Current TimingNode states  
 :id: SI01-REQ-024  
 :status: R  
 :specifies: UC-001, UC-002, UC-009, UC-020  
 
-For each configured TimingNode, SI-01 shall provide a queryable current
-operational state independently of presentation transport. That state shall
-contain at least:
+For each configured TimingNode, SI-01 shall provide these current values:
 
 - the `NodeId`;
-- the current operational `LocationId`, or no assigned location;
-- lifecycle state `CLOSED` or `OPEN`;
-- relevant explicit problem/error state.
+- functional state `CLOSED` or `OPEN`;
+- the current `LocationId`, or no assigned location;
+- operational state `INIT`, `OK` or `ERROR`;
+- relevant machine-readable operational problem details when present.
 
-The current lifecycle state and LocationId are authoritative TimingNode runtime
-state. Committed LogBook NODE_OPEN/NODE_CLOSE records are historical TimingData
-facts and shall not by themselves reconstruct or change that current runtime state.
+For the normal operator OPEN/CLOSE flow in UC-001 and UC-002, functional state and
+LocationId form one useful current view: for example `OPEN` at LocationId 24.
+Operational state and problem details support status and diagnostic use cases such
+as UC-020. They remain independent from functional OPEN/CLOSED state.
+
+Functional state determines whether participant registrations may be admitted.
+Operational state reports whether the TimingNode and its required components are
+healthy; it does not replace or erase functional OPEN/CLOSED state.
+
+A TimingNode may therefore be `OPEN` and `ERROR` at the same time. A component
+failure shall affect only functions that depend on that component unless another
+requirement explicitly makes the failure blocking.
+
+Committed LogBook NODE_OPEN/NODE_CLOSE records are historical TimingData facts
+and shall not by themselves reconstruct or change current functional state.
 :::
 
 :::{req} Current application status snapshot  
@@ -316,7 +355,8 @@ The current application status snapshot shall contain at least:
 - application/build identity;
 - current application state;
 - every configured `NodeId`;
-- the current operational state of every configured TimingNode as defined by SI01-REQ-024;
+- the current functional state, operational state and LocationId of every
+  configured TimingNode as defined by SI01-REQ-024;
 - for each contained TimingNode configuration/startup failure, the affected
   `NodeId` and a machine-readable problem indication.
 :::
@@ -329,7 +369,8 @@ The IF-03 status semantics are defined by `32-03-ISD-application-control-status.
 :specifies: UC-001, UC-002, UC-009  
 :depends_on: SI01-REQ-024  
 
-When a value represented in a TimingNode's current operational state changes,
+When a value represented in a TimingNode's current functional state, operational
+state or operational problem changes,
 SI-01 shall make the corresponding state change available to supported
 presentation interfaces that provide live-state delivery. The application owns
 the semantic change; an individual interface owns only its transport-specific
@@ -668,13 +709,20 @@ diagnostic interfaces from starting and remaining available.
 
 For the affected TimingNode, SI-01 shall:
 
-- place the affected TimingNode in `ERROR` instead of presenting it as `CLOSED`
-  or `OPEN`;
-- reject normal state-changing and registration operations for that TimingNode;
+- set its operational state to `ERROR` while retaining its independent
+  functional `OPEN`/`CLOSED` state and LocationId;
+- continue functional behaviour that does not depend on the failed component;
+- return an explicit failure for operations that require the unavailable or
+  failed component;
 - continue starting/running the application and its diagnostic presentation
   interfaces;
 - keep independently healthy TimingNodes available in a multi-node composition; and
 - expose the contained failure through the current application status snapshot.
+
+A TimingData/LogBook recovery or commit failure is therefore an operational
+problem, not a lifecycle transition. Failure of optional raw-observation
+diagnostic persistence shall not by itself set the TimingNode operational state
+to `ERROR`.
 :::
 
 #### Development, engineering and system testing
@@ -875,8 +923,10 @@ interface version or a separately specified migration contract.
 The first registration baseline uses the following TimingNode lifecycle semantics:
 
 - at least one configured TimingNode is represented;
-- a TimingNode that cannot safely complete contained startup recovery is represented
-  as `ERROR` and does not accept normal operational commands;
+- functional `OPEN`/`CLOSED` and operational `INIT`/`OK`/`ERROR` are
+  independent TimingNode values;
+- a TimingNode recovery problem is represented by operational `ERROR` without
+  replacing its functional state;
 - explicit LocationId assignment is allowed only while CLOSED;
 - normal OPEN carries the requested valid LocationId and applies that LocationId
   together with the CLOSED-to-OPEN transition as one ordered operation;
@@ -900,7 +950,8 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-030/031 | UC-009/014/015/016; SSSD interface/testability separation | shared application boundary |
 | SI01-REQ-032 | IF03-REQ-002/009 | API binding/configuration |
 | SI01-REQ-033 | IF03-REQ-010 | interface compatibility/evolution |
-| SI01-REQ-040/072/073/074 | UC-001/002/009 | OPEN/CLOSE state transitions, session independence and blocking-error policy |
+| SI01-REQ-040/072/073/074 | UC-001/002/009 | OPEN/CLOSE runtime state transitions, session independence and blocking-error policy |
+| SI01-REQ-087 | UC-001/002/009 + SI01-REQ-046 | lifecycle TimingData recording ordered with registration admission, without owning runtime state |
 | SI01-REQ-041/043 | UC-003/009 | TimingNode accepted-registration operation + IF-03 engineering control |
 | SI01-REQ-042/044 | UC-003/009/011 | LogBook/TimingData event + IF-03 bounded history/event delivery |
 | SI01-REQ-045 | UC-011 + IF05-REQ-001..007 + 33-05-IDD | reference TimingData codec/persistence boundary |

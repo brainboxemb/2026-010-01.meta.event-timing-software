@@ -1,10 +1,16 @@
 # Changelog
 
+- Clarify TimingNode lifecycle ownership: OPEN/CLOSED runtime state now remains independent from lifecycle LogBook persistence, with lifecycle records treated as separately ordered historical TimingData and verification updated accordingly.
+
 All notable changes to this repository are documented here.
 
 The repository is currently in its planning and research phase.
 
 ## Unreleased
+
+- Keep TimingNode current state as four separate generic properties (functional state, operational state, LocationId and operational problem) in one PropertyContainer. The container uses the existing Event/EventSource mechanism and publishes one list of changed properties after the complete update is committed; TimingNode contains no combined Status object.
+
+- Define the client-facing TimingNodeStatus above the Domain node as four values: id, location, OPEN/CLOSED state and INIT/OK/ERROR operational state. IF-03 maps them to compact `id`, `locId`, `state` and `opState`; problem details remain separate.
 
 - Extend DR-04 with the private Event backing-field convention: lowerCamelCase names ending in `Event`, distinct from the public semantic `EventSource` name and `onXxx(...)` handler name.
 

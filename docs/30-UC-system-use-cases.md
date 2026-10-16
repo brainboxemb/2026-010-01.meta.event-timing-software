@@ -159,9 +159,6 @@ registration at a chosen location.
   confirm the current state.
 - **Invalid location:** the cabinet rejects the requested location and remains
   `CLOSED`.
-- **Software errors:** the cabinet software has detected errors. The operator
-  sees the relevant errors and current state; opening is refused when an error
-  prevents safe operation.
 - **Open not confirmed or connection lost:** the operator does not assume
   registration is open until the resulting state can be confirmed. Reconnecting
   must show the cabinet's actual current state.
@@ -201,6 +198,9 @@ participant registrations are accepted.
   must not falsely claim that the cabinet is `CLOSED`.
 - **Connection lost or outcome unknown:** the operator reconnects to establish
   the current cabinet state rather than assuming the close succeeded.
+- **Lifecycle history recording problem:** a failure to record the CLOSE transition
+  in the LogBook is reported as a separate software/data problem. It does not reopen
+  a registration point that is already `CLOSED`.
 - **Already closed:** the operator sees `CLOSED`; there is no open
   registration to close.
 

@@ -477,10 +477,21 @@ When a component only needs to know **what is true now**, maintain or read one c
 representation of that truth. Do not queue historical state snapshots and replay them later
 as commands.
 
-If the authoritative owner emits a first-availability or post-change event, a current-state
-controller may use that event only to wake a reconciliation run. The reconciliation then reads the owner's
-authoritative current representation explicitly. This keeps event history separate from
-current control state and makes initialization use the same path as later updates.
+If the authoritative owner has several related current values, keep them as separate typed
+properties and use one generic property container when consumers need change notification.
+The container exposes the normal project `EventSource<List<Property<?>>>`; do not invent
+a second callback/subscription mechanism and do not create one bespoke Event field per
+property.
+
+A component may commit several related property values before publishing one change event.
+For example, TimingNode commits LocationId + OPEN together and then publishes one list that
+contains both changed properties. Operational state is a separate property and can change
+independently.
+
+A current-state controller may use the container change only to wake a reconciliation run.
+The reconciliation then reads the owner's current values explicitly. This keeps event
+history separate from current control state and makes initialization use the same path as
+later updates.
 
 Calculate intermediate decisions locally. If the result is already the desired state of
 another component, publish it directly to that component's shared settings rather than
@@ -508,7 +519,9 @@ Good startup flow:
 ```text
 TimingNode construction
         |
-        +--> Status = CLOSED / no LocationId
+        +--> functionalState = CLOSED
+        +--> locationId = none
+        +--> operationalState = INIT
 
 TimingNode.activate()
         |
@@ -523,11 +536,11 @@ Data Lane recovery
         +--> rebuild LogBook history
         +--> publish loaded-data fact to Task-owned derived views
         +--> report recovery failure separately when needed
-        +--> does not define or reconstruct TimingNode Status
+        +--> does not define or reconstruct TimingNode functional state
 
 SystemConductor control run
         |
-        +--> read TimingNode.status() directly
+        +--> read TimingNode functionalState() directly
         |
         v
 derive inventoryRequired = any TimingNode OPEN
@@ -536,13 +549,13 @@ derive inventoryRequired = any TimingNode OPEN
 Good runtime flow:
 
 ```text
-TimingNode.STATUS_CHANGED
+TimingNode.PROPERTIES.CHANGED
         |
         v
 CooperativeTaskController.wake()
         |
         v
-query current Status + derive inventoryRequired
+query current functionalState + derive inventoryRequired
         |
         v
 AntennaSettings.update(edit -> edit.inventoryEnabled(inventoryRequired))
