@@ -6,6 +6,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Add Java design rule DR-23: public result-bearing operations explicitly declare intentional caller-visible operation exceptions even when unchecked, forwarding boundaries preserve that contract, and shared guards remove catch/rethrow boilerplate without hiding component-owned recovery policy.
+
 - Clarify ORDERED LogBook query re-entry: same-Data-Lane queries read directly because ordering is already satisfied, while state-changing commands remain non-reentrant; bounded immutable range copies are allowed when the limit keeps their cost controlled.
 
 - Use `LogBookAccessor` as the single LogBook contract for internal and external consumers; remove the separate LogBookReader concept and express TIMING_DATA head/range reads as LogBook queries.
