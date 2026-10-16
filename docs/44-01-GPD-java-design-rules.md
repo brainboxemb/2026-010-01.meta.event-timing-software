@@ -1731,6 +1731,11 @@ out. Do not hide the second family merely because the exception extends
 Use the same rule through forwarding production boundaries. A proxy or accessor must not
 remove the declared failure contract merely because it delegates to another component.
 
+The public failure contract must stay at the abstraction level of the public component. Do not
+make a TimingNode caller understand whether an internal LogBook, lane or recovery task is ready.
+Internal readiness/order is owned below the boundary; the public operation either returns its
+normal domain result or reports the stable component-level operation failure.
+
 When a method only needs to run cleanup/recovery after a runtime failure and then rethrow
 the same failure, prefer the shared small execution/failure guard over repeating local
 `try/catch` boilerplate. Keep the component-specific recovery policy visible through a
