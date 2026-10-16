@@ -83,12 +83,15 @@ classes harder to change.
 Good:
 
 ```java
-antennaSettings.update(edit -> edit.inventoryEnabled(true));
+antennaSettings.update(
+        edit -> edit.set(
+                AntennaSettings.INVENTORY_ENABLED,
+                Boolean.TRUE));
 ```
 
 The Conductor publishes desired inventory enable. AntennaManager may then power the
 antenna, wait for stabilization, initialize it and start inventory. When all TimingNodes
-are CLOSED or ERROR, the Conductor publishes `inventoryEnabled(false)` in the
+are CLOSED, the Conductor publishes `INVENTORY_ENABLED = false` in the
 same shared Settings object.
 
 **Avoid**
@@ -118,8 +121,11 @@ domain.system.SystemConductor
 infra.setting.Setting<T>
         passive desired/applied tracking, reused across components
 
+infra.setting.SettingContainer
+        generic typed setting group, atomic update and grouped change publication
+
 io.devices.antenna.manager.AntennaSettings
-        antenna-specific shared desired-state transaction
+        thin antenna-specific setting declaration/facade
 
 io.devices.antenna.manager.AntennaManager
         owns applied state, physical transitions and recovery
@@ -128,6 +134,12 @@ io.devices.antenna.manager.AntennaManager
 A Setting is state, not a scheduler. It must not own a SerialExecutor, Future,
 queue admission, retry loop, coalescing controller or component lifecycle merely
 because its value can change asynchronously.
+
+When several related settings are shared as one desired-state boundary, use
+`SettingContainer` with typed `SettingKey<T>` values and one grouped `SettingUpdate`.
+The container owns atomic requested-value publication, group revision and the normal
+`EventSource<SettingUpdate>`. Do not hand-build the same transaction/revision/event
+mechanics again in each component-specific Settings class.
 
 ---
 
@@ -932,8 +944,10 @@ the contract clearer, prefer:
 
 ```java
 final boolean inventoryRequired = required;
-Consumer<AntennaSettings.Edit> settingsUpdate =
-        edit -> edit.inventoryEnabled(inventoryRequired);
+Consumer<SettingContainer.Edit> settingsUpdate =
+        edit -> edit.set(
+                AntennaSettings.INVENTORY_ENABLED,
+                Boolean.valueOf(inventoryRequired));
 
 antennaSettings.update(settingsUpdate);
 ```
@@ -942,7 +956,10 @@ over:
 
 ```java
 final boolean inventoryRequired = required;
-antennaSettings.update(edit -> edit.inventoryEnabled(inventoryRequired));
+antennaSettings.update(
+        edit -> edit.set(
+                AntennaSettings.INVENTORY_ENABLED,
+                Boolean.valueOf(inventoryRequired)));
 ```
 
 The local name should describe the deferred/callback operation, not the lambda syntax.
@@ -1347,7 +1364,7 @@ it waits for ordered execution. Avoid exposing generic `offer`, `admission`, `su
 `submission` vocabulary from Domain/Application APIs when ordinary queueing words are clearer.
 
 A lambda that executes **synchronously**, such as an atomic
-`AntennaSettings.update(edit -> edit.inventoryEnabled(enabled))`, is different.
+`AntennaSettings.update(edit -> edit.set(AntennaSettings.INVENTORY_ENABLED, enabled))`, is different.
 Keep a short lambda where it makes the transaction visible, but explain the
 non-obvious contract at the call site or in the immediately referenced API:
 the edit is staged, `update()` commits desired state before returning, and
