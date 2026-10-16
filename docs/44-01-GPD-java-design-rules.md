@@ -1774,6 +1774,11 @@ the same failure, prefer the shared small execution/failure guard over repeating
 named handler. The wrapper must not swallow unrelated failures or invent another failure
 model.
 
+The same applies when a fire-and-forget execution boundary deliberately contains queue
+rejection. The boundary owner should use the shared execution/failure guard and keep only
+its diagnostic policy at the call site; upstream Domain/Application code should not repeat
+the `try/catch` for a lower-level lane rejection.
+
 **Why**
 
 A return type that looks complete while a hidden runtime failure can also escape is hard
