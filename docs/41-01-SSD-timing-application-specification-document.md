@@ -129,9 +129,9 @@ NODE_CLOSE record, while a registration arriving after the CLOSED transition is
 not admitted.
 
 The lifecycle record shall use the TimingData commit rules of SI01-REQ-046.
-Failure to queue, persist or commit that record shall be observable as a
-LogBook/persistence problem but shall not roll back or reverse the already
-applied TimingNode runtime state.
+Failure to queue, persist or commit that record shall set the TimingNode
+operational state to `ERROR` with a machine-readable LogBook/persistence
+problem. It shall not roll back or reverse the already applied functional state.
 
 :::
 
@@ -306,23 +306,31 @@ and mapping tables remain behind the provider boundary.
 
 #### Operational status and client continuity
 
-:::{req} Current TimingNode operational state  
+:::{req} Current TimingNode states  
 :id: SI01-REQ-024  
 :status: R  
 :specifies: UC-001, UC-002, UC-009, UC-020  
 
-For each configured TimingNode, SI-01 shall provide a queryable current
-operational state independently of presentation transport. That state shall
-contain at least:
+For each configured TimingNode, SI-01 shall provide these independently queryable
+current values:
 
 - the `NodeId`;
-- the current operational `LocationId`, or no assigned location;
-- lifecycle state `CLOSED` or `OPEN`;
-- relevant explicit problem/error state.
+- functional state `CLOSED` or `OPEN`;
+- the current `LocationId`, or no assigned location;
+- operational state `INIT`, `OK` or `ERROR`;
+- relevant machine-readable operational problem details when present.
 
-The current lifecycle state and LocationId are authoritative TimingNode runtime
-state. Committed LogBook NODE_OPEN/NODE_CLOSE records are historical TimingData
-facts and shall not by themselves reconstruct or change that current runtime state.
+Functional state and operational state are separate TimingNode-owned values.
+Functional state determines whether participant registrations may be admitted.
+Operational state reports whether the TimingNode and its required components are
+healthy; it does not replace or erase functional OPEN/CLOSED state.
+
+A TimingNode may therefore be `OPEN` and `ERROR` at the same time. A component
+failure shall affect only functions that depend on that component unless another
+requirement explicitly makes the failure blocking.
+
+Committed LogBook NODE_OPEN/NODE_CLOSE records are historical TimingData facts
+and shall not by themselves reconstruct or change current functional state.
 :::
 
 :::{req} Current application status snapshot  
@@ -345,7 +353,8 @@ The current application status snapshot shall contain at least:
 - application/build identity;
 - current application state;
 - every configured `NodeId`;
-- the current operational state of every configured TimingNode as defined by SI01-REQ-024;
+- the current functional state, operational state and LocationId of every
+  configured TimingNode as defined by SI01-REQ-024;
 - for each contained TimingNode configuration/startup failure, the affected
   `NodeId` and a machine-readable problem indication.
 :::
@@ -358,7 +367,8 @@ The IF-03 status semantics are defined by `32-03-ISD-application-control-status.
 :specifies: UC-001, UC-002, UC-009  
 :depends_on: SI01-REQ-024  
 
-When a value represented in a TimingNode's current operational state changes,
+When a value represented in a TimingNode's current functional state, operational
+state or operational problem changes,
 SI-01 shall make the corresponding state change available to supported
 presentation interfaces that provide live-state delivery. The application owns
 the semantic change; an individual interface owns only its transport-specific
@@ -697,13 +707,20 @@ diagnostic interfaces from starting and remaining available.
 
 For the affected TimingNode, SI-01 shall:
 
-- place the affected TimingNode in `ERROR` instead of presenting it as `CLOSED`
-  or `OPEN`;
-- reject normal state-changing and registration operations for that TimingNode;
+- set its operational state to `ERROR` while retaining its independent
+  functional `OPEN`/`CLOSED` state and LocationId;
+- continue functional behaviour that does not depend on the failed component;
+- return an explicit failure for operations that require the unavailable or
+  failed component;
 - continue starting/running the application and its diagnostic presentation
   interfaces;
 - keep independently healthy TimingNodes available in a multi-node composition; and
 - expose the contained failure through the current application status snapshot.
+
+A TimingData/LogBook recovery or commit failure is therefore an operational
+problem, not a lifecycle transition. Failure of optional raw-observation
+diagnostic persistence shall not by itself set the TimingNode operational state
+to `ERROR`.
 :::
 
 #### Development, engineering and system testing
@@ -904,8 +921,10 @@ interface version or a separately specified migration contract.
 The first registration baseline uses the following TimingNode lifecycle semantics:
 
 - at least one configured TimingNode is represented;
-- a TimingNode that cannot safely complete contained startup recovery is represented
-  as `ERROR` and does not accept normal operational commands;
+- functional `OPEN`/`CLOSED` and operational `INIT`/`OK`/`ERROR` are
+  independent TimingNode values;
+- a TimingNode recovery problem is represented by operational `ERROR` without
+  replacing its functional state;
 - explicit LocationId assignment is allowed only while CLOSED;
 - normal OPEN carries the requested valid LocationId and applies that LocationId
   together with the CLOSED-to-OPEN transition as one ordered operation;
