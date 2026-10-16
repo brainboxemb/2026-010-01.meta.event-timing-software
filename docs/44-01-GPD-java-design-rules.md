@@ -214,10 +214,10 @@ Keep different lifecycle levels separate.
 For SI-01 we use, for example:
 
 ```text
-software component      LifecycleComponent onActivate / onDeactivate
+software component         LifecycleComponent onActivate / onDeactivate
 TimingNode operation state  OPEN / CLOSED
-TimingNode failure      ErrorStatus
-antenna provider         initialize / startInventory / stopInventory / shutdown
+LogBook failure diagnostics logging / failure events
+antenna provider            initialize / startInventory / stopInventory / shutdown
 ```
 
 **Why**
@@ -967,7 +967,7 @@ Keep these distinctions:
 ```text
 activate / deactivate       software component lifecycle
 OPEN / CLOSED               TimingNode state
-ErrorStatus                  TimingNode failure
+LogBook failure diagnostics  persistence/history problem reporting
 initialize                  prepare antenna provider
 startInventory              start tag inventory
 shutdown                    release antenna/provider resources
@@ -1785,15 +1785,18 @@ while the component keeps ownership of the actual recovery decision.
 
 **Example**
 
-Prefer an explicit component-level contract:
+Prefer an explicit caller-visible failure contract on an operation that actually waits for a result:
 
 ```java
-public CloseResult close() throws OperationException {
+public RegistrationResult addManualRegistration(...) throws OperationException {
 
-    logBook.process(LogBookCommands.commitNodeClose(locationId));
-    return CloseResult.CLOSED;
+    return logBook.process(
+            LogBookCommands.commitManualRegistration(...));
 }
 ```
+
+Do not add an `OperationException` merely because a fire-and-forget diagnostic/history
+submission can fail later; that later failure has no synchronous caller result.
 
 If a component really owns failure-specific cleanup, keep that policy named and use the
 shared execution/failure guard rather than repeating catch-and-rethrow mechanics.
