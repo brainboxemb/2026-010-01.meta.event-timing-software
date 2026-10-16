@@ -92,24 +92,14 @@ The current status model exposes 1..N TimingNodes. For each node it provides:
 
 - `TimingNodeId`;
 - current `LocationId`, or no assigned location;
-- functional state `CLOSED` or `OPEN`;
-- operational state `INIT`, `OK` or `ERROR`;
-- machine-readable problem entries when present.
+- functional state `CLOSED` or `OPEN`.
 
-Functional state and operational state are independent values. Functional state says
-whether the registration point is open for participant registration. Operational state
-reports whether the TimingNode and its required components are healthy.
+Functional state says whether the registration point is open for participant
+registration. Startup/recovery and LogBook failures are not represented as a second
+TimingNode health-state value in this baseline.
 
-A TimingNode may therefore be `OPEN` and `ERROR` at the same time. Clients shall
-not interpret operational `ERROR` as a replacement for functional OPEN/CLOSED state.
-Only functions that depend on the failed capability need to fail.
-
-`INIT` means startup/recovery readiness is still being established. A persisted
-TimingData load/validation failure changes operational state to `ERROR` and uses problem
-code `TIMING_DATA_LOAD_FAILED` with severity `ERROR`.
-
-A restarted TimingNode begins functionally `CLOSED`, with no current LocationId, and
-operationally `INIT`. Historical TimingData does not by itself recreate functional state.
+A restarted TimingNode begins `CLOSED` with no current LocationId. Historical
+TimingData does not by itself recreate functional state.
 
 ## Operation identifiers
 
@@ -143,8 +133,7 @@ A configuration-change event is emitted only after the authoritative Runtime
 `ApplicationConfiguration` tree accepted a new current value through the Application control boundary. It identifies the
 affected configuration target and current value without exposing secret material.
 
-A status-change event is emitted after an actual functional-state, operational-state,
-LocationId or operational-problem change.
+A status-change event is emitted after an actual functional-state or LocationId change.
 Committed TimingData is exposed as a live event only after the record is committed and is
 visible in the TimingNode LogBook. Recovery of an existing record does not present that
 record as a new live commit.
@@ -535,8 +524,7 @@ operation or value semantics.
 :refines: SI01-REQ-040, SI01-REQ-072  
 
 IF-03 shall expose application-wide-unique TimingNode identities with current optional
-LocationId, functional OPEN/CLOSED state and operational INIT/OK/ERROR state and shall
-provide IF03-OP-005/006. IF03-OP-005
+LocationId and functional OPEN/CLOSED state and shall provide IF03-OP-005/006. IF03-OP-005
 shall carry the requested LocationId and represent location selection plus the
 CLOSED-to-OPEN transition as one ordered TimingNode operation.
 :::
@@ -714,22 +702,18 @@ registration injection for the simulated antenna path.
 :::
 
 
-:::{ifreq} TimingNode functional and operational state  
-:id: IF03-REQ-017  
-:status: D  
-:refines: SI01-REQ-024, SI01-REQ-049  
+:::{ifreq} TimingNode current functional state
+:id: IF03-REQ-017
+:status: D
+:refines: SI01-REQ-024
 
-IF03-OP-002 and the complete status snapshot from IF03-OP-003 shall expose functional
-state and operational state separately for every TimingNode.
+IF03-OP-002 and the complete status snapshot from IF03-OP-003 shall expose
+functional OPEN/CLOSED state and current optional LocationId for every TimingNode.
 
-A contained startup/recovery or required-component failure shall retain the node's
-functional state and set operational state `ERROR` with a machine-readable problem
-associated with the affected TimingNodeId. A persisted TimingData load/validation failure
-shall use problem code `TIMING_DATA_LOAD_FAILED` with severity `ERROR`.
-
-An operation shall fail because of operational `ERROR` only when it actually depends
-on the failed capability. Operational `ERROR` shall not be interpreted as a replacement
-for functional OPEN/CLOSED state.
+Startup/recovery and required-component failures shall not be encoded as a second
+TimingNode operational-state field in this baseline. Failure semantics remain available
+through the operation or subsystem interface that owns the failed capability and through
+diagnostic logging.
 :::
 
 
