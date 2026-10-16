@@ -670,7 +670,9 @@ desired result directly to the shared `AntennaSettings`; no cached
 
 ```java
 antennaSettings.update(edit -> {
-    edit.inventoryEnabled(inventoryRequired);
+    edit.set(
+            AntennaSettings.INVENTORY_ENABLED,
+            Boolean.valueOf(inventoryRequired));
 });
 ```
 
@@ -1447,10 +1449,12 @@ rollback and reverse deactivation across complete TimingSystems.
 decision.
 
 The `TimingSystemConductor` itself holds only the associated
-antenna-specific `AntennaSettings`, not `AntennaManager`. Generic Setting mechanics belong to
-Infrastructure / cross-cutting; the component-specific `AntennaSettings`
-belongs beside the antenna manager in I/O. The settings object is shared
-control state, not an inventory-control interface. Runtime resolves the IF-11
+antenna-specific `AntennaSettings`, not `AntennaManager`. Generic setting mechanics belong to
+Infrastructure / cross-cutting: `Setting<T>` owns requested/applied/pending state and
+`SettingContainer` owns typed keys, atomic grouped requested-value updates, group revision
+and the grouped change source. The component-specific `AntennaSettings` belongs beside the
+antenna manager in I/O and only declares the antenna-specific setting identities/handles.
+The settings object is shared control state, not an inventory-control interface. Runtime resolves the IF-11
 `io.devices.antennaManagers` binding by `timingSystemId`; at most one manager
 is composed for each TimingSystem. It may read manager status or request
 manager-wide inventory as system behaviour requires; the manager still owns
@@ -1959,12 +1963,18 @@ directly. The physical multi-step sequences live in those task classes under `ma
 The task classes work directly on manager-owned `ManagedAntenna` objects; there is no
 second task-facing antenna interface.
 
-The generic `Setting<T>` belongs to cross-cutting `infra.setting`, alongside
-`infra.configuration`. The reusable Setting tracks desired versus applied
-values without knowing any device or Conductor. The antenna-specific
-`AntennaSettings` belongs with I/O antenna management and wraps one
-`Setting<Boolean>` for inventory intent. The Conductor only sees this
-shared settings object, which Runtime composes once for each TimingSystem:
+The generic `Setting<T>`, `SettingKey<T>`, `SettingContainer` and
+`SettingUpdate` belong to cross-cutting `infra.setting`, alongside
+`infra.configuration`. `Setting<T>` tracks desired versus applied values without knowing
+any device or Conductor. `SettingContainer` groups one or more typed settings, commits
+requested values atomically, increments one group revision per effective grouped update and
+publishes one grouped `SettingUpdate`.
+
+The antenna-specific `AntennaSettings` belongs with I/O antenna management and is a thin
+specialization that declares `INVENTORY_ENABLED` and keeps the manager-owned mutable
+`Setting<Boolean>` handle. It does not reimplement transaction, revision or event
+mechanics. The Conductor only sees this shared settings object, which Runtime composes once
+for each TimingSystem:
 
 ```text
 requestedValue
@@ -1972,7 +1982,7 @@ appliedValue
 changePending = requestedValue != appliedValue
 ```
 
-`Setting` owns no executor, lifecycle, retry policy or device action.
+`Setting` and `SettingContainer` own no executor, lifecycle, retry policy or device action.
 `AntennaManager` calls `markApplied(value)` only after the corresponding task has
 completed successfully. A
 newer request may therefore arrive while an older transition is executing; once the older
@@ -2100,7 +2110,10 @@ read node.functionalState() for all nodes
 inventoryRequired = any node OPEN
        |
        v
-AntennaSettings.update(edit -> edit.inventoryEnabled(inventoryRequired))
+AntennaSettings.update(
+        edit -> edit.set(
+                AntennaSettings.INVENTORY_ENABLED,
+                Boolean.valueOf(inventoryRequired)))
        |
        v
 AntennaManager wakes and reconciles desired versus applied state

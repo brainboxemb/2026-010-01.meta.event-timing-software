@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Define the generic grouped-settings pattern: `Setting<T>` retains requested/applied/pending semantics while `SettingKey<T>`, `SettingContainer` and grouped `SettingUpdate` own reusable typed grouping, atomic updates, revision and change publication. `AntennaSettings` becomes a thin antenna-specific declaration/facade.
+
 - Standardize LogBook terminology on concrete `TimingData` records, registrations, committed data and persisted data; avoid generic `history` / `history fact` wording for LogBook data.
 
 - Add composition-time filtered `EventSource` subscriptions and typed `PropertyKey<T>` identity so consumers such as TimingSystemConductor can react only to relevant grouped property updates without adding per-property Events or string-name checks.
