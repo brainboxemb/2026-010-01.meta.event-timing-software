@@ -778,8 +778,9 @@ RegistrationId-to-TeamId overrides where EventData has no stable TeamId.
 but it is a composition/lifecycle facade rather than a serial-execution owner.
 It composes `LogBook`, `NodeService` and its node-local
 `TagProcessor`. `LogBook` owns Data Lane queueing, command/query
-execution, persisted TimingData startup loading, lifecycle/location state,
-durable TimingData commit and post-commit event publication.
+execution, persisted TimingData startup loading, durable TimingData commit and
+post-commit TimingData publication. TimingNode itself owns current runtime
+OPEN/CLOSED + LocationId state.
 `NodeService` owns Task Lane semantic orchestration. Its package-private
 `NodeTaskLane` adapts the Runtime-supplied `SerialLane` for Task Lane
 lifecycle, current-thread checks and result-bearing wait/error mapping; it does
@@ -828,12 +829,18 @@ in-memory commit, LogBook publishes one immutable committed-TimingData fact thro
 `NEW_DATA_ENTRY`.
 
 TimingNode owns OPEN/CLOSED and current LocationId as transient runtime operation state.
-It consumes the normal LogBook committed-TimingData fact, applies any NODE_OPEN/NODE_CLOSE
-effect to that state, republishes the node-level `TIMING_DATA_COMMITTED` fact, and only
-then publishes `STATUS_CHANGED` when the operation state changed. This also covers a
-command that was accepted but completed after its waiting caller timed out. LogBook
-therefore owns committed TimingData history and recovery facts, not TimingNode operation
-state or TimingNode-specific before/after sequencing events.
+A successful `open()` or `close()` first waits for the corresponding lifecycle
+TimingData command to commit. When that result returns successfully, TimingNode updates
+its own runtime Status and publishes `STATUS_CHANGED` directly. The generic committed
+TimingData event is not used to drive lifecycle state.
+
+TimingNode republishes LogBook `NEW_DATA_ENTRY` as the node-level
+`TIMING_DATA_COMMITTED` fact, but that event remains a durable-history fact only.
+A direct LogBook lifecycle command, persisted startup history, or a lifecycle record that
+commits after the original caller wait timed out does not by itself mutate current
+TimingNode OPEN/CLOSED + LocationId state. LogBook therefore owns committed TimingData
+history and recovery facts, while TimingNode remains authoritative for current runtime
+lifecycle state.
 
 State-changing `process(command)` remains non-reentrant: a command may not synchronously
 re-enter the same Data Lane behind itself. ORDERED queries are different. If the caller is
@@ -3293,9 +3300,9 @@ The important guarantees are:
 
 TimingNode Status is a small immutable snapshot of TimingNode-owned runtime state:
 OPEN/CLOSED plus the current LocationId. It exists independently from LogBook recovery and
-starts as CLOSED with no LocationId. Persisted NODE_OPEN/NODE_CLOSE history is deliberately
-not used to reconstruct it. Later committed NODE_OPEN/NODE_CLOSE facts update the snapshot
-during the running process.
+starts as CLOSED with no LocationId. Persisted or newly committed NODE_OPEN/NODE_CLOSE
+TimingData does not itself update this snapshot. Only successful TimingNode lifecycle
+operations apply the corresponding current runtime state.
 
 This runtime state is intentionally not restart-durable in the current design. A later
 design may reconstruct it from LogBook history or persist it separately; that is a separate
@@ -3478,9 +3485,9 @@ Data Lane
 
 Delivery is synchronous on the emitting thread and `Event<T>` does not serialize
 concurrent `emit(...)` calls. The completed listener graph is read-only during runtime.
-An owner that requires ordered/non-overlapping callbacks emits from its own ordered
-execution boundary; TimingNode status and committed-TimingData events therefore originate
-from the Data Lane.
+Committed-TimingData events originate from the Data Lane after durable commit. TimingNode
+`STATUS_CHANGED` instead originates from the successful serialized TimingNode
+`open()`/`close()` operation after its lifecycle commit has returned.
 
 Ordinary listener RuntimeExceptions are isolated and reported in the delivery report so
 one failing listener does not prevent later listeners from seeing the fact. Fatal Errors
