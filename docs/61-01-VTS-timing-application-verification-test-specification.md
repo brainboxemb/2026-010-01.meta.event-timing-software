@@ -167,9 +167,10 @@ storage recovery remains component-level persistence/codec verification.
 
 1. Start SI-01 and verify the TimingNode is `CLOSED` with no current LocationId.
 2. Request `OPEN` with LocationId `24`.
-3. Verify `TIMING_DATA_COMMITTED` first exposes sequence 1 as
-   `NODE_INFO`, LocationId 24, code `OPEN`; then verify the successful
-   `STATUS_CHANGED` reports `OPEN` at LocationId 24.
+3. Verify the successful `STATUS_CHANGED` reports `OPEN` at LocationId 24.
+   Verify that one corresponding committed `NODE_INFO / OPEN` record is
+   subsequently observable in the LogBook. Do not use event-delivery order
+   between STATUS_CHANGED and TIMING_DATA_COMMITTED as the lifecycle authority.
 4. Submit one node-addressed dev auto-reg request with deterministic
    RegistrationId and time. Verify the response returns sequence 2.
 5. Verify one `TIMING_DATA_COMMITTED` event exposes sequence 2 as
@@ -177,9 +178,9 @@ storage recovery remains component-level persistence/codec verification.
    LocationId 24.
 6. Query LogBook metadata/range and verify source order is sequence 1 OPEN,
    sequence 2 registration.
-7. Request `CLOSE`. Verify sequence 3 is committed first as
-   `NODE_INFO` / `CLOSE` with LocationId 24, followed by successful
-   `STATUS_CHANGED` to `CLOSED`.
+7. Request `CLOSE`. Verify the runtime state changes to `CLOSED` and no
+   later registration can be admitted. Verify sequence 3 is eventually committed
+   as `NODE_INFO / CLOSE` with LocationId 24.
 8. Reconnect the WebSocket client. Verify the new session starts from current
    `STATUS_SNAPSHOT`, LogBook sequences 1..3 remain queryable and recovered
    history is not emitted again as new `TIMING_DATA_COMMITTED` events.
@@ -198,9 +199,11 @@ storage recovery remains component-level persistence/codec verification.
 **Expected result**
 
 - lifecycle and registration records share one contiguous NodeId-scoped sequence;
-- OPEN/CLOSE records reach the committed-data visibility point before the
-  corresponding successful status change;
-- the registration remains committed between its surrounding lifecycle records;
+- OPEN/CLOSE runtime state is observable independently from lifecycle-record
+  persistence and is not reconstructed from those records;
+- when lifecycle records commit normally, the registration remains committed
+  between its surrounding OPEN/CLOSE records because admission and LogBook
+  submission use the same source ordering;
 - reconnect/restart exposes committed history without replaying it as new live
   commits;
 - operational OPEN/CLOSED state is not restored merely from historical records.
