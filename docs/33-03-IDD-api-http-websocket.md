@@ -122,61 +122,19 @@ Response shape:
     {
       "id": "TN-01",
       "locId": null,
-      "state": "CLOSED",
-      "opState": "INIT"
-    }
-  ],
-  "problems": []
-}
-```
-
-`locId` is `null` when no current location is assigned.
-`state` is `CLOSED` or `OPEN`. `opState` is `INIT`,
-`OK` or `ERROR`.
-
-During initial TimingNode recovery the node is normally `CLOSED + INIT`. Current
-status remains queryable; recovery changes only operational state to `OK` or
-`ERROR`.
-
-Problem entries use:
-
-```json
-{
-  "code": "<stable-machine-code>",
-  "severity": "WARNING|ERROR",
-  "nodeId": "TN-01",
-  "message": "<human-readable-summary>"
-}
-```
-
-`nodeId` is present for a TimingNode-scoped problem and omitted for an
-application-wide problem.
-
-A contained persisted TimingData load/validation failure is represented for example as:
-
-```json
-{
-  "nodes": [
-    {
-      "id": "TN-01",
-      "locId": null,
-      "state": "CLOSED",
-      "opState": "ERROR"
-    }
-  ],
-  "problems": [
-    {
-      "code": "TIMING_DATA_LOAD_FAILED",
-      "severity": "ERROR",
-      "nodeId": "TN-01",
-      "message": "Persisted TimingData load failed for TN-01"
+      "state": "CLOSED"
     }
   ]
 }
 ```
 
-The message is diagnostic text; clients use `state`,
-`opState`, `code` and `nodeId` for machine behaviour.
+`locId` is `null` when no current location is assigned.
+`state` is `CLOSED` or `OPEN`.
+
+This status is deliberately limited to the TimingNode's current functional state.
+Startup/recovery and LogBook failures are not folded into a second TimingNode
+health-state model in this baseline. They remain observable through operation
+failures, LogBook/recovery interfaces and diagnostic logging.
 
 When the Engineering API upstream connector is configured, status may additionally
 contain this compatible v1 branch:
