@@ -6,6 +6,10 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Bound each Engineering Portal headless-browser invocation so a wedged Chrome process fails the workspace verification directly instead of consuming the complete 10-minute documentation-job timeout.
+
+- Clarify lifecycle-state ownership: TimingNode is authoritative for current OPEN/CLOSED + LocationId and publishes STATUS_CHANGED from successful open/close operations; LogBook NODE_OPEN/NODE_CLOSE records remain committed historical TimingData and do not themselves drive runtime status.
+
 - Define separate synchronous LogBook wait guards: 5000 ms for result-bearing TimingData commit commands and 2000 ms for ORDERED queries, with CURRENT reads remaining wait-free; add SI01-REQ-086 and DR-24 so caller-visible operation failures are logged centrally with stable context and TimingData commit failures retain record-level diagnostics.
 
 - Make caller-visible operation failures explicit across the Java SDD and DR-23: result-bearing public operations declare intentional `OperationException` failures even when unchecked, normal domain results remain separate from execution failures, forwarding boundaries preserve the contract, and TimingNode startup status stays `CLOSED`/no-location independently from ordered LogBook recovery.

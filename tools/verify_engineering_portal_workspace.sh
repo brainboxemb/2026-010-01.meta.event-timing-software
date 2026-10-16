@@ -39,7 +39,13 @@ if [ -z "$chrome" ]; then
   exit 1
 fi
 
-"$chrome" \
+# A wedged headless browser must fail this check, not consume the entire
+# documentation job timeout. Healthy invocations normally finish in seconds.
+run_chrome() {
+  timeout --signal=TERM --kill-after=5s 30s "$chrome" "$@"
+}
+
+run_chrome \
   --headless \
   --no-sandbox \
   --disable-gpu \
@@ -491,7 +497,7 @@ target.write_text(
 )
 PY
 
-"$chrome" \
+run_chrome \
   --headless \
   --no-sandbox \
   --disable-gpu \
@@ -548,7 +554,7 @@ rm -rf bld/engineering-portal/site/workspace-interaction-test
 ! grep -q 'paneResizeInteraction' bld/engineering-portal/site/workspace/index.html
 ! grep -q 'paneResizePersisted' bld/engineering-portal/site/workspace/index.html
 
-"$chrome" \
+run_chrome \
   --headless \
   --no-sandbox \
   --disable-gpu \
@@ -561,7 +567,7 @@ rm -rf bld/engineering-portal/site/workspace-interaction-test
 grep -q 'Event Timing Engineering Portal' bld/engineering-portal/browser-landing.html
 grep -q 'Start here' bld/engineering-portal/browser-landing.html
 
-"$chrome" \
+run_chrome \
   --headless \
   --no-sandbox \
   --disable-gpu \
@@ -574,7 +580,7 @@ grep -q 'Start here' bld/engineering-portal/browser-landing.html
 grep -q 'Select an engineering object.' bld/engineering-portal/browser-explorer-neutral.html
 ! grep -q '<code>TimingNode</code>' bld/engineering-portal/browser-explorer-neutral.html
 
-"$chrome" \
+run_chrome \
   --headless \
   --no-sandbox \
   --disable-gpu \
@@ -588,7 +594,7 @@ grep -q 'Select an engineering object.' bld/engineering-portal/browser-workspace
 grep -q 'Select a related object to compare.' bld/engineering-portal/browser-workspace-neutral.html
 ! grep -q 'aria-current="true"' bld/engineering-portal/browser-workspace-neutral.html
 
-"$chrome" \
+run_chrome \
   --headless \
   --no-sandbox \
   --disable-gpu \
@@ -621,7 +627,7 @@ portal_lacks bld/engineering-portal/browser-explorer.html 'Incoming relationship
 portal_lacks bld/engineering-portal/browser-explorer.html 'One-hop context'
 portal_lacks bld/engineering-portal/browser-explorer.html 'ELABORATES THIS'
 
-"$chrome" \
+run_chrome \
   --headless \
   --no-sandbox \
   --disable-gpu \
@@ -646,7 +652,7 @@ grep -q 'Open details &amp; relations' bld/engineering-portal/browser-explorer.h
 grep -q 'Open source definition' bld/engineering-portal/browser-explorer.html
 ! grep -q 'data-eng-compare-detail' bld/engineering-portal/browser-explorer.html
 
-"$chrome" \
+run_chrome \
   --headless \
   --no-sandbox \
   --disable-gpu \
@@ -664,7 +670,7 @@ done
 portal_lacks bld/engineering-portal/browser-explorer-UC-001.html 'class="eng-relation__document"'
 portal_lacks bld/engineering-portal/browser-explorer-UC-001.html 'This use case is specified by:'
 
-"$chrome" \
+run_chrome \
   --headless \
   --no-sandbox \
   --disable-gpu \
@@ -687,7 +693,7 @@ grep -q 'Alternative/failure flows' bld/engineering-portal/browser-explorer-UC-0
 grep -q 'Open source definition' bld/engineering-portal/browser-explorer-UC-001.html
 grep -q '?plain=1#L' bld/engineering-portal/browser-explorer-UC-001.html
 
-"$chrome" \
+run_chrome \
   --headless \
   --no-sandbox \
   --disable-gpu \
@@ -704,7 +710,7 @@ done
 # Negative relation membership is asserted against the generated graph in
 # verify_engineering_portal.py; the Explorer DOM also contains the global object tree.
 
-"$chrome" \
+run_chrome \
   --headless \
   --no-sandbox \
   --disable-gpu \
@@ -720,7 +726,7 @@ portal_has bld/engineering-portal/browser-explorer-UC-005.html 'data-object-id="
 grep -q 'data-engineering-id="AntennaManager"' bld/engineering-portal/site/explorer/index.html
 grep -q 'aria-label="Open AntennaManager"' bld/engineering-portal/site/explorer/index.html
 
-"$chrome" \
+run_chrome \
   --headless \
   --no-sandbox \
   --disable-gpu \
@@ -734,7 +740,7 @@ grep -q '<code>AntennaManager</code>' bld/engineering-portal/browser-explorer-An
 grep -q 'coordinates 1..N configured Antenna components for one' bld/engineering-portal/browser-explorer-AntennaManager.html
 grep -q 'Open source definition' bld/engineering-portal/browser-explorer-AntennaManager.html
 
-"$chrome" \
+run_chrome \
   --headless \
   --no-sandbox \
   --disable-gpu \
@@ -750,7 +756,7 @@ grep -q 'OPEN with bounded LogBook' bld/engineering-portal/browser-engineering-c
 grep -q 'RECONNECTING / stale' bld/engineering-portal/browser-engineering-client-ui.html
 grep -q 'engineering-client-timing-open.svg' bld/engineering-portal/browser-engineering-client-ui.html
 
-"$chrome" \
+run_chrome \
   --headless \
   --no-sandbox \
   --disable-gpu \
@@ -760,7 +766,7 @@ grep -q 'engineering-client-timing-open.svg' bld/engineering-portal/browser-engi
   --screenshot=bld/engineering-portal/engineering-client-ui.png \
   "http://127.0.0.1:8765/engineering-client-ui/"
 
-"$chrome" \
+run_chrome \
   --headless \
   --no-sandbox \
   --disable-gpu \
@@ -771,7 +777,7 @@ grep -q 'engineering-client-timing-open.svg' bld/engineering-portal/browser-engi
   "http://127.0.0.1:8765/explorer/?object=TimingNode"
 
 
-"$chrome" \
+run_chrome \
   --headless \
   --no-sandbox \
   --disable-gpu \
