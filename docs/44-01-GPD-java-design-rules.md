@@ -1784,7 +1784,9 @@ operation failure, emit the operational log record at that same boundary.
 The record must contain enough context to identify the failed operation without requiring
 the caller to reconstruct it. For TimingNode/LogBook operations this means at least the
 NodeId, stable operation name and failure category. A wait timeout must also report the
-effective timeout duration and that the final outcome may still be unknown.
+effective timeout duration. For an accepted state-changing command, the record must state
+that the final outcome may still be unknown; an ORDERED-query timeout must not imply an
+unknown state-change outcome.
 
 Use severity consistently:
 
