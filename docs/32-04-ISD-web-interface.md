@@ -82,17 +82,15 @@ independent of a concrete HTTP route, message name or other wire representation.
 
 Returns the current state of the TimingNode associated with the Web binding.
 
-The semantic state contains at least:
+The semantic state contains:
 
 - TimingNodeId;
 - current LocationId, or no assigned location;
-- functional state `CLOSED` or `OPEN`;
-- explicit problem/error state where relevant to separate diagnostic behaviour.
+- state `CLOSED` or `OPEN`.
 
-For UC-001 and UC-002, the operator needs the current LocationId and
-`CLOSED`/`OPEN` state together so the interface can show the registration point
-as it is now. Problem/error information is not part of UC-001 itself; when it is
-shown through IF-04 it supports separate status/diagnostic behaviour such as UC-020.
+These values form the normal operator view of one registration point. Operational
+health and diagnostic problems are separate information and are not part of this
+TimingNode status.
 
 Returned state represents SI-01 application/domain state, not browser-local
 presentation state.
@@ -247,8 +245,8 @@ endpoint part of TimingNode domain identity.
 :status: D  
 :refines: SI01-REQ-024  
 
-IF-04 shall expose the bound TimingNode identity, current operational LocationId
-when assigned, OPEN/CLOSED lifecycle state and relevant explicit problem state.
+IF-04 shall expose the bound TimingNode identity, current LocationId when assigned
+and `CLOSED`/`OPEN` state.
 :::
 
 :::{ifreq} Open with LocationId  
