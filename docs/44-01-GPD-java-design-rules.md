@@ -249,7 +249,7 @@ published the event and can accidentally propagate downstream problems back into
 For SystemConductor, a TimingNode status event is only a short wake signal:
 
 ```java
-timingNode.statusChangedEvent()
+timingNode.STATUS_CHANGED
         .subscribe(
                 status -> systemConductor.onTimingNodeStatusChanged(timingNode, status));
 ```
@@ -268,7 +268,7 @@ second registration style such as `onChange(Consumer<T>)`, `addListener(...)` or
 Use these naming roles consistently:
 
 ```text
-statusChangedEvent()          EventSource: first available Status + later effective changes
+STATUS_CHANGED               EventSource: effective TimingNode Status changes
 onTimingNodeStatusChanged()   listener/handler method that reacts to the fact
 ```
 
@@ -975,13 +975,11 @@ For Conductor:
   Data Lane;
 - Task Lane activation is independent of LogBook state and does not require a preflight
   against the Data Lane;
-- the initial Data Lane load publishes CURRENT status only after LogBook/current
-  state is complete;
-- the first Conductor run may observe startup UNAVAILABLE and then publishes no
-  partial Settings decision;
-- the initial status event wakes a later reconciliation after persisted-data loading completes;
+- TimingNode Status is readable as CLOSED/no-location independently from LogBook recovery;
+- a persistence command waits for ordered LogBook recovery before it can commit;
+- a recovery failure is reported separately and does not redefine OPEN/CLOSED Status;
 - a status event only wakes the control task and does not publish Settings itself;
-- every ready-state control run reads CURRENT TimingNode status before deriving desired inventory;
+- every control run reads current TimingNode Status before deriving desired inventory;
 - rapid state changes converge to the final desired inventory while control wakes coalesce;
 - one OPEN node among several nodes keeps shared inventory desired state enabled;
 - CURRENT-state failure after readiness is explicit and is never interpreted as CLOSED;
