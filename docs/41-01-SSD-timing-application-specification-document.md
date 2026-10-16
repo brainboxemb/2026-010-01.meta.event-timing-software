@@ -156,8 +156,10 @@ When a result-bearing TimingNode command or ordered LogBook query cannot return
 its normal result, SI-01 shall emit an operational log record containing at least
 the TimingNode identity, operation name and stable failure category.
 
-A caller wait timeout shall include the configured wait duration and shall state
-that the final outcome may be unknown. `TIMEOUT` and execution/commit `FAILED`
+A caller wait timeout shall include the configured wait duration. For an accepted
+state-changing command, the log shall state that the final outcome may be unknown.
+An ordered-query timeout reports that no query result was obtained and shall not
+imply an unknown state-change outcome. `TIMEOUT` and execution/commit `FAILED`
 conditions shall be logged at ERROR level. `BUSY`, `UNAVAILABLE` and
 `INTERRUPTED` conditions shall be logged at WARN level or higher.
 
