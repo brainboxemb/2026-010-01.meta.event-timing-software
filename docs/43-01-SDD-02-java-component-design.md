@@ -824,12 +824,15 @@ when that LogBookQuery explicitly supports it. Status and the published LogBook
 head support CURRENT; count and record/range reads remain ORDERED. Task-owned
 queries such as StageTiming are separate and execute on NodeService.
 
-State-changing commands still execute on the Data Lane. After a command
-completes its domain mutation, LogBook builds and publishes the immutable after-Status
-before emitting `statusChangedEvent(after)` when the effective status changed. A CURRENT
-status reader therefore observes only completed published transitions.
+State-changing TimingData commands still execute on the Data Lane. After durable append and
+in-memory commit, LogBook publishes one immutable committed-TimingData fact through
+`NEW_DATA_ENTRY`.
 
-The active LogBook owns mutable TimingNode state and does not expose `LogBookData` directly.
+TimingNode owns OPEN/CLOSED and current LocationId as transient runtime operation state.
+It consumes committed NODE_OPEN/NODE_CLOSE facts to update that state, including a command
+that was accepted but completed after its waiting caller timed out. LogBook therefore owns
+committed TimingData history and recovery facts, not TimingNode operation state.
+
 State-changing `process(command)` remains non-reentrant: a command may not synchronously
 re-enter the same Data Lane behind itself. ORDERED queries are different. If the caller is
 already executing on the Data Lane, earlier queued work has already run before the current
@@ -870,12 +873,12 @@ context for node status, commands, queries and events. The architectural composi
 contains **one TimingNodeProxy per composed TimingNode (1..N)**. The default executable currently has one because the executable still composes one TimingNode. A proxy is
 an Application-layer boundary object, not a second owner of TimingNode state.
 
-Status-change detection remains owned by the TimingNode serial boundary. A
-state-changing command compares authoritative status before and after the domain
-operation on that Data Lane. A real difference emits the TimingNode status
-event before the result leaves ordered command execution. `TimingNodeProxy` maps
-that fact to the node-scoped Application-layer `TimingNodeStatus`; it does not perform a second before/after query
-outside the ordered boundary.
+Status publication remains owned by TimingNode. LogBook publishes the committed
+TimingData fact after durable commit; TimingNode consumes NODE_OPEN/NODE_CLOSE records,
+updates its current runtime status, and emits the TimingNode status event. The same path
+also observes accepted operations that complete after a synchronous caller timeout.
+`TimingNodeProxy` maps that fact to the node-scoped Application-layer
+`TimingNodeStatus`; it does not own or reconstruct operation state.
 
 The visible Domain component boundary uses typed commands and queries rather than
 mirroring every `LogBook` method:
@@ -1381,10 +1384,12 @@ validated effective configuration
 
 TimingNode initial persisted-data load:
   -> read/validate persisted TimingData on the Data Lane
-  -> rebuild LogBookData / node state derived from committed history
+  -> rebuild LogBook committed history
   -> publish initial loaded TimingData fact to Task-owned derived views
-  -> publish first CURRENT Status
-  -> emit statusChangedEvent as a wake signal
+  -> do not replay NODE_OPEN/NODE_CLOSE to reconstruct TimingNode operation state
+  -> after successful recovery publish TimingNode CLOSED with no LocationId
+  -> on recovery failure publish TimingNode ErrorStatus
+  -> emit the TimingNode status event as a wake signal
 
 system control run:
   -> read CURRENT status of every TimingNode
@@ -3236,13 +3241,16 @@ The important guarantees are:
 - read strategy is selected from measured CPU, allocation/GC and lane-occupancy
   behaviour rather than convenience alone.
 
-TimingNode Status supports an explicit CURRENT query backed by a safely published immutable
-snapshot because it is current state, not a mutable LogBook traversal. The same status query
-also supports ORDERED when a caller deliberately needs a read after earlier accepted node
-work. The first publication occurs when the asynchronous persisted-data load completes;
-later publications occur after completed command transitions. In both cases the snapshot is
-published before the corresponding status event. This read model does not permit direct access to
-LogBook-owned or LogBook mutable state.
+TimingNode Status is a safely published immutable snapshot of TimingNode-owned runtime
+operation state, not a mutable LogBook traversal. The first publication occurs when
+asynchronous LogBook recovery completes. Successful recovery deliberately initializes the
+runtime state as CLOSED with no LocationId; persisted NODE_OPEN/NODE_CLOSE history is not
+used to reconstruct operation state. Later NODE_OPEN/NODE_CLOSE commits update the snapshot
+from the normal committed-TimingData fact.
+
+This runtime operation state is intentionally not restart-durable in the current design.
+A later design may reconstruct it from LogBook history or persist it separately; that is a
+separate architecture decision rather than an implicit LogBook responsibility.
 
 ### Node data persistence boundary
 
