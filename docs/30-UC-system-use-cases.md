@@ -165,6 +165,9 @@ registration at a chosen location.
 - **Open not confirmed or connection lost:** the operator does not assume
   registration is open until the resulting state can be confirmed. Reconnecting
   must show the cabinet's actual current state.
+- **Lifecycle history recording problem:** a failure to record the OPEN transition
+  in the LogBook is reported as a separate software/data problem. It does not by
+  itself undo an OPEN state that the cabinet has already applied.
 
 **Postcondition:** if opening succeeds, registration is `OPEN` for the selected
 location. Closing the browser or losing the iPad connection does not itself
@@ -201,6 +204,9 @@ participant registrations are accepted.
   must not falsely claim that the cabinet is `CLOSED`.
 - **Connection lost or outcome unknown:** the operator reconnects to establish
   the current cabinet state rather than assuming the close succeeded.
+- **Lifecycle history recording problem:** a failure to record the CLOSE transition
+  in the LogBook is reported as a separate software/data problem. It does not reopen
+  a registration point that is already `CLOSED`.
 - **Already closed:** the operator sees `CLOSED`; there is no open
   registration to close.
 
