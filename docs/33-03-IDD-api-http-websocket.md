@@ -122,7 +122,7 @@ Response shape:
     {
       "id": "TN-01",
       "locationId": null,
-      "functionalState": "CLOSED",
+      "state": "CLOSED",
       "operationalState": "INIT"
     }
   ],
@@ -131,7 +131,7 @@ Response shape:
 ```
 
 `locationId` is `null` when no current location is assigned.
-`functionalState` is `CLOSED` or `OPEN`. `operationalState` is `INIT`,
+`state` is `CLOSED` or `OPEN`. `operationalState` is `INIT`,
 `OK` or `ERROR`.
 
 During initial TimingNode recovery the node is normally `CLOSED + INIT`. Current
@@ -160,7 +160,7 @@ A contained persisted TimingData load/validation failure is represented for exam
     {
       "id": "TN-01",
       "locationId": null,
-      "functionalState": "CLOSED",
+      "state": "CLOSED",
       "operationalState": "ERROR"
     }
   ],
@@ -175,7 +175,7 @@ A contained persisted TimingData load/validation failure is represented for exam
 }
 ```
 
-The message is diagnostic text; clients use `functionalState`,
+The message is diagnostic text; clients use `state`,
 `operationalState`, `code` and `nodeId` for machine behaviour.
 
 When the Engineering API upstream connector is configured, status may additionally
