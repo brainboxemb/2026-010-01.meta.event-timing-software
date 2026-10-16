@@ -661,7 +661,7 @@ InventoryTask
 
 Each TimingSystem `Conductor` uses `SerialTaskRunner` and
 `CooperativeTaskController` for event-triggered reconciliation.
-`TimingNode.FUNCTIONAL_STATE_CHANGED` is emitted for effective OPEN/CLOSED changes.
+`TimingNode.PROPERTIES_CHANGED` is emitted after one committed property update.
 For TimingSystemConductor it only wakes the existing control task. The later run reads
 each TimingNode's current functional state directly. It computes
 `inventoryEnabled = any node OPEN` as a local boolean and publishes the
@@ -831,12 +831,13 @@ State-changing TimingData commands still execute on the Data Lane. After durable
 in-memory commit, LogBook publishes one immutable committed-TimingData fact through
 `NEW_DATA_ENTRY`.
 
-TimingNode owns functional OPEN/CLOSED state, operational INIT/OK/ERROR state and
-current LocationId as separate transient runtime values. Its `open()` and `close()`
-methods change only functional state/LocationId and publish
-`FUNCTIONAL_STATE_CHANGED`; they do not wait for lifecycle TimingData persistence.
+TimingNode owns functional OPEN/CLOSED state, operational INIT/OK/ERROR state,
+current LocationId and operational problem as separate `Property<T>` values in one
+`PropertyContainer`. Its `open()` and `close()` methods commit functional
+state/LocationId together and publish one `PROPERTIES_CHANGED` notification; they do
+not wait for lifecycle TimingData persistence.
 
-Operational state changes independently. LogBook recovery/commit failure changes the
+Operational state changes independently through the same property container. LogBook recovery/commit failure changes the
 TimingNode operational state to ERROR and records problem detail, but does not rewrite
 functional state. Optional raw-observation diagnostic persistence is outside this health
 decision and does not by itself put a TimingNode in operational ERROR.
@@ -1466,8 +1467,9 @@ return without waiting for persisted TimingData loading. The TimingSystemConduct
 hook wakes the first normal reconciliation run. TimingNode functional state is already
 available as CLOSED/no-location while operational state may still be INIT. LogBook
 recovery health does not replace functional state and does not participate in the
-inventory calculation. Later effective OPEN/CLOSED changes emit
-FUNCTIONAL_STATE_CHANGED and wake another reconciliation.
+inventory calculation. Later committed TimingNode property changes emit
+PROPERTIES_CHANGED and wake another reconciliation; the later run still derives
+inventory only from current functional state.
 
 Tag events and individual antenna commands do not pass through either
 Conductor. Runtime resolves the configured antenna-to-node mapping as pure
@@ -2083,7 +2085,7 @@ self-test PASS + `INACTIVE`, not artificially `READY`.
 SI01-REQ-053 uses one system-scoped inventory demand:
 
 ```text
-TimingNode A/B/... FUNCTIONAL_STATE_CHANGED
+TimingNode A/B/... PROPERTIES_CHANGED
        |
        v
 wake domain.system.TimingSystemConductor control task
@@ -2750,8 +2752,7 @@ TimingNode
   operationalState()
   locationId()
   operationalProblem()
-  FUNCTIONAL_STATE_CHANGED
-  OPERATIONAL_STATE_CHANGED
+  PROPERTIES_CHANGED
   TIMING_DATA_COMMITTED
 
   X runtimeMetrics()
@@ -3533,10 +3534,9 @@ Data Lane
 Delivery is synchronous on the emitting thread and `Event<T>` does not serialize
 concurrent `emit(...)` calls. The completed listener graph is read-only during runtime.
 Committed-TimingData events originate from the Data Lane after durable commit.
-TimingNode `FUNCTIONAL_STATE_CHANGED` originates directly from the serialized
-`open()`/`close()` transition and does not wait for lifecycle-history commit.
-`OPERATIONAL_STATE_CHANGED` originates from health changes such as recovery or
-required LogBook failure.
+TimingNode `PROPERTIES_CHANGED` originates after a committed property update. One
+notification may identify several properties, for example LocationId + functional state
+for OPEN. Operational-state/problem updates use the same source.
 
 Ordinary listener RuntimeExceptions are isolated and reported in the delivery report so
 one failing listener does not prevent later listeners from seeing the fact. Fatal Errors
