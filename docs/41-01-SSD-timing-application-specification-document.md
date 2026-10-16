@@ -129,9 +129,10 @@ NODE_CLOSE record, while a registration arriving after the CLOSED transition is
 not admitted.
 
 The lifecycle record shall use the TimingData commit rules of SI01-REQ-046.
-Failure to queue, persist or commit that record shall set the TimingNode
-operational state to `ERROR` with a machine-readable LogBook/persistence
-problem. It shall not roll back or reverse the already applied functional state.
+Failure to queue, persist or commit that record shall not roll back or reverse
+the already applied functional state. The failure remains owned by the LogBook/
+persistence path and diagnostic logging; this baseline does not introduce a
+second TimingNode health-state value for it.
 
 :::
 
@@ -305,34 +306,23 @@ and mapping tables remain behind the provider boundary.
 
 #### Operational status and client continuity
 
-:::{req} Current TimingNode states  
-:id: SI01-REQ-024  
-:status: R  
-:specifies: UC-001, UC-002, UC-009, UC-020  
+:::{req} Current TimingNode states
+:id: SI01-REQ-024
+:status: R
+:specifies: UC-001, UC-002, UC-009
 
 For each configured TimingNode, SI-01 shall provide these current values:
 
 - the `NodeId`;
 - functional state `CLOSED` or `OPEN`;
-- the current `LocationId`, or no assigned location;
-- operational state `INIT`, `OK` or `ERROR`;
-- relevant machine-readable operational problem details when present.
-
-For the normal operator OPEN/CLOSE flow in UC-001 and UC-002, functional state and
-LocationId form one useful current view: for example `OPEN` at LocationId 24.
-Operational state and problem details support status and diagnostic use cases such
-as UC-020. They remain independent from functional OPEN/CLOSED state.
+- the current `LocationId`, or no assigned location.
 
 Functional state determines whether participant registrations may be admitted.
-Operational state reports whether the TimingNode and its required components are
-healthy; it does not replace or erase functional OPEN/CLOSED state.
-
-A TimingNode may therefore be `OPEN` and `ERROR` at the same time. A component
-failure shall affect only functions that depend on that component unless another
-requirement explicitly makes the failure blocking.
-
 Committed LogBook NODE_OPEN/NODE_CLOSE records are historical TimingData facts
 and shall not by themselves reconstruct or change current functional state.
+
+Startup/recovery and LogBook failures are not represented as a second
+TimingNode health-state value in this baseline.
 :::
 
 :::{req} Current application status snapshot  
@@ -344,37 +334,35 @@ SI-01 shall provide a queryable current application status snapshot independentl
 of diagnostic log output.
 :::
 
-:::{req} Application status content  
-:id: SI01-REQ-021  
-:status: R  
-:specifies: UC-009, UC-020  
-:depends_on: SI01-REQ-024  
+:::{req} Application status content
+:id: SI01-REQ-021
+:status: R
+:specifies: UC-009
+:depends_on: SI01-REQ-024
 
 The current application status snapshot shall contain at least:
 
-- application/build identity;
-- current application state;
 - every configured `NodeId`;
-- the current functional state, operational state and LocationId of every
-  configured TimingNode as defined by SI01-REQ-024;
-- for each contained TimingNode configuration/startup failure, the affected
-  `NodeId` and a machine-readable problem indication.
+- the current functional state and LocationId of every configured TimingNode as
+  defined by SI01-REQ-024.
+
+Build/version identity remains available through the dedicated version interface.
+Diagnostic failures remain available through the interface/logging path that owns
+the failed capability rather than being folded into TimingNode current state.
 :::
 
 The IF-03 status semantics are defined by `32-03-ISD-application-control-status.md`; the current wire schema is defined by `33-03-IDD-api-http-websocket.md`.
 
-:::{req} TimingNode operational state-change publication  
-:id: SI01-REQ-023  
-:status: R  
-:specifies: UC-001, UC-002, UC-009  
-:depends_on: SI01-REQ-024  
+:::{req} TimingNode current-state change publication
+:id: SI01-REQ-023
+:status: R
+:specifies: UC-001, UC-002, UC-009
+:depends_on: SI01-REQ-024
 
-When a value represented in a TimingNode's current functional state, operational
-state or operational problem changes,
-SI-01 shall make the corresponding state change available to supported
-presentation interfaces that provide live-state delivery. The application owns
-the semantic change; an individual interface owns only its transport-specific
-delivery.
+When the TimingNode functional state or current LocationId changes, SI-01 shall
+make the corresponding current-state change available to supported presentation
+interfaces that provide live-state delivery. The application owns the semantic
+change; an individual interface owns only its transport-specific delivery.
 :::
 
 :::{req} Presentation current-state recovery  
@@ -698,31 +686,28 @@ sequence gap or sequence regression shall produce an explicit recovery failure
 for that TimingNode rather than being silently skipped or renumbered.
 :::
 
-:::{req} Contain TimingNode recovery failure  
-:id: SI01-REQ-049  
-:status: D  
-:specifies: UC-020  
+:::{req} Contain TimingNode recovery failure
+:id: SI01-REQ-049
+:status: D
+:specifies: UC-020
 
 A failure while restoring or validating recoverable state for one configured
-TimingNode shall not by itself prevent independently healthy TimingNodes or
+TimingNode shall not by itself prevent independently functioning TimingNodes or
 diagnostic interfaces from starting and remaining available.
 
 For the affected TimingNode, SI-01 shall:
 
-- set its operational state to `ERROR` while retaining its independent
-  functional `OPEN`/`CLOSED` state and LocationId;
+- retain its independent functional `OPEN`/`CLOSED` state and LocationId;
 - continue functional behaviour that does not depend on the failed component;
 - return an explicit failure for operations that require the unavailable or
   failed component;
 - continue starting/running the application and its diagnostic presentation
-  interfaces;
-- keep independently healthy TimingNodes available in a multi-node composition; and
-- expose the contained failure through the current application status snapshot.
+  interfaces; and
+- keep independently functioning TimingNodes available in a multi-node composition.
 
-A TimingData/LogBook recovery or commit failure is therefore an operational
-problem, not a lifecycle transition. Failure of optional raw-observation
-diagnostic persistence shall not by itself set the TimingNode operational state
-to `ERROR`.
+The failure remains owned by the recovery/LogBook path and diagnostic logging.
+This baseline deliberately does not introduce a persistent TimingNode
+`INIT`/`OK`/`ERROR` health state.
 :::
 
 #### Development, engineering and system testing
@@ -2689,7 +2674,7 @@ Status should allow presentation and diagnostics to observe application, timing-
 
 Status returned to a client is read-only from that client's point of view. The transport response does not define the internal Java class structure used to produce it.
 
-Logging records diagnostic/history information; status represents current operational state. One must not be used as a substitute for the other.
+Logging records diagnostic/history information; status represents current functional state. One must not be used as a substitute for the other.
 
 ### Logging architecture
 
