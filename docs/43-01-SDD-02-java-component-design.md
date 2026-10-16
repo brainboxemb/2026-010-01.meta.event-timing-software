@@ -3027,6 +3027,41 @@ Keep the exception family small and add distinct exception types only where
 callers need different recovery behaviour. Timeout remains a distinct reason
 because its outcome semantics differ from a definite not-queued result.
 
+The Java baseline uses separate wait guards for the two result-bearing LogBook
+operation families:
+
+```text
+TimingData commit command
+  OPEN / CLOSE / AUTO_REG / MAN_REG / REV
+  default caller wait guard: 5000 ms
+
+ORDERED LogBook query
+  history/count/range/recovery reads that enter the Data Lane
+  default caller wait guard: 2000 ms
+
+CURRENT LogBook query
+  published immutable/current snapshot
+  no Data Lane wait timeout
+```
+
+The 5000 ms commit value is a guard on how long the synchronous caller waits for
+the complete ordered commit result. It includes time already queued ahead of the
+command plus command execution, durable append, in-memory commit and result
+delivery. It is **not** a statement that one file append is allowed to consume
+five seconds. Normal local persistence is expected to complete far faster; a
+timeout is an operational failure signal.
+
+An accepted command is not cancelled when this caller wait expires. The Data
+Lane may still complete it later, so the caller-visible state-change outcome
+remains unknown until current state or a later committed fact establishes the
+result. An ORDERED-query timeout has different meaning: no query result was
+received within its wait guard, but no state-change outcome is implied.
+
+These two defaults are explicit composition constants, not one generic
+`operationTimeoutMillis`. Runtime configuration is not added solely for tuning
+before target measurements justify it. Timeout log records include the effective
+duration so the value is observable when a guard fires.
+
 ### SerialExecutor design
 
 `SerialExecutor` preserves TimingNode execution semantics while separating the logical
@@ -3843,7 +3878,7 @@ Useful automated rules may include:
 - final package naming where capability-oriented packages prove clearer than layer names;
 - exact reusable boundary between single-instance runtime mechanics and multi-system application orchestration;
 - exact bounded TimingNode work-queue capacity and queue-full operational policy after Raspberry-Pi burst/latency measurement;
-- exact guard timeout for synchronous TimingNode operations and how it is configured/exposed diagnostically;
+- whether the 5000 ms commit and 2000 ms ORDERED-query wait guards need deployment configuration after target-platform measurements;
 - compact LogBook indexing required by future ranking/query implementation when measurement justifies it;
 - exact antenna automatic-recovery trigger, retry/backoff, retry-limit and terminal-failure policy;
 - exact external extension-JAR directory/layout and dependency-isolation policy;

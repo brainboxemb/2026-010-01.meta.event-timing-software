@@ -146,6 +146,28 @@ confirm its effect. Command outcome shall remain distinct from the subsequently
 observed TimingNode state.
 :::
 
+:::{req} Log result-bearing TimingNode operation failures  
+:id: SI01-REQ-086  
+:status: D  
+:specifies: UC-001, UC-002, UC-009, UC-020, UC-021  
+:depends_on: SI01-REQ-026, SI01-REQ-046  
+
+When a result-bearing TimingNode command or ordered LogBook query cannot return
+its normal result, SI-01 shall emit an operational log record containing at least
+the TimingNode identity, operation name and stable failure category.
+
+A caller wait timeout shall include the configured wait duration. For an accepted
+state-changing command, the log shall state that the final outcome may be unknown.
+An ordered-query timeout reports that no query result was obtained and shall not
+imply an unknown state-change outcome. `TIMEOUT` and execution/commit `FAILED`
+conditions shall be logged at ERROR level. `BUSY`, `UNAVAILABLE` and
+`INTERRUPTED` conditions shall be logged at WARN level or higher.
+
+When a TimingData persistence or in-memory commit step fails, the retained
+operational log shall include available commit context such as sequence, record
+type and location in addition to the underlying failure.
+:::
+
 #### Participant registration
 
 :::{req} Accepted registration commit semantics  
@@ -904,6 +926,7 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-083 | UC-012/013 + SI01-REQ-042 | LogBook is replay payload source; no duplicate durable outbox history |
 | SI01-REQ-084 | IF06-REQ-017/020 + SI01-REQ-078/081 | observable TimingData head and RaceData applied sequence |
 | SI01-REQ-085 | UC-011/012 + IF06-REQ-021 | fresh source-head SYNC/REQ after reconnect |
+| SI01-REQ-086 | UC-001/002/009/020/021 + SI01-REQ-026/046 | result-bearing operation failure logging |
 | SI01-REQ-066 | UC-015 | simulation composition through production paths |
 | SI01-REQ-067 | UC-016 | public-contract test stubs |
 | SI01-REQ-068 | UC-017 + IF06-REQ-010 | Engineering API UpstreamData transport |
