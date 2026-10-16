@@ -288,9 +288,14 @@ second registration style such as `onChange(Consumer<T>)`, `addListener(...)` or
 Use these naming roles consistently:
 
 ```text
-STATUS_CHANGED               EventSource: effective TimingNode Status changes
+statusChangedEvent            private Event<Status> backing object
+STATUS_CHANGED                public EventSource<Status>
 onTimingNodeStatusChanged()   listener/handler method that reacts to the fact
 ```
+
+Private mutable `Event<T>` backing fields use lowerCamelCase and end in
+`Event`. The exposed `EventSource<T>` keeps the semantic source name; do not
+append `Event` merely because its backing object is an `Event<T>`.
 
 An `onXxx(...)` method is a handler name, not a subscription API.
 
