@@ -903,11 +903,10 @@ publishes one committed TimingData fact after durable commit and publishes node-
 LogBook failures separately. TimingNode republishes the committed data as
 `TIMING_DATA_COMMITTED`; NODE_OPEN/NODE_CLOSE history never drives functional state.
 
-`TimingNodeProxy.status()` returns the normal operator-facing `TimingNodeStatus`:
-TimingNodeId, `CLOSED`/`OPEN` state and current LocationId. Operational
-`INIT`/`OK`/`ERROR` and problem detail remain separate queries/events on the proxy.
-An engineering interface such as IF-03 may put both kinds of information in one response
-without turning them into one Java status object.
+`TimingNodeProxy.status()` returns one client-facing `TimingNodeStatus` containing
+NodeId, LocationId, `CLOSED`/`OPEN` state and `INIT`/`OK`/`ERROR`
+operational state. IF-03 maps those four values directly to `id`, `locId`,
+`state` and `opState`. Operational problem detail remains separate.
 
 The visible Domain component boundary uses typed commands and queries rather than
 mirroring every `LogBook` method:
@@ -1483,8 +1482,14 @@ antennaManager.tagObservedEvent(antennaId)
     .subscribe(timingNode::onTagObserved);
 ```
 
-For semantic local events, concrete producers expose named `EventSource` ports such as
-`FUNCTIONAL_STATE_CHANGED`, `OPERATIONAL_STATE_CHANGED`,
+For current component properties, TimingNode uses the generic
+`Property<T>` + `PropertyContainer` mechanism. The four node-owned values
+(functional state, operational state, LocationId and operational problem) remain separate
+properties. One `PROPERTIES_CHANGED` source reports a committed container change and
+identifies the properties that changed. Related values such as OPEN + LocationId are
+committed together before that notification is published.
+
+Other semantic facts still use named `EventSource` ports such as
 `TIMING_DATA_COMMITTED` and `NEW_DATA_ENTRY`. Method-based event
 access remains only where an abstraction contract requires dispatch. The antenna boundary
 may still use `tagObservedEvent(AntennaId)` because the selected AntennaId determines the
@@ -2909,9 +2914,11 @@ hierarchy. One TimingNode owns two logically independent bounded serial lanes:
 
 ```text
 TimingNode
-  ├── functionalState -> transient CLOSED / OPEN
-  ├── operationalState -> INIT / OK / ERROR + optional OperationalProblem
-  ├── locationId -> current LocationId or none
+  ├── PropertyContainer
+  │     ├── functionalState -> transient CLOSED / OPEN
+  │     ├── operationalState -> INIT / OK / ERROR
+  │     ├── locationId -> current LocationId or none
+  │     └── operationalProblem -> optional problem detail
   ├── Data Lane  -> LogBook facade
   │                ├── LogBookDataLane -> SerialLane ordering/wait/rejection mapping
   │                ├── LogBookOperations -> commands, TimingData creation, persistence + commit
@@ -3333,8 +3340,10 @@ The important guarantees are:
 - read strategy is selected from measured CPU, allocation/GC and lane-occupancy
   behaviour rather than convenience alone.
 
-TimingNode keeps functional state, operational state and LocationId as separate fields;
-there is no Domain `Status` object that must be replaced for every change.
+TimingNode keeps functional state, operational state, LocationId and operational problem
+as separate generic `Property<T>` values in one `PropertyContainer`; there is no
+Domain `Status` object in TimingNode. Subscribers use the container change source rather
+than one event implementation per property.
 
 Functional state starts CLOSED with no LocationId. Operational state starts INIT and
 moves independently to OK or ERROR. Persisted or newly committed NODE_OPEN/NODE_CLOSE
