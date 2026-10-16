@@ -2110,7 +2110,10 @@ read node.functionalState() for all nodes
 inventoryRequired = any node OPEN
        |
        v
-AntennaSettings.update(edit -> edit.inventoryEnabled(inventoryRequired))
+AntennaSettings.update(
+        edit -> edit.set(
+                AntennaSettings.INVENTORY_ENABLED,
+                Boolean.valueOf(inventoryRequired)))
        |
        v
 AntennaManager wakes and reconciles desired versus applied state
