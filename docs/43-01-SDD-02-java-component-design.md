@@ -829,9 +829,12 @@ in-memory commit, LogBook publishes one immutable committed-TimingData fact thro
 `NEW_DATA_ENTRY`.
 
 TimingNode owns OPEN/CLOSED and current LocationId as transient runtime operation state.
-It consumes committed NODE_OPEN/NODE_CLOSE facts to update that state, including a command
-that was accepted but completed after its waiting caller timed out. LogBook therefore owns
-committed TimingData history and recovery facts, not TimingNode operation state.
+It consumes the normal LogBook committed-TimingData fact, applies any NODE_OPEN/NODE_CLOSE
+effect to that state, republishes the node-level `TIMING_DATA_COMMITTED` fact, and only
+then publishes `STATUS_CHANGED` when the operation state changed. This also covers a
+command that was accepted but completed after its waiting caller timed out. LogBook
+therefore owns committed TimingData history and recovery facts, not TimingNode operation
+state or TimingNode-specific before/after sequencing events.
 
 State-changing `process(command)` remains non-reentrant: a command may not synchronously
 re-enter the same Data Lane behind itself. ORDERED queries are different. If the caller is
@@ -873,11 +876,12 @@ context for node status, commands, queries and events. The architectural composi
 contains **one TimingNodeProxy per composed TimingNode (1..N)**. The default executable currently has one because the executable still composes one TimingNode. A proxy is
 an Application-layer boundary object, not a second owner of TimingNode state.
 
-Status publication remains owned by TimingNode. LogBook publishes the committed
-TimingData fact after durable commit; TimingNode consumes NODE_OPEN/NODE_CLOSE records,
-updates its current runtime status, and emits the TimingNode status event. The same path
-also observes accepted operations that complete after a synchronous caller timeout.
-`TimingNodeProxy` maps that fact to the node-scoped Application-layer
+Status publication remains owned by TimingNode. LogBook publishes one committed
+TimingData fact after durable commit. TimingNode consumes it, updates its current runtime
+status for NODE_OPEN/NODE_CLOSE, publishes `TIMING_DATA_COMMITTED` to node-level
+consumers, and then emits `STATUS_CHANGED`. The same path also observes accepted
+operations that complete after a synchronous caller timeout. `TimingNodeProxy` exposes
+the node-level committed-data source and maps the status fact to Application-layer
 `TimingNodeStatus`; it does not own or reconstruct operation state.
 
 The visible Domain component boundary uses typed commands and queries rather than
