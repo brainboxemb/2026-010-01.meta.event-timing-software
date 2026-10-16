@@ -47,7 +47,7 @@ A few words occur repeatedly in the Java design:
 Example:
 
 ```text
-TimingNode state is OPEN
+TimingNode operation state is OPEN
         |
         v
 Conductor publishes:
@@ -194,7 +194,7 @@ For SI-01 we use, for example:
 
 ```text
 software component      activate / deactivate
-TimingNode state        OPEN / CLOSED
+TimingNode operation state  OPEN / CLOSED
 TimingNode failure      ErrorStatus
 antenna provider         initialize / startInventory / stopInventory / shutdown
 ```
