@@ -2988,35 +2988,44 @@ For example:
 OpenResult
   OPENED
   ALREADY_OPEN
-  NO_LOCATION
 
-queueing/execution failure
-  queue full
-  node stopping/unavailable
-  unexpected internal failure
+RegistrationResult
+  COMMITTED
+  NODE_NOT_OPEN
 
-wait timeout
-  caller stopped waiting
-  operation may still be queued or executing
-  final domain outcome is unknown to that caller
+OperationException.Reason
+  BUSY
+  UNAVAILABLE
+  FAILED
+  INTERRUPTED
+  TIMEOUT
 ```
 
-A domain rejection such as `NO_LOCATION` is a normal processed result. Queue
-full or a stopping worker means the operation was not admitted and belongs to an
-operation/execution exception rather than `OpenResult`.
+Normal processed outcomes stay in the operation result type. For example,
+`NODE_NOT_OPEN` is a normal registration result and does not mean execution
+failed. Queue-full, unavailable/stopped execution, internal execution failure,
+interruption and wait timeout mean the caller did not obtain that normal result
+and therefore use `OperationException`.
 
-A timeout is different again. It means only that the caller did not receive the
-processed result within the configured guard time. TimingNode timeout handling
-must not automatically cancel or interrupt an already accepted state change.
-The caller must treat the final outcome as unknown and re-query the current state
-before assuming that the command did not happen.
+A timeout is different from a definite rejection. It means only that the caller
+did not receive the processed result within the configured guard time.
+TimingNode timeout handling must not automatically cancel or interrupt an already
+accepted state change. The caller must treat the final outcome as unknown and
+re-query the current state before assuming that the command did not happen.
 
-TimingNode uses a small operation/execution exception model rather than leaking
-`TimeoutException`, `ExecutionException` or `InterruptedException` from
-`java.util.concurrent` through the domain API.
-Keep that family small and add distinct exception types only where callers need
-different recovery behaviour. Timeout is a useful distinct case because its
-outcome semantics differ from a definite not-queued result.
+TimingNode uses one small caller-visible `OperationException` with a stable
+`Reason` instead of leaking `TimeoutException`, `ExecutionException` or
+`InterruptedException` from `java.util.concurrent` through the domain API.
+Result-bearing public TimingNode operations explicitly declare
+`throws OperationException`, even though the current Java type is unchecked,
+so callers can see the second outcome family directly at the method boundary.
+Internal LogBook recovery/lane readiness is not a caller precondition: ordered
+node operations wait behind startup loading, and any resulting execution failure
+is reported through the TimingNode operation contract.
+
+Keep the exception family small and add distinct exception types only where
+callers need different recovery behaviour. Timeout remains a distinct reason
+because its outcome semantics differ from a definite not-queued result.
 
 ### SerialExecutor design
 
