@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Standardize LogBook terminology on concrete `TimingData` records, registrations, committed data and persisted data; avoid generic `history` / `history fact` wording for LogBook data.
+
 - Add composition-time filtered `EventSource` subscriptions and typed `PropertyKey<T>` identity so consumers such as TimingSystemConductor can react only to relevant grouped property updates without adding per-property Events or string-name checks.
 
 - Move the reusable inactive-component guard into `LifecycleComponent`: the lifecycle base owns the active-state check while concrete components may supply their caller-visible failure factory without coupling lifecycle infrastructure to domain exceptions.
