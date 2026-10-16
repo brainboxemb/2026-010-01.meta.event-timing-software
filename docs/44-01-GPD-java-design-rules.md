@@ -479,14 +479,18 @@ as commands.
 
 If the authoritative owner has several related current values, keep them as separate typed
 properties and use one generic property container when consumers need change notification.
-The container exposes the normal project `EventSource<List<Property<?>>>`; do not invent
-a second callback/subscription mechanism and do not create one bespoke Event field per
-property.
+Each `Property<T>` owns one strongly typed value. The owner sets one or more properties
+and then calls `PropertyContainer.update()`.
 
-A component may commit several related property values before publishing one change event.
-For example, TimingNode commits LocationId + OPEN together and then publishes one list that
-contains both changed properties. Operational state is a separate property and can change
-independently.
+The container compares current values with its previous baseline and exposes one normal
+project `EventSource<PropertyUpdate>`. One `PropertyUpdate` contains the complete list
+of properties changed by that logical update. Do not invent a second callback/subscription
+mechanism and do not create one bespoke Event field per property.
+
+For example, TimingNode sets LocationId + OPEN and then calls `properties.update()`; one
+`PropertyUpdate` reports both properties. Lifecycle teardown may use
+`PropertyContainer.sync()` to accept a silent baseline reset without emitting a normal
+runtime change event.
 
 A current-state controller may use the container change only to wake a reconciliation run.
 The reconciliation then reads the owner's current values explicitly. This keeps event
@@ -521,7 +525,6 @@ TimingNode construction
         |
         +--> functionalState = CLOSED
         +--> locationId = none
-        +--> operationalState = INIT
 
 TimingNode.activate()
         |
