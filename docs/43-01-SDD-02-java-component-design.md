@@ -1487,10 +1487,10 @@ antennaManager.tagObservedEvent(antennaId)
 For current component properties, TimingNode uses the generic
 `Property<T>` + `PropertyContainer` mechanism. The four node-owned values
 (functional state, operational state, LocationId and operational problem) remain separate
-properties. `PropertyContainer.CHANGED` is the normal `EventSource<Property<?>>`;
-after an update has been fully committed it emits the properties that actually changed.
-Related values such as OPEN + LocationId are committed together before those notifications
-are published.
+properties. `PropertyContainer.CHANGED` is the normal `EventSource<List<Property<?>>>`. After an
+update has been fully committed it emits one event containing the properties that actually
+changed. Related values such as OPEN + LocationId are committed together and therefore
+arrive in one change event.
 
 Other semantic facts still use named `EventSource` ports such as
 `TIMING_DATA_COMMITTED` and `NEW_DATA_ENTRY`. Method-based event
@@ -3539,10 +3539,10 @@ Data Lane
 Delivery is synchronous on the emitting thread and `Event<T>` does not serialize
 concurrent `emit(...)` calls. The completed listener graph is read-only during runtime.
 Committed-TimingData events originate from the Data Lane after durable commit.
-TimingNode `PROPERTIES.CHANGED` originates after a committed property update. An update
-may therefore emit more than one changed property; for OPEN, LocationId and functional
-state are both current before either notification is delivered. Operational-state/problem
-updates use the same source.
+TimingNode `PROPERTIES.CHANGED` originates after a committed property update. One update
+emits one change event with the complete list of changed properties. For OPEN, LocationId
+and functional state are both current and are reported together in that event.
+Operational-state/problem updates use the same source.
 
 Ordinary listener RuntimeExceptions are isolated and reported in the delivery report so
 one failing listener does not prevent later listeners from seeing the fact. Fatal Errors
