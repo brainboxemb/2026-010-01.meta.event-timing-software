@@ -91,24 +91,25 @@ product identity.
 The current status model exposes 1..N TimingNodes. For each node it provides:
 
 - `TimingNodeId`;
-- current operational `LocationId`, or no assigned location;
-- operational state `CLOSED`, `OPEN` or `ERROR`.
+- current `LocationId`, or no assigned location;
+- functional state `CLOSED` or `OPEN`;
+- operational state `INIT`, `OK` or `ERROR`;
+- machine-readable problem entries when present.
 
-`ERROR` means the TimingNode is not available for normal operational commands because
-a contained node-local failure prevented safe operation. The first such case is startup
-persisted TimingData load/validation failure.
+Functional state and operational state are independent values. Functional state says
+whether the registration point is open for participant registration. Operational state
+reports whether the TimingNode and its required components are healthy.
 
-Status can also expose machine-readable problem entries. A problem has a stable code,
-severity and human-readable explanation. A TimingNode-scoped problem identifies the
-affected TimingNode. Clients shall make decisions from the machine-readable state/code,
-not by parsing human-readable problem text.
+A TimingNode may therefore be `OPEN` and `ERROR` at the same time. Clients shall
+not interpret operational `ERROR` as a replacement for functional OPEN/CLOSED state.
+Only functions that depend on the failed capability need to fail.
 
-For the current containment baseline, a persisted TimingData load/validation failure
-uses problem code `TIMING_DATA_LOAD_FAILED` with severity `ERROR`.
+`INIT` means startup/recovery readiness is still being established. A persisted
+TimingData load/validation failure changes operational state to `ERROR` and uses problem
+code `TIMING_DATA_LOAD_FAILED` with severity `ERROR`.
 
-A restarted TimingNode begins `CLOSED` with no current operational LocationId unless a
-later requirement explicitly defines another restart-state rule. Historical TimingData does
-not by itself recreate live operational state.
+A restarted TimingNode begins functionally `CLOSED`, with no current LocationId, and
+operationally `INIT`. Historical TimingData does not by itself recreate functional state.
 
 ## Operation identifiers
 
@@ -142,7 +143,8 @@ A configuration-change event is emitted only after the authoritative Runtime
 `ApplicationConfiguration` tree accepted a new current value through the Application control boundary. It identifies the
 affected configuration target and current value without exposing secret material.
 
-A status-change event is emitted only after an actual authoritative status change.
+A status-change event is emitted after an actual functional-state, operational-state,
+LocationId or operational-problem change.
 Committed TimingData is exposed as a live event only after the record is committed and is
 visible in the TimingNode LogBook. Recovery of an existing record does not present that
 record as a new live commit.
@@ -533,7 +535,8 @@ operation or value semantics.
 :refines: SI01-REQ-040, SI01-REQ-072  
 
 IF-03 shall expose application-wide-unique TimingNode identities with current optional
-LocationId and OPEN/CLOSED state and shall provide IF03-OP-005/006. IF03-OP-005
+LocationId, functional OPEN/CLOSED state and operational INIT/OK/ERROR state and shall
+provide IF03-OP-005/006. IF03-OP-005
 shall carry the requested LocationId and represent location selection plus the
 CLOSED-to-OPEN transition as one ordered TimingNode operation.
 :::
@@ -711,19 +714,22 @@ registration injection for the simulated antenna path.
 :::
 
 
-:::{ifreq} Degraded TimingNode status  
+:::{ifreq} TimingNode functional and operational state  
 :id: IF03-REQ-017  
 :status: D  
 :refines: SI01-REQ-024, SI01-REQ-049  
 
-IF03-OP-002 and the complete status snapshot from IF03-OP-003 shall represent a
-contained TimingNode startup failure using node state `ERROR` and a machine-readable
-problem associated with the affected TimingNodeId.
+IF03-OP-002 and the complete status snapshot from IF03-OP-003 shall expose functional
+state and operational state separately for every TimingNode.
 
-A persisted TimingData load/validation failure shall use problem code
-`TIMING_DATA_LOAD_FAILED` with severity `ERROR`. Normal state-changing or
-registration operations addressed to a TimingNode in `ERROR` shall return an explicit
-failure outcome rather than being accepted as normal operation.
+A contained startup/recovery or required-component failure shall retain the node's
+functional state and set operational state `ERROR` with a machine-readable problem
+associated with the affected TimingNodeId. A persisted TimingData load/validation failure
+shall use problem code `TIMING_DATA_LOAD_FAILED` with severity `ERROR`.
+
+An operation shall fail because of operational `ERROR` only when it actually depends
+on the failed capability. Operational `ERROR` shall not be interpreted as a replacement
+for functional OPEN/CLOSED state.
 :::
 
 
