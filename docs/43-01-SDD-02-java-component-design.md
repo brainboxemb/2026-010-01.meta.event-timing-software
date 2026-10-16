@@ -803,11 +803,10 @@ explicit read model. The snapshot is unavailable while the initial persisted-dat
 TimingNode activation uses `ComponentLifecycleManager`: it starts the Task Lane,
 then activates LogBook so the Data Lane can queue persisted TimingData
 loading as its first ordered task, and finally starts TagProcessor ingress. Task
-Lane activation does not depend on LogBook state. The call does not wait for file
-I/O. The Data Lane loads TimingData and rebuilds LogBookData/state, then publishes the first
-immutable status with safe cross-thread visibility and emits the status event.
-Deactivation makes CURRENT status unavailable; reactivation performs a fresh
-persisted-data load and later publishes a fresh snapshot.
+Lane activation does not depend on LogBook state. The call does not wait for file I/O. TimingNode Status is independent runtime state and is available as
+CLOSED/no-location without waiting for LogBook recovery. The Data Lane separately loads
+persisted TimingData and rebuilds LogBookData/history. Recovery does not define or
+reconstruct TimingNode OPEN/CLOSED state.
 
 LogBook queries expose two explicit consistency modes:
 
@@ -1386,18 +1385,19 @@ validated effective configuration
             -> wake first control run
   -> PresentationRuntime.activate()
 
+TimingNode runtime status:
+  -> exists independently as CLOSED with no LocationId
+  -> NODE_OPEN/NODE_CLOSE commits update it during the running process
+  -> persisted history is not replayed to reconstruct it
+
 TimingNode initial persisted-data load:
   -> read/validate persisted TimingData on the Data Lane
   -> rebuild LogBook committed history
   -> publish initial loaded TimingData fact to Task-owned derived views
-  -> do not replay NODE_OPEN/NODE_CLOSE to reconstruct TimingNode operation state
-  -> after successful recovery publish TimingNode CLOSED with no LocationId
-  -> on recovery failure publish TimingNode ErrorStatus
-  -> emit the TimingNode status event as a wake signal
+  -> report recovery failure separately from TimingNode Status
 
 system control run:
-  -> read CURRENT status of every TimingNode
-  -> if any node is not ready yet: publish no partial inventory decision and return
+  -> read the current Status of every TimingNode directly
   -> calculate whether any node is OPEN
   -> atomically publish desired inventory through AntennaSettings
   -> AntennaManager wakes and reconciles hardware asynchronously
@@ -1431,9 +1431,8 @@ deactivates them in reverse order. `ApplicationConductor` only orchestrates
 complete TimingSystems and does not need a coordination lane. TimingNode and
 TimingSystemConductor activation establish execution context and
 return without waiting for persisted TimingData loading. The TimingSystemConductor activation
-hook wakes the first normal reconciliation run. A TimingNode whose CURRENT status
-is still unavailable because its initial load has not published yet is treated as
-**not ready**, not as CLOSED and not as a control failure; the TimingSystemConductor
+hook wakes the first normal reconciliation run. TimingNode Status is already available as
+CLOSED/no-location; LogBook recovery readiness/failure is a separate concern, not as CLOSED and not as a control failure; the TimingSystemConductor
 publishes no partial inventory decision. The TimingNode's first status publication then wakes a later reconciliation. Once a node has published current state,
 unexpected CURRENT failure remains an explicit fault rather than a guessed value.
 
@@ -3245,16 +3244,15 @@ The important guarantees are:
 - read strategy is selected from measured CPU, allocation/GC and lane-occupancy
   behaviour rather than convenience alone.
 
-TimingNode Status is a safely published immutable snapshot of TimingNode-owned runtime
-operation state, not a mutable LogBook traversal. The first publication occurs when
-asynchronous LogBook recovery completes. Successful recovery deliberately initializes the
-runtime state as CLOSED with no LocationId; persisted NODE_OPEN/NODE_CLOSE history is not
-used to reconstruct operation state. Later NODE_OPEN/NODE_CLOSE commits update the snapshot
-from the normal committed-TimingData fact.
+TimingNode Status is a small immutable snapshot of TimingNode-owned runtime state:
+OPEN/CLOSED plus the current LocationId. It exists independently from LogBook recovery and
+starts as CLOSED with no LocationId. Persisted NODE_OPEN/NODE_CLOSE history is deliberately
+not used to reconstruct it. Later committed NODE_OPEN/NODE_CLOSE facts update the snapshot
+during the running process.
 
-This runtime operation state is intentionally not restart-durable in the current design.
-A later design may reconstruct it from LogBook history or persist it separately; that is a
-separate architecture decision rather than an implicit LogBook responsibility.
+This runtime state is intentionally not restart-durable in the current design. A later
+design may reconstruct it from LogBook history or persist it separately; that is a separate
+architecture decision rather than an implicit recovery responsibility.
 
 ### Node data persistence boundary
 
