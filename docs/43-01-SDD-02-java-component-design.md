@@ -799,10 +799,16 @@ lifecycle-only or partially configured production node. The only non-public cons
 seam exists for deterministic TimingNode execution-boundary tests and is documented as
 test-only in code.
 
-TimingNode extends `LifecycleComponent`; its protected lifecycle hook uses
-`ComponentLifecycleManager` to start the Task Lane service, then LogBook so the Data
-Lane can queue persisted TimingData loading as its first ordered task, and finally
-TagProcessor ingress. No public TimingNode activate/deactivate API is exposed.
+TimingNode extends `LifecycleComponent`; the base class owns the generic active/inactive
+lifecycle fact. TimingNode therefore does not keep a second `active` field. Its protected
+lifecycle hook uses `ComponentLifecycleManager` to start the Task Lane service, then
+LogBook so the Data Lane can queue persisted TimingData loading as its first ordered task,
+and finally TagProcessor ingress. No public TimingNode activate/deactivate API is exposed.
+
+When a public TimingNode operation must map inactive lifecycle to the node operation
+contract, it uses a small `failIfInactive()` guard backed by
+`LifecycleComponent.isActive()`. The lifecycle base remains independent from
+TimingNode-specific `OperationException` types.
 
 Functional state is immediately available as CLOSED with no LocationId. The Data Lane
 separately loads persisted TimingData and rebuilds LogBookData/history. Recovery never
