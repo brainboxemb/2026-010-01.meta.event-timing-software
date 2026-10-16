@@ -1723,9 +1723,9 @@ public RegistrationResult addManualRegistration(...)
 ```
 
 Here `RegistrationResult` represents normal processed outcomes such as COMMITTED or
-NODE_NOT_OPEN. `OperationException` represents failure to obtain that normal result,
-for example because the owning lane is unavailable, full, failed, interrupted or timed
-out. Do not hide the second family merely because the exception extends
+NODE_NOT_OPEN. `OperationException` represents failure to obtain that normal result, for example because
+the operation is busy or unavailable, execution failed, the caller was interrupted, or
+waiting timed out. Do not hide the second family merely because the exception extends
 `RuntimeException`.
 
 Use the same rule through forwarding production boundaries. A proxy or accessor must not
