@@ -1459,10 +1459,11 @@ deactivates them in reverse order. `ApplicationConductor` only orchestrates
 complete TimingSystems and does not need a coordination lane. TimingNode and
 TimingSystemConductor activation establish execution context and
 return without waiting for persisted TimingData loading. The TimingSystemConductor activation
-hook wakes the first normal reconciliation run. TimingNode Status is already available as
-CLOSED/no-location. LogBook recovery readiness/failure is a separate persistence concern
-and does not participate in the inventory calculation. Later effective OPEN/CLOSED changes
-emit STATUS_CHANGED and wake another reconciliation.
+hook wakes the first normal reconciliation run. TimingNode functional state is already
+available as CLOSED/no-location while operational state may still be INIT. LogBook
+recovery health does not replace functional state and does not participate in the
+inventory calculation. Later effective OPEN/CLOSED changes emit
+FUNCTIONAL_STATE_CHANGED and wake another reconciliation.
 
 Tag events and individual antenna commands do not pass through either
 Conductor. Runtime resolves the configured antenna-to-node mapping as pure
@@ -1478,7 +1479,8 @@ antennaManager.tagObservedEvent(antennaId)
 ```
 
 For semantic local events, concrete producers expose named `EventSource` ports such as
-`STATUS_CHANGED`, `TIMING_DATA_COMMITTED` and `NEW_DATA_ENTRY`. Method-based event
+`FUNCTIONAL_STATE_CHANGED`, `OPERATIONAL_STATE_CHANGED`,
+`TIMING_DATA_COMMITTED` and `NEW_DATA_ENTRY`. Method-based event
 access remains only where an abstraction contract requires dispatch. The antenna boundary
 may still use `tagObservedEvent(AntennaId)` because the selected AntennaId determines the
 source instance. `TagObservation` remains the
@@ -2072,13 +2074,13 @@ self-test PASS + `INACTIVE`, not artificially `READY`.
 SI01-REQ-053 uses one system-scoped inventory demand:
 
 ```text
-TimingNode A/B/... STATUS_CHANGED
+TimingNode A/B/... FUNCTIONAL_STATE_CHANGED
        |
        v
 wake domain.system.TimingSystemConductor control task
        |
        v
-read node.status() for all nodes
+read node.functionalState() for all nodes
        |
        v
 inventoryRequired = any node OPEN
@@ -2735,15 +2737,19 @@ The normal public Domain component contract does not expose runtime measurements
 TimingNode
   open(...)
   close()
-  status()
-  STATUS_CHANGED
+  functionalState()
+  operationalState()
+  locationId()
+  operationalProblem()
+  FUNCTIONAL_STATE_CHANGED
+  OPERATIONAL_STATE_CHANGED
   TIMING_DATA_COMMITTED
 
   X runtimeMetrics()
 ```
 
-`TimingNodeTypes` therefore contains Domain/result/status types only; an engineering
-runtime snapshot is not a `TimingNodeTypes` member.
+`TimingNodeTypes` therefore contains only Domain state/result/problem/exception types;
+an engineering runtime snapshot is not a `TimingNodeTypes` member.
 
 `RuntimeMeasurementReader` is not exposed through `PresentationGateway`, IF-03, the
 local console or the remote shell merely for characterization. T01 obtains it from
@@ -2920,8 +2926,9 @@ time capture, durable append, startup reconstruction and commit metrics/logging.
 `LogBookState` contains only passive mutable facts and committed in-memory history,
 The persisted TimingData load runs as the first ordered Data Lane task. A successful
 load publishes an immutable initial-history fact; each later successful commit publishes
-an immutable committed-TimingData fact. TimingNode consumes committed NODE_OPEN/NODE_CLOSE
-facts to update its own transient Status and then emits STATUS_CHANGED.
+an immutable committed-TimingData fact. TimingNode republishes those history facts but
+does not use NODE_OPEN/NODE_CLOSE commits to drive functional state. Functional state is
+changed directly by `open()`/`close()`; LogBook failure affects operational health.
 
 The **Task Lane** is the sole writer for live RaceData and its derived timing
 state. `NodeServiceState` owns `RaceDataState`, `TeamAssignments`,
@@ -3510,9 +3517,11 @@ Data Lane
 
 Delivery is synchronous on the emitting thread and `Event<T>` does not serialize
 concurrent `emit(...)` calls. The completed listener graph is read-only during runtime.
-Committed-TimingData events originate from the Data Lane after durable commit. TimingNode
-`STATUS_CHANGED` instead originates from the successful serialized TimingNode
-`open()`/`close()` operation after its lifecycle commit has returned.
+Committed-TimingData events originate from the Data Lane after durable commit.
+TimingNode `FUNCTIONAL_STATE_CHANGED` originates directly from the serialized
+`open()`/`close()` transition and does not wait for lifecycle-history commit.
+`OPERATIONAL_STATE_CHANGED` originates from health changes such as recovery or
+required LogBook failure.
 
 Ordinary listener RuntimeExceptions are isolated and reported in the delivery report so
 one failing listener does not prevent later listeners from seeing the fact. Fatal Errors
