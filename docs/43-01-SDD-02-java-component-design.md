@@ -3464,6 +3464,7 @@ Conceptually:
 ```java
 interface EventSource<T> {
     boolean subscribe(Consumer<T> listener);
+    boolean subscribe(Predicate<T> filter, Consumer<T> listener);
 }
 
 final class Event<T> implements EventSource<T> {
@@ -3490,7 +3491,9 @@ Runtime.activate()
 ```
 
 The event graph is therefore fixed before activation. `subscribe(...)` is a
-composition-time operation and `EventSource` deliberately exposes no `unsubscribe(...)`
+composition-time operation and may include a predicate when a consumer only needs a subset
+of the published facts. The predicate is evaluated synchronously by the Event before the
+listener is delivered that value. `EventSource` deliberately exposes no `unsubscribe(...)`
 in the baseline. If a future requirement genuinely needs dynamic connection lifecycle,
 that requirement must define its ownership and concurrency semantics rather than silently
 turning every local event into a runtime-mutable graph.
@@ -3537,6 +3540,14 @@ TimingNode `PROPERTIES.CHANGED` originates from `PropertyContainer.update()`. On
 logical update emits one `PropertyUpdate` containing the complete list of changed
 properties. For OPEN, LocationId and functional state are both current and are reported
 together in that message.
+
+Property identity is represented by typed immutable `PropertyKey<T>` values. The owner keeps
+the mutable `Property<T>` handle private while consumers may use the public key to inspect or
+filter a `PropertyUpdate` without string-name comparisons. A filtered EventSource subscription
+does not create another Event or another property publication path; it only suppresses delivery
+of updates that are irrelevant to that subscriber. TimingSystemConductor therefore listens to
+`TimingNode.PROPERTIES.CHANGED` with a filter for the functional-state key and is not woken by
+unrelated property updates.
 
 Ordinary listener RuntimeExceptions are isolated and reported in the delivery report so
 one failing listener does not prevent later listeners from seeing the fact. Fatal Errors
