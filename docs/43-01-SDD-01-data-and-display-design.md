@@ -582,8 +582,8 @@ optional consumers and do not participate in commit success.
 ### Startup flow
 
 Lifecycle activation and persisted-data loading are deliberately separate. TimingNode
-operation status exists independently from recovery and starts as `CLOSED` with no
-LocationId:
+starts with independent values: functional state `CLOSED`, no LocationId and
+operational state `INIT`:
 
 ```text
 start process
@@ -594,7 +594,9 @@ load configuration / compose components
    v
 construct TimingNode
    |
-   +--> Status = CLOSED / no LocationId
+   +--> functionalState = CLOSED
+   +--> locationId = none
+   +--> operationalState = INIT
    |
    v
 TimingNode activation
