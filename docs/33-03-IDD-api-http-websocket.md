@@ -122,17 +122,21 @@ Response shape:
     {
       "id": "TN-01",
       "locationId": null,
-      "state": "CLOSED"
+      "functionalState": "CLOSED",
+      "operationalState": "INIT"
     }
   ],
   "problems": []
 }
 ```
 
-`locationId` is `null` when no operational location is assigned. `state` is
-`CLOSED`, `OPEN` or `ERROR`. During initial TimingNode recovery no authoritative
-CURRENT status exists yet. `GET /api/v1/status` then returns the normal `503`
-`UNAVAILABLE` mapping rather than inventing a CLOSED or partial node state.
+`locationId` is `null` when no current location is assigned.
+`functionalState` is `CLOSED` or `OPEN`. `operationalState` is `INIT`,
+`OK` or `ERROR`.
+
+During initial TimingNode recovery the node is normally `CLOSED + INIT`. Current
+status remains queryable; recovery changes only operational state to `OK` or
+`ERROR`.
 
 Problem entries use:
 
@@ -156,7 +160,8 @@ A contained persisted TimingData load/validation failure is represented for exam
     {
       "id": "TN-01",
       "locationId": null,
-      "state": "ERROR"
+      "functionalState": "CLOSED",
+      "operationalState": "ERROR"
     }
   ],
   "problems": [
@@ -170,8 +175,8 @@ A contained persisted TimingData load/validation failure is represented for exam
 }
 ```
 
-The message is diagnostic text; clients use `state`, `code` and `nodeId` for
-machine behaviour.
+The message is diagnostic text; clients use `functionalState`,
+`operationalState`, `code` and `nodeId` for machine behaviour.
 
 When the Engineering API upstream connector is configured, status may additionally
 contain this compatible v1 branch:
@@ -788,10 +793,10 @@ immediate heartbeat PING and node-scoped `SYNC(stream=TIMING_DATA, seq=<LogBook 
 as normal `UPSTREAM_DATA` events. The Central System Simulator answers with its
 RACE_DATA source-head SYNC and can issue TIMING_DATA REQ as required. Closing that
 WebSocket marks the connector disconnected and stops its heartbeat lifecycle without
-clearing LogBook or applied RaceData state. If one or more TimingNodes have not published their initial CURRENT
-status yet, SI-01 closes that connection with code **1013 (Try Again Later)** and
-reason `TimingNode status not ready`; the client reconnects and obtains the complete
-snapshot once recovery has published current state.
+clearing LogBook or applied RaceData state. A TimingNode in operational `INIT`
+is included in the complete snapshot. The connection therefore does not close
+merely because persisted-data recovery is still in progress; a later
+`STATUS_CHANGED` reports `OK` or `ERROR`.
 
 ### Slow-client / outbound backlog policy
 
@@ -851,7 +856,7 @@ Current status mapping:
 | `404` | `NOT_FOUND`, `NODE_NOT_FOUND` |
 | `405` | `METHOD_NOT_ALLOWED` |
 | `409` | domain conflict such as `NODE_NOT_OPEN`, or semantic `RESTART_REQUIRED` for a valid configuration update |
-| `503` | `BUSY`, `UNAVAILABLE` (including initial TimingNode recovery not ready), `INTERRUPTED`, expected operation failure |
+| `503` | `BUSY`, `UNAVAILABLE`, `INTERRUPTED`, expected operation failure |
 | `504` | `OUTCOME_UNKNOWN` |
 | `500` | unexpected internal interface failure |
 
