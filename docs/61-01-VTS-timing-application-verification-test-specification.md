@@ -287,7 +287,7 @@ TimingNode while application-level diagnostic interfaces remain available.
    different NodeId than the configured TimingNode.
 2. Start SI-01 and verify the process remains running.
 3. Query IF-03 status and verify the affected node is `ERROR` with
-   `TIMING_DATA_RECOVERY_FAILED`.
+   `TIMING_DATA_LOAD_FAILED`.
 4. Query the Remote Shell status and verify the same contained problem.
 5. Attempt OPEN and verify an explicit failure response rather than normal
    acceptance.
