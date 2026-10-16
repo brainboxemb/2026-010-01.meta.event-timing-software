@@ -165,7 +165,9 @@ storage recovery remains component-level persistence/codec verification.
 
 **Procedure — run 1**
 
-1. Start SI-01 and verify the TimingNode is `CLOSED` with no current LocationId.
+1. Start SI-01 and verify the TimingNode is functionally `CLOSED` with no
+   current LocationId. Observe operational `INIT` during recovery when visible,
+   followed by `OK` for a healthy node.
 2. Request `OPEN` with LocationId `24`.
 3. Verify the successful `STATUS_CHANGED` reports `OPEN` at LocationId 24.
    Verify that one corresponding committed `NODE_INFO / OPEN` record is
@@ -189,7 +191,8 @@ storage recovery remains component-level persistence/codec verification.
 **Procedure — run 2 restart recovery**
 
 1. Start a second SI-01 process with the same TimingData persistence file.
-2. Verify operational state starts `CLOSED` with no current LocationId.
+2. Verify functional state starts `CLOSED` with no current LocationId and
+   operational state becomes `OK` after successful recovery.
 3. Verify LogBook contains the original three committed records, in sequence:
    OPEN, registration ADD, CLOSE.
 4. Verify a new WebSocket session begins with `STATUS_SNAPSHOT` and does not
@@ -206,7 +209,7 @@ storage recovery remains component-level persistence/codec verification.
   submission use the same source ordering;
 - reconnect/restart exposes committed history without replaying it as new live
   commits;
-- operational OPEN/CLOSED state is not restored merely from historical records.
+- functional OPEN/CLOSED state is not restored merely from historical records.
 
 :::
 
@@ -289,21 +292,26 @@ TimingNode while application-level diagnostic interfaces remain available.
 1. Prepare a syntactically valid persisted TimingData record owned by a
    different NodeId than the configured TimingNode.
 2. Start SI-01 and verify the process remains running.
-3. Query IF-03 status and verify the affected node is `ERROR` with
+3. Query IF-03 status and verify the affected node remains functionally
+   `CLOSED` and has operational state `ERROR` with problem
    `TIMING_DATA_LOAD_FAILED`.
-4. Query the Remote Shell status and verify the same contained problem.
-5. Attempt OPEN and verify an explicit failure response rather than normal
-   acceptance.
-6. Connect/reconnect IF-03 events and verify each session starts with an ERROR
-   status snapshot that retains the problem.
+4. Query the Remote Shell status and verify the same functional state,
+   operational state and contained problem.
+5. Attempt OPEN and verify the functional transition can still be applied.
+   Verify the lifecycle-history write fails separately because the LogBook is
+   unavailable and operational state remains `ERROR`.
+6. Connect/reconnect IF-03 events and verify each session starts with a complete
+   snapshot containing functional state plus operational `ERROR` and the problem.
 7. Shut down through the supported control path.
 
 **Expected result**
 
 - invalid recovered ownership does not terminate SI-01;
-- the affected TimingNode remains contained in ERROR;
+- the affected TimingNode remains contained with operational `ERROR` while
+  functional OPEN/CLOSED remains independently observable;
 - HTTP, WebSocket and Remote Shell diagnostics remain usable;
-- normal state-changing work is rejected explicitly.
+- functions that do not require the failed LogBook remain available; operations
+  that do require it report their own failure.
 
 :::
 
