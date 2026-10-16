@@ -290,6 +290,10 @@ contain at least:
 - the current operational `LocationId`, or no assigned location;
 - lifecycle state `CLOSED` or `OPEN`;
 - relevant explicit problem/error state.
+
+The current lifecycle state and LocationId are authoritative TimingNode runtime
+state. Committed LogBook NODE_OPEN/NODE_CLOSE records are historical TimingData
+facts and shall not by themselves reconstruct or change that current runtime state.
 :::
 
 :::{req} Current application status snapshot  
@@ -1348,9 +1352,10 @@ components shown inside the TimingNode aggregate in Figure SI01-01.
 A TimingNode owns two distinct bounded logical execution lanes, potentially
 backed by the **same Runtime-owned physical ExecutorService**:
 
-- **Data Lane:** the single writer of lifecycle/location state, TimingData
-  sequence allocation, durable TimingData persistence and committed LogBook
-  contents. TimingData commands and ORDERED LogBook/history reads execute here.
+- **Data Lane:** the single writer of lifecycle/location TimingData records,
+  TimingData sequence allocation, durable TimingData persistence and committed
+  LogBook contents. TimingData commands and ORDERED LogBook/history reads execute
+  here. Current TimingNode OPEN/CLOSED + LocationId state remains TimingNode-owned.
 - **Task Lane:** the single writer of live RaceData and task-derived timing state:
   TeamAssignments, StageStartTimes and UniqueTeamRegistrations. It also owns
   upstream semantic/protocol coordination, heartbeats and task-owned timing
