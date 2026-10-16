@@ -1,5 +1,7 @@
 # Changelog
 
+- Clarify TimingNode lifecycle ownership: OPEN/CLOSED runtime state now remains independent from lifecycle LogBook persistence, with lifecycle records treated as separately ordered historical TimingData and verification updated accordingly.
+
 All notable changes to this repository are documented here.
 
 The repository is currently in its planning and research phase.
