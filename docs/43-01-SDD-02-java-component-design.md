@@ -1520,14 +1520,17 @@ timing-point-core.jar
       ConfigurationUpdateResult.java
       DefaultDynamicConfiguration.java
       FixedConfiguration.java
+    property/
+      Property.java
+      PropertyContainer.java
 
   io.github.brainboxemb.eventtiming.timingpoint.application/
     ApplicationConductor.java
     ConfigurationControl.java
 
   io.github.brainboxemb.eventtiming.timingpoint.domain.system/
-    SystemConductor.java
-    PropertyRegistry.java
+    TimingSystem.java
+    TimingSystemConductor.java
 
   io.github.brainboxemb.eventtiming.timingpoint.runtime/
     TimingApplicationRuntime.java
