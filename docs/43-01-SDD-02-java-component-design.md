@@ -3052,8 +3052,10 @@ five seconds. Normal local persistence is expected to complete far faster; a
 timeout is an operational failure signal.
 
 An accepted command is not cancelled when this caller wait expires. The Data
-Lane may still complete it later, so the caller-visible outcome remains unknown
-until current state or a later committed fact establishes the result.
+Lane may still complete it later, so the caller-visible state-change outcome
+remains unknown until current state or a later committed fact establishes the
+result. An ORDERED-query timeout has different meaning: no query result was
+received within its wait guard, but no state-change outcome is implied.
 
 These two defaults are explicit composition constants, not one generic
 `operationTimeoutMillis`. Runtime configuration is not added solely for tuning
