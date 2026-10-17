@@ -396,8 +396,17 @@ metrics, and both use the **same Runtime-owned timing-node executor**.
 Each lane has a bounded queue and one queue worker. Queue capacity bounds backlog;
 `maxItemsPerRun` independently bounds how many items one worker run may process.
 A worker run takes only items already queued when that run starts; work arriving
-during the batch remains queued for the next run. The TagProcessor retains an
-independent `ScheduledSerialLane`.
+during the batch remains queued for the next run.
+
+Each TagProcessor has one component-owned `ScheduledSerialLane` backed by the
+Runtime-owned tag-processing executor. TagProcessor also owns its separate bounded
+`TagObservation` ingress queue; that queue is not the lane queue and its configured
+`observationQueueCapacity` remains the antenna-ingress/backpressure bound. Accepted
+observations trigger ordinary lane work through `processQueuedObservations()`.
+Time-driven processing uses two distinct fixed-delay registrations on the same lane:
+`processObservationFilter()` evaluates quiet/max-burst passage expiry, while
+`processHousekeeping()` cleans duplicate-window state. These are three work paths
+on one logical lane, not separate executors or threads.
 
 The Task Lane cannot read or mutate Data Lane-owned collections directly.
 Cross-lane commands, reads and immutable replies must be non-blocking and
@@ -421,6 +430,9 @@ timingNodeExecutor — ThreadPoolExecutor, 1 physical worker
 
 tagProcessorScheduledExecutor — ScheduledThreadPoolExecutor, 1 physical worker
   └── one ScheduledSerialLane per TagProcessor
+        ├── processQueuedObservations()   ordinary queued lane work
+        ├── processObservationFilter()   fixed-delay passage expiry
+        └── processHousekeeping()        fixed-delay duplicate cleanup
 
 timingSystemConductorExecutor — ScheduledThreadPoolExecutor, 1 physical worker
   └── one TaskSerialLane per TimingSystemConductor
@@ -721,8 +733,11 @@ not introduce another queue or executor. Passive mutable Task Lane data lives in
 `NodeServiceState`, not in the service object itself. Other node-owned helpers
 such as UpstreamHandler may use the same underlying Task Lane for non-blocking
 handoffs. Both logical serial lanes are supplied by Runtime and may share one
-physical worker. The TagProcessor uses its separately supplied
-scheduled executor.
+physical worker. TagProcessor receives one `ScheduledSerialLane`; Runtime owns
+the physical scheduled executor underneath it. The processor's antenna-ingress
+queue is drained through ordinary lane work, while passage-filter expiry and
+duplicate-state cleanup are two separate fixed-delay registrations on that same
+logical lane.
 
 A production `TimingNode` is always constructed as a complete capability.
 `TimingDataPersistence`, `TimingDataFactory`, the injected absolute-time supplier,
