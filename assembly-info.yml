@@ -1,0 +1,29 @@
+schema_version: 1
+assembler:
+  name: tool.eng-docs
+  version: 0.10.0
+source:
+  repository: brainboxemb/2026-010-01.meta.event-timing-software
+  revision: b0c58bba7e68ded845dcc524c6f1544d5ad1f7fb
+configuration:
+  path: docs/assembly.yml
+  sha256: e91573e48d7fb24f8dd43ec97d86da44d35bd2cd8c5045a8815ad0b14766b913
+input_manifests:
+- path: bld/docs-producers/architecture/assets-publication.yml
+  sha256: 599ed3d585694b9bb181951d25a66f9a772d01c95db37fcf97193302fc014de8
+  producer:
+    name: event-timing-software.architecture-publication
+    version: 0.10.0
+    source_revision: 6e14c38ade362ac111cfa6fc92ddb7530c9572c4
+- path: bld/docs-producers/architecture/assets-raw.yml
+  sha256: d7f7c19d20b945eacadc865e15e3c95aa25a25986785e240357b726a5af6b771
+  producer:
+    name: event-timing-software.architecture-raw
+    version: 0.10.0
+    source_revision: 6e14c38ade362ac111cfa6fc92ddb7530c9572c4
+- path: bld/docs-producers/planning/assets.yml
+  sha256: 33bde4b12d18d182bf2331b333dec863c0140767d95557e72fd9668275c2700f
+  producer:
+    name: event-timing-software.planning
+    version: 0.10.0
+    source_revision: 8739a6fbacd5f76cfd81524982e6812b21a6e14d
