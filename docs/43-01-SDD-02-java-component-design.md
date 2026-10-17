@@ -389,8 +389,8 @@ generic `io.storage.AppendOnlyRecordStore`; the file implementation remains
 completely unaware of TimingData, TimingNode and Domain types.
 The architecture distinguishes two logical serial lanes **per TimingNode**:
 a **Data Lane** for ordered lifecycle/registration commits, LogBook persistence,
-live reference data, derived registration state and ORDERED reads, and a
-**Task Lane** for node coordination, heartbeat and upstream protocol state.
+and ORDERED LogBook reads, and a **Task Lane** for live RaceData,
+derived timing state, heartbeat and upstream protocol state.
 Both are bounded `SerialLane` instances, each with its own FIFO/admission/
 metrics, and both use the **same Runtime-owned timing-node executor**.
 The TagProcessor retains an independent `ScheduledSerialLane`.
@@ -500,8 +500,8 @@ for reimplementing JDK executor internals.
 Detailed Java design for cooperative task execution and the TimingSystem-scoped
 coordination pattern used by `domain.system.TimingSystemConductor`.
 
-Both coordinator components are labeled **Conductor** in the architecture diagram, each
-within its owning layer. Their Java implementations are
+Both coordinators are labeled **Conductor** in Figure SI01-01, one in the
+Application layer and one inside TimingSystem. Their Java implementations are
 `application.ApplicationConductor` and `domain.system.TimingSystemConductor`.
 
 Some component operations consist of several ordered steps. One step must stay short enough
@@ -2789,13 +2789,15 @@ shared TagProcessor role worker
   -> one serial/scheduled TagProcessor lane per TimingNode
   -> registration ingress/highest latency sensitivity
 
-shared Domain/application ExecutorService
-  -> Data Lane per TimingNode (ordered commits/reads)
-  -> Task Lane per TimingNode (node coordination/upstream/heartbeat)
-  -> TimingSystem Conductor serial lanes (task-runner when required)
+shared TimingNode executor
+  -> Data Lane per TimingNode (SerialLane, LogBook commits/reads)
+  -> Task Lane per TimingNode (SerialLane, RaceData/upstream)
 
-shared I/O executor
-  -> external hardware, messaging and other bounded I/O
+shared TimingSystemConductor scheduled executor
+  -> one TaskSerialLane per TimingSystemConductor
+
+shared I/O scheduled executor
+  -> one TaskSerialLane per AntennaManager and bounded I/O
 ```
 
 All these lanes may be logical queues over a small fixed set of workers;
