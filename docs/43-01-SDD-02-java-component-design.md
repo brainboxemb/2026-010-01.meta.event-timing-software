@@ -393,17 +393,22 @@ and ORDERED LogBook reads, and a **Task Lane** for live RaceData,
 derived timing state, heartbeat and upstream protocol state.
 Both are bounded `SerialLane` instances, each with its own FIFO/admission/
 metrics, and both use the **same Runtime-owned timing-node executor**.
-The TagProcessor retains an independent `ScheduledSerialLane`.
+Each lane has a bounded queue and one queue worker. Queue capacity bounds backlog;
+`maxItemsPerRun` independently bounds how many items one worker run may process.
+A worker run takes only items already queued when that run starts; work arriving
+during the batch remains queued for the next run. The TagProcessor retains an
+independent `ScheduledSerialLane`.
 
 The Task Lane cannot read or mutate Data Lane-owned collections directly.
 Cross-lane commands, reads and immutable replies must be non-blocking and
 bounded; synchronous Future-waiting between lanes is forbidden when they share
 one physical worker. Cooperative tasks add neither another worker nor another
-queue: `TaskSerialLane` executes one `YieldingTask` step per lane turn and
-uses `LaneScheduler` only for delayed re-admission. A single physical worker
-cannot process two lane items concurrently, so slow durable persistence can
-temporarily delay a heartbeat despite independent logical queues. V01 measures
-the need for additional workers.
+queue: `TaskSerialLane` submits each `YieldingTask` step as one queue item and
+uses `LaneScheduler` only for delayed re-admission. Re-admitted work is newer
+than the current worker-run snapshot and therefore runs in a later worker run.
+A single physical worker cannot process two lane items concurrently, so slow
+durable persistence can temporarily delay a heartbeat despite independent
+logical queues. V01 measures the need for additional workers.
 
 ```text
 RuntimeExecutors
@@ -524,9 +529,10 @@ AGAIN AFTER(t) DONE
 
 `TaskSerialLane` extends `ScheduledSerialLane`. It owns no physical thread; Runtime
 supplies the backing `ScheduledExecutorService`. Each task step is submitted as one normal
-serial-lane turn. `AGAIN` yields by re-admitting at the back of the same bounded queue.
-`AFTER(delay)` uses delayed admission and does not occupy the physical worker while waiting.
-`DONE` completes the task run.
+queue item. `AGAIN` yields by re-admitting at the back of the same bounded queue; because
+the queue-worker batch size is fixed when a run starts, that re-admitted step cannot loop
+again inside the current worker run. `AFTER(delay)` uses delayed admission and does not
+occupy the physical worker while waiting. `DONE` completes the task run.
 
 `ScheduledSerialLane` currently uses the Java helper `LaneScheduler` for timer
 registration. That helper is an implementation detail, not a separate architecture
