@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Clarify production API encapsulation: when callers need one stable lifecycle predicate, expose a semantic query such as `isRunning()` instead of requiring caller-side interpretation of a full internal state enum; retain complete state views where diagnostics or genuine multi-state decisions need them.
+
 - Define validation guards as explicit runtime failures with positive assertion conditions: `failIfInvalidArgument(assertion, ...)` and `failIfIllegalState(assertion, ...)`; `true` means the contract holds and `false` throws. Do not use Java's optional `assert` mechanism or invert callers into failure conditions.
 
 - Simplify TimingSystem antenna control: TimingSystemConductor calls the optional AntennaManager's idempotent desired-inventory API directly, while AntennaManager privately retains requested/applied/retry bookkeeping and all physical device mechanics. Remove the unnecessary shared grouped-settings bridge.

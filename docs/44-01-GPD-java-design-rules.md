@@ -1658,6 +1658,29 @@ system-level antenna routing may call `TimingNode.onTagObserved(...)`; TimingNod
 delegates internally to its TagProcessor. The system owner therefore depends on the
 TimingNode component boundary and does not need `tagProcessor()` access.
 
+The same principle applies to state queries. When a production caller needs one stable
+predicate, expose that semantic predicate on the owner instead of making every caller read
+and interpret the owner's full state representation. For example:
+
+```java
+if (coordinationLane.isRunning()) {
+    wakeControlTask();
+}
+```
+
+is preferred over:
+
+```java
+if (coordinationLane.state() == SerialLane.State.RUNNING) {
+    wakeControlTask();
+}
+```
+
+A complete `state()` view may still exist for diagnostics, tests or callers that genuinely
+need to distinguish several states. Do not remove useful state diagnostics merely to force
+Boolean APIs; the rule is that ordinary control flow should not depend on enum representation
+when the owner can answer the semantic question directly.
+
 **Why**
 
 Test-only convenience methods and pass-through getters slowly become accidental production
