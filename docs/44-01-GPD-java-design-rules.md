@@ -50,8 +50,8 @@ Example:
 TimingNode operation state is OPEN
         |
         v
-Conductor publishes:
-AntennaSettings.update(...)
+Conductor requests:
+AntennaManager.setInventoryRequired(...)
         |
         v
 AntennaManager reconciles:
@@ -83,16 +83,13 @@ classes harder to change.
 Good:
 
 ```java
-antennaSettings.update(
-        edit -> edit.set(
-                AntennaSettings.INVENTORY_ENABLED,
-                Boolean.TRUE));
+antennaManager.setInventoryRequired(true);
 ```
 
-The Conductor publishes desired inventory enable. AntennaManager may then power the
-antenna, wait for stabilization, initialize it and start inventory. When all TimingNodes
-are CLOSED, the Conductor publishes `INVENTORY_ENABLED = false` in the
-same shared Settings object.
+The Conductor tells AntennaManager whether inventory is required. AntennaManager may then
+power the antenna, wait for stabilization, initialize it and start inventory. When all
+TimingNodes are CLOSED, the Conductor calls `setInventoryRequired(false)`. Repeating the
+same desired value is idempotent and is not an implicit retry.
 
 **Avoid**
 
@@ -104,9 +101,9 @@ antennaManager.startInventory();
 
 from Conductor. This makes Conductor responsible for AntennaManager internals.
 
-The same rule applies to recovery. After the Conductor publishes desired
-inventory state, AntennaManager owns recovery needed to restore it without
-requiring the Conductor to micromanage hardware.
+Calling `setInventoryRequired(...)` is different: it states the outcome the system needs,
+not the physical sequence. AntennaManager still owns recovery needed to restore the requested
+state without requiring the Conductor to micromanage hardware.
 
 The same ownership rule also guides package placement. A reusable technical mechanism
 that knows nothing about SI-01 concepts belongs under `infra`; domain-specific
@@ -115,31 +112,24 @@ registration and behaviour stay with the owning Domain component.
 Example:
 
 ```text
-domain.system.SystemConductor
+domain.system.TimingSystemConductor
         reads current TimingNode status and calculates desired inventory
 
-infra.setting.Setting<T>
-        passive desired/applied tracking, reused across components
-
-infra.setting.SettingContainer
-        generic typed setting group, atomic update and grouped change publication
-
-io.devices.antenna.manager.AntennaSettings
-        thin antenna-specific setting declaration/facade
-
 io.devices.antenna.manager.AntennaManager
-        owns applied state, physical transitions and recovery
+        accepts desired inventory intent and owns physical transitions and recovery
+
+infra.setting.Setting<T>
+        optional manager-private requested/applied/retry bookkeeping
 ```
 
 A Setting is state, not a scheduler. It must not own a SerialExecutor, Future,
 queue admission, retry loop, coalescing controller or component lifecycle merely
 because its value can change asynchronously.
 
-When several related settings are shared as one desired-state boundary, use
-`SettingContainer` with typed `SettingKey<T>` values and one grouped `SettingUpdate`.
-The container owns atomic requested-value publication, group revision and the normal
-`EventSource<SettingUpdate>`. Do not hand-build the same transaction/revision/event
-mechanics again in each component-specific Settings class.
+Do not introduce a shared settings object merely to avoid a direct semantic method call
+between two components that already belong to the same composition owner. A settings
+abstraction needs its own concrete reason, such as genuinely shared configuration or an
+atomic multi-value contract.
 
 ---
 
@@ -290,9 +280,10 @@ timingNode.STATUS_CHANGED
 ```
 
 The handler may validate source identity and wake the existing control task, then returns.
-The later control run reads TimingNode status with CURRENT consistency and updates
-shared AntennaSettings, which wakes the manager to reconcile asynchronously. It does not perform that
-reconciliation in the synchronous event callback.
+The later control run reads TimingNode status with CURRENT consistency and calls
+`AntennaManager.setInventoryRequired(...)`. That call only records desired state and wakes
+the manager's own work when needed; physical reconciliation does not run in the synchronous
+TimingNode event callback.
 
 **Event and handler naming**
 
@@ -382,8 +373,8 @@ system-wide reporting of those failures belongs to event infrastructure/diagnost
 not to domain event producers.
 
 Initialization is also separate from events. TimingSystemConductor activation wakes its first
-normal reconciliation run; that run reads CURRENT TimingNode status and publishes
-the desired AntennaSettings state. No synthetic status-change event is required.
+normal reconciliation run; that run reads CURRENT TimingNode status and sets the desired
+AntennaManager inventory state. No synthetic status-change event is required.
 
 **Avoid**
 
@@ -523,8 +514,8 @@ history separate from current control state and makes initialization use the sam
 later updates.
 
 Calculate intermediate decisions locally. If the result is already the desired state of
-another component, publish it directly to that component's shared settings rather than
-copying it into a DerivedProperty first.
+another owned component, pass it through that component's semantic API rather than copying
+it into a DerivedProperty or introducing a shared-state bridge.
 
 **Why**
 
@@ -586,16 +577,13 @@ CooperativeTaskController.wake()
 query current functionalState + derive inventoryRequired
         |
         v
-AntennaSettings.update(
-        edit -> edit.set(
-                AntennaSettings.INVENTORY_ENABLED,
-                Boolean.valueOf(inventoryRequired)))
+AntennaManager.setInventoryRequired(inventoryRequired)
         |
         v
-apply current inventory intent
+manager reconciles current inventory intent
 ```
 
-The event callback only validates/wakes the consumer; it does not modify Settings,
+The event callback only validates/wakes the consumer; it does not call AntennaManager,
 wait on another lane or perform device control. Repeated wakes may be coalesced because the
 later control run rereads CURRENT TimingNode status before deriving behaviour.
 
@@ -944,28 +932,10 @@ over:
 return submitAndWait(() -> applyCommand(command), command.name());
 ```
 
-The same rule applies to non-execution callbacks. When the explicit functional type makes
-the contract clearer, prefer:
-
-```java
-final boolean inventoryRequired = required;
-Consumer<SettingContainer.Edit> settingsUpdate =
-        edit -> edit.set(
-                AntennaSettings.INVENTORY_ENABLED,
-                Boolean.valueOf(inventoryRequired));
-
-antennaSettings.update(settingsUpdate);
-```
-
-over:
-
-```java
-final boolean inventoryRequired = required;
-antennaSettings.update(
-        edit -> edit.set(
-                AntennaSettings.INVENTORY_ENABLED,
-                Boolean.valueOf(inventoryRequired)));
-```
+Do not introduce a callback merely to express a direct semantic request. For example,
+`antennaManager.setInventoryRequired(inventoryRequired)` is clearer than wrapping one
+Boolean in a transaction/callback abstraction. Use an explicitly named callback variable
+when the receiving API genuinely accepts deferred or transactional work.
 
 The local name should describe the deferred/callback operation, not the lambda syntax.
 This is especially useful at serial-lane, task-runner, asynchronous-execution,
@@ -1389,13 +1359,10 @@ say that it queues work and returns immediately; a result-bearing method should 
 it waits for ordered execution. Avoid exposing generic `offer`, `admission`, `submit` or
 `submission` vocabulary from Domain/Application APIs when ordinary queueing words are clearer.
 
-A lambda that executes **synchronously**, such as an atomic
-`AntennaSettings.update(edit -> edit.set(AntennaSettings.INVENTORY_ENABLED, enabled))`, is different.
-Keep a short lambda where it makes the transaction visible, but explain the
-non-obvious contract at the call site or in the immediately referenced API:
-the edit is staged, `update()` commits desired state before returning, and
-hardware application still happens asynchronously. Do not let the lambda
-syntax hide when state becomes visible or which component performs the work.
+A lambda that executes **synchronously** inside a genuine transaction API is different.
+Keep a short lambda where it makes that transaction visible, and explain non-obvious
+publication semantics at the API boundary. Do not introduce a transaction callback solely
+to move one desired Boolean between components already owned by the same composition.
 
 **Why**
 
