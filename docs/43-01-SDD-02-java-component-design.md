@@ -359,9 +359,6 @@ platform/
     lanes/
       SerialLane.java                        bounded typed serial FIFO
       SerialLaneMetrics.java                 typed-lane queue/timing metrics
-      RunnableSerialLane.java                runnable/Callable lane retained for simulation support
-    scheduling/
-      LaneScheduler.java                     simulation-only delayed RunnableSerialLane admission
     tasks/
       SerialTaskRunner.java                  cooperative task runs over SerialLane<TaskRun>
       YieldingTask.java                      one cooperative step contract
@@ -3190,9 +3187,11 @@ AntennaManager
   -> sharedIoScheduledExecutor
 ```
 
-`RunnableSerialLane` and `LaneScheduler` remain only for the independent deterministic
-simulation path (`SimulatedTagScenarioRunner`). They are not the normal Domain execution
-model and do not justify reintroducing scheduled/task lane wrappers.
+`SimulatedTagScenarioRunner` uses the Runtime-owned `sharedIoScheduledExecutor`
+directly. It keeps at most 32 active scenarios and schedules only the next step of each
+scenario, so simulation work is bounded without another logical lane or scheduling wrapper.
+A lifecycle-generation guard prevents delayed work from a previous activation from emitting
+after deactivate/reactivate.
 
 All execution is JDK-backed. Physical parallelism remains a Runtime decision; adding
 logical lanes or task runners does not imply adding threads.
