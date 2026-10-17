@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Clarify SerialLane worker batching: queue capacity bounds backlog while configurable `maxItemsPerRun` independently bounds one worker run; each run processes only items already queued at its start, and later arrivals wait for the next run.
+
 - Simplify the Java command/failure design: Application owns `CommandResult`, LogBook registration commands return committed `TimingData`, `TimingNodeTypes` contains only real node values/results, and technical Data Lane failures remain owning-boundary diagnostics instead of a caller-visible reason-state model; align IF-03 failure mapping and Java design rules.
 
 - Define the compact TimingNode locked-operation boundary for presentation-triggered LogBook writes: meaningful `Supplier<T>` work is named before `processLocked(...)`, state-sensitive registration ADD keeps OPEN/LocationId stable with OPEN/CLOSE, revocation keeps caller-supplied original values, and stale automatic-registration examples are removed.
