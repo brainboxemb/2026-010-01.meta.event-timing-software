@@ -935,8 +935,8 @@ The same rule applies to a real synchronous lock/transaction boundary. Name the 
 work first when that makes the operation easier to read:
 
 ```java
-Supplier<RegistrationResult> processRevocation =
-        () -> logBook.process(command);
+Supplier<CommandResult> processRevocation =
+        () -> CommandResult.committed(logBook.process(command));
 
 return timingNode.processLocked(processRevocation);
 ```
@@ -1795,83 +1795,47 @@ no semantic contract beyond returning that field.
 
 ---
 
-### DR-23 — Make caller-visible operation failures explicit
+### DR-23 — Keep normal results separate from technical failures
 
 **Rule**
 
-When a public result-bearing operation deliberately uses a runtime exception as a second
-caller-visible outcome family, make that failure contract explicit at the method boundary.
+Public result types describe normal semantic outcomes. Do not turn queue state,
+timeouts, interruption and internal execution failures into a second public state
+machine merely because a caller needs to know that normal processing did not finish.
 
-For a stable project exception such as `OperationException`, declare it with `throws`
-even though Java does not require an unchecked exception to appear in the signature. Add
-a precise `@throws` description that tells the caller when it can happen and, where
-relevant, what the failure means. For example, a TIMEOUT on an accepted TimingNode
-operation means the final domain outcome is unknown.
-
-Keep normal domain results and operational execution failures distinct:
+Prefer a small result owned by the actual boundary:
 
 ```java
-public RegistrationResult addManualRegistration(...)
-        throws OperationException
-```
-
-Here `RegistrationResult` represents normal processed outcomes such as COMMITTED or
-NODE_NOT_OPEN. `OperationException` represents failure to obtain that normal result, for example because
-the operation is busy or unavailable, execution failed, the caller was interrupted, or
-waiting timed out. Do not hide the second family merely because the exception extends
-`RuntimeException`.
-
-Use the same rule through forwarding production boundaries. A proxy or accessor must not
-remove the declared failure contract merely because it delegates to another component.
-
-The public failure contract must stay at the abstraction level of the public component. Do not
-make a TimingNode caller understand whether an internal LogBook, lane or recovery task is ready.
-Internal readiness/order is owned below the boundary; the public operation either returns its
-normal domain result or reports the stable component-level operation failure.
-
-When a method only needs to run cleanup/recovery after a runtime failure and then rethrow
-the same failure, prefer the shared small execution/failure guard over repeating local
-`try/catch` boilerplate. Keep the component-specific recovery policy visible through a
-named handler. The wrapper must not swallow unrelated failures or invent another failure
-model.
-
-The same applies when a fire-and-forget execution boundary deliberately contains queue
-rejection. The boundary owner should use the shared execution/failure guard and keep only
-its diagnostic policy at the call site; upstream Domain/Application code should not repeat
-the `try/catch` for a lower-level lane rejection.
-
-**Why**
-
-A return type that looks complete while a hidden runtime failure can also escape is hard
-to review and easy to misuse. Explicit unchecked `throws` declarations are documentation
-here: they make the real API shape visible without forcing recoverable execution problems
-into normal domain result enums.
-
-Repeated catch-and-rethrow blocks also obscure the normal application flow. The component
-should show the business steps; generic exception mechanics belong in the shared wrapper,
-while the component keeps ownership of the actual recovery decision.
-
-**Example**
-
-Prefer an explicit caller-visible failure contract on an operation that actually waits for a result:
-
-```java
-public RegistrationResult addManualRegistration(...) throws OperationException {
-
-    return logBook.process(
-            LogBookCommands.commitManualRegistration(...));
+public CommandResult addManualRegistration(...) {
+    ...
 }
 ```
 
-Do not add an `OperationException` merely because a fire-and-forget LogBook
-submission can fail later; that later failure has no synchronous caller result.
+For this example, `CommandResult` may contain `COMMITTED` and
+`NODE_NOT_OPEN`. The LogBook command itself returns the committed
+`TimingData`; `NODE_NOT_OPEN` is decided by Application before LogBook
+processing starts.
 
-If a component really owns failure-specific cleanup, keep that policy named and use the
-shared execution/failure guard rather than repeating catch-and-rethrow mechanics.
+Use an exception only to leave normal Java flow when the operation cannot return
+its normal result. Prefer ordinary Java runtime failures when callers do not have
+distinct recovery behaviour. Do not introduce a generic project reason enum
+solely to mirror BUSY, unavailable, timeout, interruption and execution-failure
+diagnostics already owned by the execution boundary.
 
-This does not mean every possible programming exception belongs in a `throws` clause.
-Ordinary argument/precondition failures remain documented where useful. The rule applies
-to intentional caller-visible operation failure contracts.
+Exceptions do not belong in a generic `*Types` grouping merely for convenience.
+If a custom exception is genuinely required, place it with the component/boundary
+that owns its meaning and keep it as specific as the caller's recovery need.
+
+Do not wrap fire-and-forget submission failure into a caller-result model. That
+path has no synchronous caller result; its owner records the operational
+diagnostic and applies any local recovery policy.
+
+**Why**
+
+A compact API is easier to read when callers see the domain/application outcomes
+they can actually act on. Repeating internal execution categories through Domain,
+Application and Presentation creates mapping code without adding authoritative
+state; retained logs are the right place for those technical diagnostics.
 
 ---
 
@@ -1879,8 +1843,8 @@ to intentional caller-visible operation failure contracts.
 
 **Rule**
 
-When an execution boundary converts a technical failure into a stable caller-visible
-operation failure, emit the operational log record at that same boundary.
+When an execution boundary detects a technical failure, emit the operational log
+record at that owning boundary.
 
 The record must contain enough context to identify the failed operation without requiring
 the caller to reconstruct it. For TimingNode/LogBook operations this means at least the
@@ -1894,9 +1858,9 @@ Use severity consistently:
 - `TIMEOUT` and execution/commit `FAILED`: ERROR;
 - `BUSY`, `UNAVAILABLE` and `INTERRUPTED`: WARN or higher.
 
-Do not catch and re-log the same operation failure in forwarding layers merely because
-they translate it to HTTP, terminal or another presentation result. The component that
-creates the stable operation failure owns its operational log.
+Do not catch and re-log the same technical failure in forwarding layers merely to
+reclassify it for HTTP, terminal or another presentation adapter. The execution boundary
+that knows the cause owns its operational log.
 
 A lower-level owner may emit one additional root-cause record when it adds materially
 different diagnostic context. For example, TimingData persistence may log sequence,
@@ -1942,7 +1906,7 @@ For Java component changes, a reviewer can use this short check:
 19. **Production API** — Does each public member serve a production boundary, and are intentional test-only seams explicit?
 20. **Data carriers** — Is a small immutable Java-8 value kept simple instead of wrapped in getter boilerplate without a reason?
 21. **Tests** — Is the risky behaviour tested, not only the happy path?
-22. **Failure contract** — Do result-bearing public operations explicitly declare intentional caller-visible operation exceptions, and is catch/rethrow boilerplate kept out of the normal flow?
+22. **Failure contract** — Do normal result types contain only semantic outcomes, with technical execution failures kept out of a duplicate public state model?
 23. **Failure logging** — Is an operational failure logged once at its owning boundary with stable identity, operation and reason, without forwarding-layer duplicates?
 
 A review can cite a rule such as `DR-05`, but the rule text and example should remain

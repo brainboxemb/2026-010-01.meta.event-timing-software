@@ -733,9 +733,9 @@ and finally TagProcessor ingress. No public TimingNode activate/deactivate API i
 
 When a public component operation must reject an inactive lifecycle, the reusable
 `failIfInactive()` guard belongs to `LifecycleComponent` together with the active/inactive
-fact. A concrete component supplies the caller-visible failure factory when it needs a
-domain/application-specific exception such as `OperationException(UNAVAILABLE)`; the
-lifecycle package therefore remains independent from TimingNode-specific exception types.
+fact. A concrete component supplies the failure factory; TimingNode uses an ordinary
+`IllegalStateException` because inactive lifecycle is not a second domain-result state.
+The lifecycle package therefore remains independent from TimingNode-specific failure types.
 
 Functional state is immediately available as CLOSED with no LocationId. The Data Lane
 separately loads persisted TimingData and rebuilds LogBookData. Recovery never
@@ -850,23 +850,24 @@ the ordered LogBook commit. Meaningful deferred work is named before it is passe
 boundary:
 
 ```java
-Supplier<RegistrationResult> addRegistration = () -> {
-    RegistrationResult result;
+Supplier<CommandResult> addRegistration = () -> {
+    CommandResult result;
     if (node.functionalState() != FunctionalState.OPEN) {
-        result = RegistrationResult.nodeNotOpen();
+        result = CommandResult.nodeNotOpen();
     } else {
-        LogBookCommand<RegistrationResult> command =
+        LogBookCommand<TimingData> command =
                 LogBookCommands.commitManualRegistration(
                         node.locationId(),
                         registrationId,
                         time,
                         timeSource);
-        result = logBook.process(command);
+        TimingData timingData = logBook.process(command);
+        result = CommandResult.committed(timingData);
     }
     return result;
 };
 
-RegistrationResult result =
+CommandResult result =
         node.processLocked(addRegistration);
 ```
 
@@ -2874,8 +2875,8 @@ TimingNode
 
 The **Data Lane** is the sole writer for the append-only TimingData source.
 `LogBookDataLane` adapts the generic `SerialLane` to the LogBook result contract
-(startup scheduling, ordered submit/wait, reentrancy prevention and
-`OperationException` mapping) without creating another queue or thread model.
+(startup scheduling, ordered submit/wait, reentrancy prevention and owning-boundary
+failure diagnostics) without creating another queue or thread model.
 `LogBookOperations` owns state-changing domain operations, TimingData creation,
 time capture, durable append, startup reconstruction and commit metrics/logging.
 `LogBookState` contains only passive mutable state and committed in-memory TimingData.
@@ -2972,52 +2973,49 @@ wait on work that cannot run until the current work item finishes.
 
 ### Operation results and execution failures
 
-Keep domain outcomes separate from failures of the execution boundary.
+Keep normal semantic results small and owned by the boundary that defines them.
 
 For example:
 
 ```text
-OpenResult
-  OPENED
-  ALREADY_OPEN
+TimingNodeTypes
+  FunctionalState
+  OpenResult
+  CloseResult
 
-RegistrationResult
-  COMMITTED
-  NODE_NOT_OPEN
+Application
+  CommandResult
+    COMMITTED
+    NODE_NOT_OPEN
 
-OperationException.Reason
-  BUSY
-  UNAVAILABLE
-  FAILED
-  INTERRUPTED
-  TIMEOUT
+LogBook command result
+  TimingData
 ```
 
-Normal processed outcomes stay in the operation result type. For example,
-`NODE_NOT_OPEN` is a normal registration result and does not mean execution
-failed. Queue-full, unavailable/stopped execution, internal execution failure,
-interruption and wait timeout mean the caller did not obtain that normal result
-and therefore use `OperationException`.
+`CommandResult` belongs to Application because it describes a
+presentation-triggered command, not TimingNode state and not a LogBook commit
+primitive. A LogBook registration/revocation command returns the committed
+`TimingData` directly. The proxy adds the normal application result around that
+value and decides `NODE_NOT_OPEN` before the LogBook is called.
 
-A timeout is different from a definite rejection. It means only that the caller
-did not receive the processed result within the configured guard time.
-TimingNode timeout handling must not automatically cancel or interrupt an already
-accepted state change. The caller must treat the final outcome as unknown and
-re-query the current state before assuming that the command did not happen.
+Technical queue rejection, unavailable execution, interruption, timeout and
+execution failure are not another TimingNode result/state enum. The Data Lane
+retains the bounded wait guards and logs the concrete technical reason where it
+is known. The Java call aborts normal flow with an ordinary runtime failure.
+Forwarding Application/Presentation layers do not translate the internal failure
+taxonomy into a second public reason model.
 
-TimingNode uses one small caller-visible `OperationException` with a stable
-`Reason` instead of leaking `TimeoutException`, `ExecutionException` or
-`InterruptedException` from `java.util.concurrent` through the domain API.
-Result-bearing public TimingNode operations explicitly declare
-`throws OperationException`, even though the current Java type is unchecked,
-so callers can see the second outcome family directly at the method boundary.
-Internal LogBook recovery/lane readiness is not a caller precondition: ordered
-node operations wait behind startup loading, and any resulting execution failure
-is reported through the TimingNode operation contract.
+A command wait timeout still has an important diagnostic distinction: already
+accepted work may complete later. The owning Data Lane log therefore records
+that the final command outcome may be unknown. An ordered-query timeout records
+only that no query result was obtained. That distinction belongs in retained
+diagnostics; it does not require a generic public operation-state exception.
 
-Keep the exception family small and add distinct exception types only where
-callers need different recovery behaviour. Timeout remains a distinct reason
-because its outcome semantics differ from a definite not-queued result.
+Exceptions are not grouped into `TimingNodeTypes`. That source-only grouping is
+for actual TimingNode value/result types. Introduce an owner-specific exception
+only when callers genuinely need distinct programmatic recovery behaviour;
+otherwise ordinary Java runtime failure plus owning-boundary diagnostics is
+preferred.
 
 The Java baseline uses separate wait guards for the two result-bearing LogBook
 operation families:

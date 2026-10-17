@@ -815,11 +815,10 @@ Current status mapping:
 | `404` | `NOT_FOUND`, `NODE_NOT_FOUND` |
 | `405` | `METHOD_NOT_ALLOWED` |
 | `409` | domain conflict such as `NODE_NOT_OPEN`, or semantic `RESTART_REQUIRED` for a valid configuration update |
-| `503` | `BUSY`, `UNAVAILABLE`, `INTERRUPTED`, expected operation failure |
-| `504` | `OUTCOME_UNKNOWN` |
-| `500` | unexpected internal interface failure |
+| `500` | technical execution or unexpected internal interface failure |
 
-`OUTCOME_UNKNOWN` explicitly means that already accepted work may still complete.
+Detailed queue, timeout, interruption and execution diagnostics are retained by SI-01 at
+the owning execution boundary rather than mirrored as a second IF-03 error-state taxonomy.
 
 ## Request validation
 

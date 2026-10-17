@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Simplify the Java command/failure design: Application owns `CommandResult`, LogBook registration commands return committed `TimingData`, `TimingNodeTypes` contains only real node values/results, and technical Data Lane failures remain owning-boundary diagnostics instead of a caller-visible reason-state model; align IF-03 failure mapping and Java design rules.
+
 - Define the compact TimingNode locked-operation boundary for presentation-triggered LogBook writes: meaningful `Supplier<T>` work is named before `processLocked(...)`, state-sensitive registration ADD keeps OPEN/LocationId stable with OPEN/CLOSE, revocation keeps caller-supplied original values, and stale automatic-registration examples are removed.
 
 - Align the SI-01 SSD execution/process model, diagrams and Java design rules with SDD-02 and current Java: independent logical Data/Task lanes, four shared executor roles, scheduled cooperative tasks, direct AntennaManager inventory requests and no shared Settings component. Simplify architecture prose and remove stale processor/runner terminology.
