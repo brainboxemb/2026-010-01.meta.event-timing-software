@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Refresh SDD-02 and Figure SI01-01 to the implemented execution architecture: `SerialLane` / `ScheduledSerialLane` / `TaskSerialLane`, `LaneScheduler`, `AbstractTask`/`YieldingTask`/`TaskStep`, Runtime-owned shared role executors, current `TimingSystemConductor`, and no shared Settings component boundary.
+
 - Clarify production API encapsulation: when callers need one stable lifecycle predicate, expose a semantic query such as `isRunning()` instead of requiring caller-side interpretation of a full internal state enum; retain complete state views where diagnostics or genuine multi-state decisions need them.
 
 - Define validation guards as explicit runtime failures with positive assertion conditions: `failIfInvalidArgument(assertion, ...)` and `failIfIllegalState(assertion, ...)`; `true` means the contract holds and `false` throws. Do not use Java's optional `assert` mechanism or invert callers into failure conditions.
