@@ -358,16 +358,17 @@ io/
 platform/
   execution/
     lanes/
-      SerialLane.java                        bounded serial logical lane
-      SerialLaneMetrics.java                 lane queue/timing metrics
-      ScheduledSerialLane.java               SerialLane with delayed admission
-      TaskSerialLane.java                    ScheduledSerialLane + YieldingTask execution
+      SerialLane.java                        typed bounded item queue + fixed queue worker
+      SerialLaneMetrics.java                 item queue/timing metrics
+      RunnableSerialLane.java                Runnable execution helper
+      ScheduledSerialLane.java               Runnable lane with delayed admission
+      TaskSerialLane.java                    scheduled lane + YieldingTask execution
     scheduling/
       LaneScheduler.java                     timer-to-lane delayed admission
     tasks/
       YieldingTask.java                      one cooperative step contract
       AbstractTask.java                      reusable run/wake/cancel lifecycle
-      TaskStep.java                          AGAIN / AFTER / DONE continuation
+      TaskStep.java                          AGAIN / AFTER / AWAIT / DONE continuation
   events/
     Event.java                            owner-side typed emit primitive
     EventSource.java                      subscription-only consumer view
@@ -387,16 +388,22 @@ types early. Lower layers expose generic contracts that do not import higher
 layers. TimingData-specific persistence semantics stay in Domain and use the
 generic `io.storage.AppendOnlyRecordStore`; the file implementation remains
 completely unaware of TimingData, TimingNode and Domain types.
-The architecture distinguishes two logical serial lanes **per TimingNode**:
-a **Data Lane** for ordered lifecycle/registration commits, LogBook persistence,
-and ORDERED LogBook reads, and a **Task Lane** for live RaceData,
-derived timing state, heartbeat and upstream protocol state.
-Both are bounded `SerialLane` instances, each with its own FIFO/admission/
-metrics, and both use the **same Runtime-owned timing-node executor**.
-Each lane has a bounded queue and one queue worker. Queue capacity bounds backlog;
-`maxItemsPerRun` independently bounds how many items one worker run may process.
-A worker run takes only items already queued when that run starts; work arriving
-during the batch remains queued for the next run.
+The architecture distinguishes two logical serial lanes **per TimingNode**.
+The **Data Lane** is a typed `SerialLane<TimingNodeDataItem>`. Its bounded FIFO
+contains domain/data items rather than one `Runnable` wrapper per operation.
+Normal LogBook commands and ORDERED queries enter as `LogBookOperationItem`
+variants; node-scoped upstream Data Lane turns use the same typed queue. The lane
+owns capacity, `maxItemsPerRun`, metrics and exactly one fixed queue worker.
+
+The **Task Lane** owns live RaceData, derived timing state, heartbeat and upstream
+task work. Runtime supplies it as a `TaskSerialLane`, so genuine cooperative
+operations can use `YieldingTask` without adding another physical worker.
+
+Both logical lanes use the **same Runtime-owned one-thread
+`ScheduledThreadPoolExecutor`**. Logical separation therefore gives independent
+FIFO/admission while preserving the one-worker TimingNode baseline. A Data Lane
+worker run processes at most the items present at the start of its bounded batch;
+later work remains for a later run.
 
 Each TagProcessor has one component-owned `ScheduledSerialLane` backed by the
 Runtime-owned tag-processing executor. TagProcessor also owns its separate bounded
@@ -411,22 +418,27 @@ on one logical lane, not separate executors or threads.
 The Task Lane cannot read or mutate Data Lane-owned collections directly.
 Cross-lane commands, reads and immutable replies must be non-blocking and
 bounded; synchronous Future-waiting between lanes is forbidden when they share
-one physical worker. Cooperative tasks add neither another worker nor another
-queue: `TaskSerialLane` submits each `YieldingTask` step as one queue item and
-uses `LaneScheduler` only for delayed re-admission. Re-admitted work is newer
-than the current worker-run snapshot and therefore runs in a later worker run.
-A single physical worker cannot process two lane items concurrently, so slow
-durable persistence can temporarily delay a heartbeat despite independent
-logical queues. V01 measures the need for additional workers.
+one physical worker. For a genuine asynchronous dependency, a `YieldingTask`
+may return `TaskStep.await(completion)`; the task releases the physical worker
+and is re-admitted only after that completion fires. `AGAIN` and `AFTER`
+similarly re-admit later rather than looping inside the current worker turn.
+
+This cooperative mechanism is **not** used for TimingNode startup recovery.
+Startup is deliberately synchronous and completes before normal runtime
+processing is exposed. A single physical worker still cannot process two lane
+items concurrently, so slow runtime work can temporarily delay the sibling
+logical lane; additional physical parallelism remains measurement-driven.
 
 ```text
 RuntimeExecutors
 
-timingNodeExecutor — ThreadPoolExecutor, 1 physical worker
-  ├── TimingNode A: Data Lane (SerialLane)
-  ├── TimingNode A: Task Lane (SerialLane)
-  ├── TimingNode B: Data Lane (SerialLane)
-  └── TimingNode B: Task Lane (SerialLane)
+timingNodeExecutor — ScheduledThreadPoolExecutor, 1 physical worker
+  ├── TimingNode A
+  │     ├── Data Lane — SerialLane<TimingNodeDataItem>
+  │     └── Task Lane — TaskSerialLane
+  └── TimingNode B
+        ├── Data Lane — SerialLane<TimingNodeDataItem>
+        └── Task Lane — TaskSerialLane
 
 tagProcessorScheduledExecutor — ScheduledThreadPoolExecutor, 1 physical worker
   └── one ScheduledSerialLane per TagProcessor
@@ -530,21 +542,22 @@ The current implementation therefore uses `YieldingTask`, `TaskStep` and
 YieldingTask.runStep()
         |
         v
-    TaskStep
-   /    |     \
-AGAIN AFTER(t) DONE
-  |      |      |
-  |      |      +--> complete this run
-  |      +---------> timer; later admit next lane turn
-  +----------------> re-admit at back of the lane
+      TaskStep
+   /    |      |      \
+AGAIN AFTER(t) AWAIT(c) DONE
+  |      |       |       |
+  |      |       |       +--> complete this run
+  |      |       +----------> completion; later admit next lane turn
+  |      +------------------> timer; later admit next lane turn
+  +-------------------------> re-admit at back of the lane
 ```
 
 `TaskSerialLane` extends `ScheduledSerialLane`. It owns no physical thread; Runtime
 supplies the backing `ScheduledExecutorService`. Each task step is submitted as one normal
-queue item. `AGAIN` yields by re-admitting at the back of the same bounded queue; because
-the queue-worker batch size is fixed when a run starts, that re-admitted step cannot loop
-again inside the current worker run. `AFTER(delay)` uses delayed admission and does not
-occupy the physical worker while waiting. `DONE` completes the task run.
+queue item. `AGAIN` yields by re-admitting at the back of the same bounded queue;
+`AFTER(delay)` waits for a timer; `AWAIT(completion)` waits for an asynchronous
+dependency. AFTER and AWAIT release the physical worker while waiting. `DONE` completes
+the task run.
 
 `ScheduledSerialLane` currently uses the Java helper `LaneScheduler` for timer
 registration. That helper is an implementation detail, not a separate architecture
@@ -583,7 +596,7 @@ YieldingTask
   component/operation state remains in the concrete task
 
 TaskStep
-  continuation decision only: AGAIN / AFTER(delay) / DONE
+  continuation decision only: AGAIN / AFTER(delay) / AWAIT(completion) / DONE
 
 AbstractTask
   reusable run lifecycle, wake coalescing, cancellation and completion hook
@@ -740,17 +753,24 @@ duplicate-state cleanup are two separate fixed-delay registrations on that same
 logical lane.
 
 A production `TimingNode` is always constructed as a complete capability.
-`TimingDataPersistence`, `TimingDataFactory`, the injected absolute-time supplier,
-EventData/tag-processing configuration and both execution lanes are constructor dependencies; there is no
-lifecycle-only or partially configured production node. The only non-public construction
-seam exists for deterministic TimingNode execution-boundary tests and is documented as
-test-only in code.
+Runtime composition supplies LogBook with its Data Lane, NodeService with its Task Lane,
+and TagProcessor with its scheduled lane. TimingNode receives the composed child
+components; it does not receive a Task Lane merely to implement startup. There is no
+lifecycle-only or partially configured production node.
 
 TimingNode extends `LifecycleComponent`; the base class owns the generic active/inactive
 lifecycle fact. TimingNode therefore does not keep a second `active` field. Its protected
-lifecycle hook uses `ComponentLifecycleManager` to start the Task Lane service, then
-LogBook so the Data Lane can queue persisted TimingData loading as its first ordered task,
-and finally TagProcessor ingress. No public TimingNode activate/deactivate API is exposed.
+lifecycle hook uses `ComponentLifecycleManager` in this order:
+
+1. **LogBook** performs persisted-TimingData recovery synchronously, publishes the
+   recovered startup data, and only then starts normal Data Lane admission.
+2. **NodeService** consumes that startup data to rebuild compact derived state before
+   starting normal Task Lane processing.
+3. **TagProcessor** starts normal observation ingress.
+
+Only after those child activation steps complete does TimingNode activation return.
+TimingNode then exposes operational `OK` or `ERROR` from the completed LogBook
+recovery result. No public TimingNode activate/deactivate API is exposed.
 
 When a public component operation must reject an inactive lifecycle, the reusable
 `failIfInactive()` guard belongs to `LifecycleComponent` together with the active/inactive
@@ -758,9 +778,11 @@ fact. A concrete component supplies the failure factory; TimingNode uses an ordi
 `IllegalStateException` because inactive lifecycle is not a second domain-result state.
 The lifecycle package therefore remains independent from TimingNode-specific failure types.
 
-Functional state is immediately available as CLOSED with no LocationId. The Data Lane
-separately loads persisted TimingData and rebuilds LogBookData. Recovery never
-defines or reconstructs functional OPEN/CLOSED state.
+Functional state starts CLOSED with no LocationId. During synchronous activation,
+LogBook rebuilds its committed TimingData state before the Data Lane starts; NodeService
+then rebuilds its compact derived startup state before its Task Lane starts. Recovery
+never defines or reconstructs functional OPEN/CLOSED state. Operational
+`INIT/OK/ERROR` remains a separate readiness/health fact.
 
 LogBook queries expose two explicit consistency modes:
 
