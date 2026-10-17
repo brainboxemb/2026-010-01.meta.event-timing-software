@@ -1029,10 +1029,10 @@ For Conductor:
 - TimingNode Status is readable as CLOSED/no-location independently from LogBook recovery;
 - a persistence command waits for ordered LogBook recovery before it can commit;
 - a recovery failure is reported separately and does not redefine OPEN/CLOSED Status;
-- a status event only wakes the control task and does not publish Settings itself;
+- a functional-state change only wakes the control task; no shared Settings object is used;
 - every control run reads current TimingNode Status before deriving desired inventory;
 - rapid state changes converge to the final desired inventory while control wakes coalesce;
-- one OPEN node among several nodes keeps shared inventory desired state enabled;
+- one OPEN node among several nodes keeps the AntennaManager inventory request enabled;
 - CURRENT-state failure after readiness is explicit and is never interpreted as CLOSED;
 - no downstream control failure throws back through TimingNode event delivery.
 
