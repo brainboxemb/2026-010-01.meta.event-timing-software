@@ -1,0 +1,241 @@
+<mxfile host="app.diagrams.net" compressed="false">
+  <diagram id="layered-architecture" name="Figure SI01-01 — SI-01 layered architecture">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1440" pageHeight="1520" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="group-presentation-layer" value="Presentation / external interfaces" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eef4ff;strokeColor=#6c8ebf;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="30" y="85" width="1120" height="213" as="geometry" />
+        </mxCell>
+        <mxCell id="group-application-layer" value="Application layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eef8ee;strokeColor=#82b366;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="30" y="318" width="1120" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="group-domain-layer" value="Domain layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8df;strokeColor=#d6b656;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;shape=mxgraph.basic.polygon;polyCoords=[[0.0,0.0],[1.0,0.0],[1.0,0.84],[0.7767857,0.84],[0.71875,1.0],[0.0,1.0]];polyline=0;" vertex="1" parent="1">
+          <mxGeometry x="30" y="546" width="1120" height="485" as="geometry" />
+        </mxCell>
+        <mxCell id="group-timing-system-aggregate" value="TimingSystem (1..N)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffaf0;strokeColor=#d6b656;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;shape=component;" vertex="1" parent="1" data-engineering-id="TimingSystem">
+          <mxGeometry x="55" y="586" width="1080" height="350" as="geometry" />
+        </mxCell>
+        <mxCell id="group-timing-system-aggregate-properties" value="- SystemId (internal)" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;align=left;fillColor=#ffffff;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=12;spacingTop=6;spacingLeft=6;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="75" y="626.0" width="220" height="31.4" as="geometry" />
+        </mxCell>
+        <mxCell id="group-timing-node-aggregate" value="TimingNode (1..N)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffaf0;strokeColor=#d6b656;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;shape=component;" vertex="1" parent="1" data-engineering-id="TimingNode">
+          <mxGeometry x="300" y="606" width="810" height="320" as="geometry" />
+        </mxCell>
+        <mxCell id="group-timing-node-aggregate-properties" value="- NodeId&lt;br&gt;- LocationId&lt;br&gt;- State" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;align=left;fillColor=#ffffff;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=12;spacingTop=6;spacingLeft=6;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="320" y="646.0" width="220" height="66.19999999999999" as="geometry" />
+        </mxCell>
+        <mxCell id="group-io-layer" value="I/O (per TimingSystem)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff0ee;strokeColor=#b85450;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=86;spacingLeft=10;fontStyle=1;fontSize=17;shape=mxgraph.basic.polygon;polyCoords=[[0.0,0.3007752],[0.71875,0.3007752],[0.7767857,0.0],[1.0,0.0],[1.0,1.0],[0.0,1.0]];polyline=0;" vertex="1" parent="1">
+          <mxGeometry x="30" y="978" width="1120" height="282" as="geometry" />
+        </mxCell>
+        <mxCell id="group-platform-layer" value="Platform abstractions / execution environment" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f2eff8;strokeColor=#9673a6;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1290" width="1120" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="group-runtime-layer" value="Runtime" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#777777;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="1170" y="85" width="250" height="415" as="geometry" />
+        </mxCell>
+        <mxCell id="group-crosscutting-layer" value="Infrastructure /&#10;cross-cutting" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#777777;fontFamily=Helvetica;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontStyle=1;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="1170" y="520" width="250" height="990" as="geometry" />
+        </mxCell>
+        <mxCell id="local-console" value="Console&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;local text interface&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="Console" data-notation="component">
+          <mxGeometry x="55" y="145" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="local-console-port-console" value="Local console" style="shape=rectangle;rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;strokeWidth=1.5;fontFamily=Helvetica;fontSize=10;resizable=0;portConstraint=north;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;spacingBottom=4;" vertex="1" parent="local-console" data-notation="port" data-port-id="console" data-port-side="top">
+          <mxGeometry x="0.5" y="0" width="10" height="10" relative="1" as="geometry">
+            <mxPoint x="-5.0" y="-5.0" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="remote-shell" value="RemoteShell&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;remote text interface&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="RemoteShell" data-notation="component">
+          <mxGeometry x="275" y="145" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="remote-shell-port-shell" value="TCP shell" style="shape=rectangle;rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;strokeWidth=1.5;fontFamily=Helvetica;fontSize=10;resizable=0;portConstraint=north;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;spacingBottom=4;" vertex="1" parent="remote-shell" data-notation="port" data-port-id="shell" data-port-side="top">
+          <mxGeometry x="0.5" y="0" width="10" height="10" relative="1" as="geometry">
+            <mxPoint x="-5.0" y="-5.0" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="web-interface" value="Web&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;browser-facing • 1 binding per TimingNode&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="Web" data-notation="component">
+          <mxGeometry x="515" y="145" width="280" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="web-interface-port-http" value="HTTP" style="shape=rectangle;rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;strokeWidth=1.5;fontFamily=Helvetica;fontSize=10;resizable=0;portConstraint=north;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;spacingBottom=4;" vertex="1" parent="web-interface" data-notation="port" data-port-id="http" data-port-side="top">
+          <mxGeometry x="0.32" y="0" width="10" height="10" relative="1" as="geometry">
+            <mxPoint x="-5.0" y="-5.0" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="web-interface-port-websocket" value="WebSocket" style="shape=rectangle;rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;strokeWidth=1.5;fontFamily=Helvetica;fontSize=10;resizable=0;portConstraint=north;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;spacingBottom=4;" vertex="1" parent="web-interface" data-notation="port" data-port-id="websocket" data-port-side="top">
+          <mxGeometry x="0.72" y="0" width="10" height="10" relative="1" as="geometry">
+            <mxPoint x="-5.0" y="-5.0" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="remote-api" value="Api&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;remote clients • tools • test&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="Api" data-notation="component">
+          <mxGeometry x="815" y="145" width="300" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="remote-api-port-http" value="HTTP" style="shape=rectangle;rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;strokeWidth=1.5;fontFamily=Helvetica;fontSize=10;resizable=0;portConstraint=north;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;spacingBottom=4;" vertex="1" parent="remote-api" data-notation="port" data-port-id="http" data-port-side="top">
+          <mxGeometry x="0.32" y="0" width="10" height="10" relative="1" as="geometry">
+            <mxPoint x="-5.0" y="-5.0" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="remote-api-port-websocket" value="WebSocket" style="shape=rectangle;rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;strokeWidth=1.5;fontFamily=Helvetica;fontSize=10;resizable=0;portConstraint=north;labelPosition=center;verticalLabelPosition=top;align=center;verticalAlign=bottom;spacingBottom=4;" vertex="1" parent="remote-api" data-notation="port" data-port-id="websocket" data-port-side="top">
+          <mxGeometry x="0.72" y="0" width="10" height="10" relative="1" as="geometry">
+            <mxPoint x="-5.0" y="-5.0" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="shared-terminal" value="SharedTerminalHandler&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;command parsing • terminal session behaviour&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="SharedTerminalHandler" data-notation="component">
+          <mxGeometry x="55" y="220" width="440" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="application-conductor" value="Conductor&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;lifecycle / activation order&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="ApplicationConductor" data-notation="component">
+          <mxGeometry x="870" y="425" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="presentation-gateway" value="PresentationGateway&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;application entry / node proxy access&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="PresentationGateway" data-notation="component">
+          <mxGeometry x="545" y="345" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="timing-node-proxy" value="TimingNodeProxy (1..N)&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;commands / queries / events&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="TimingNodeProxy" data-notation="component">
+          <mxGeometry x="545" y="445" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="configuration-control" value="ConfigurationControl&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;query / runtime override use-cases&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="ConfigurationControl" data-notation="component">
+          <mxGeometry x="55" y="425" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="system-conductor" value="Conductor&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;system coordinator&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="SystemConductor" data-notation="component">
+          <mxGeometry x="75" y="667" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="next-up-teams" value="NextUpTeams&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;teams expected next&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="NextUpTeams" data-notation="component">
+          <mxGeometry x="565" y="657" width="235" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="node-processing" value="Processing&lt;br&gt;&lt;div style=&quot;text-align:left;font-size:12px;margin-left:12px&quot;&gt;&lt;span data-engineering-id=&quot;TagProcessor&quot;&gt;• TagProcessor&lt;/span&gt;&lt;br&gt;• TagObservationFilter&lt;br&gt;• RegistrationDuplicateFilter&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;shape=component;container=1;" vertex="1" parent="1" data-engineering-id="TimingNodeProcessing" data-notation="packaging-component">
+          <mxGeometry x="315" y="722" width="235" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="node-racedata" value="RaceData&lt;br&gt;&lt;div style=&quot;text-align:left;font-size:12px;margin-left:12px&quot;&gt;&lt;span data-engineering-id=&quot;TeamAssignments&quot;&gt;• TeamAssignments&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;StageStartTimes&quot;&gt;• StageStartTimes&lt;/span&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;shape=component;container=1;" vertex="1" parent="1" data-engineering-id="TimingNodeRaceData" data-notation="packaging-component">
+          <mxGeometry x="815" y="657" width="280" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="node-timing" value="Timing&lt;br&gt;&lt;div style=&quot;text-align:left;font-size:12px;margin-left:12px&quot;&gt;&lt;span data-engineering-id=&quot;UniqueTeamRegistrations&quot;&gt;• UniqueTeamRegistrations&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;StagePassageList&quot;&gt;• StagePassageList&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;StageRanking&quot;&gt;• StageRanking&lt;/span&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;shape=component;container=1;" vertex="1" parent="1" data-engineering-id="TimingNodeTiming" data-notation="packaging-component">
+          <mxGeometry x="565" y="722" width="235" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="node-data" value="Data&lt;br&gt;&lt;div style=&quot;text-align:left;font-size:12px;margin-left:12px&quot;&gt;&lt;span data-engineering-id=&quot;LogBook&quot;&gt;• LogBook&lt;/span&gt;&lt;br&gt;• Persistence&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;shape=component;container=1;" vertex="1" parent="1" data-engineering-id="TimingNodeData" data-notation="packaging-component">
+          <mxGeometry x="315" y="828" width="235" height="79" as="geometry" />
+        </mxCell>
+        <mxCell id="upstream-message-port" value="Upstream&lt;br&gt;&lt;div style=&quot;text-align:left;font-size:12px;margin-left:12px&quot;&gt;• UpstreamHandler&lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;└─ UpstreamHeartbeat&lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;└─ UpstreamDataSync&lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;└─ LogBookSync&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;shape=component;container=1;" vertex="1" parent="1" data-engineering-id="TimingNodeUpstreamHandler" data-notation="packaging-component">
+          <mxGeometry x="815" y="752" width="280" height="155" as="geometry" />
+        </mxCell>
+        <mxCell id="event-data-domain" value="EventData&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;tag • registration • provider&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="EventData" data-notation="component">
+          <mxGeometry x="55" y="956" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="timing-data-domain" value="TimingData&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;records • timestamp • factory • codec&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="TimingData" data-notation="component">
+          <mxGeometry x="635" y="956" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="upstream-data-domain" value="UpstreamData&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;timing • race • sync • ack • req • ping&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="UpstreamData" data-notation="component">
+          <mxGeometry x="335" y="956" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="storage-io" value="Storage&lt;br&gt;&lt;div style=&quot;text-align:left;font-size:12px;margin-left:12px&quot;&gt;• AppendOnlyRecordStore&lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;└─ FileAppendOnlyRecordStore&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f4cccc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=14;shape=component;container=1;" vertex="1" parent="1" data-engineering-id="Storage" data-notation="packaging-component">
+          <mxGeometry x="55" y="1098" width="200" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="devices-io" value="Devices&lt;br&gt;&lt;div style=&quot;text-align:left;font-size:12px;margin-left:12px&quot;&gt;&lt;span data-engineering-id=&quot;AntennaManager&quot;&gt;• AntennaManager&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;Antenna&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;└─ Antenna (0..N)&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;SimulatedAntenna&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;└─ SimulatedAntenna&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;VendorAntenna&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;└─ VendorAntenna&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;PowerDevice&quot;&gt;• PowerDevice (0..N)&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;SimulatedPowerDevice&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;└─ SimulatedPowerDevice&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;Display&quot;&gt;• Display&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;Rev1CanDisplay&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;└─ Rev1CanDisplay&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;Rev2WifiDisplay&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;└─ Rev2WifiDisplay&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;Keypad&quot;&gt;• Keypad&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;Rev1CanKeypad&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;└─ Rev1CanKeypad&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;Beeper&quot;&gt;• Beeper&lt;/span&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=14;shape=component;container=1;" vertex="1" parent="1" data-engineering-id="Devices" data-notation="packaging-component">
+          <mxGeometry x="890" y="1000" width="240" height="245" as="geometry" />
+        </mxCell>
+        <mxCell id="device-network-io" value="DeviceNetworks&lt;br&gt;&lt;div style=&quot;text-align:left;font-size:12px;margin-left:12px&quot;&gt;&lt;span data-engineering-id=&quot;CanNetworkController&quot;&gt;• CanNetworkController&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;NetworkDeviceService&quot;&gt;• NetworkDeviceService&lt;/span&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=14;shape=component;container=1;" vertex="1" parent="1" data-engineering-id="DeviceNetworks" data-notation="packaging-component">
+          <mxGeometry x="275" y="1098" width="240" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="messaging-io" value="Messaging&lt;br&gt;&lt;div style=&quot;text-align:left;font-size:12px;margin-left:12px&quot;&gt;&lt;span data-engineering-id=&quot;UpstreamGateway&quot;&gt;• UpstreamGateway&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;UpstreamStream&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;└─ UpstreamStream (1 per TimingNode)&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;Connector&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;└─ Connector (1..N)&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;RabbitMqConnector&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;└─ RabbitMqConnector&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;EngineeringApiConnector&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;└─ EngineeringApiConnector&lt;/span&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=14;shape=component;container=1;" vertex="1" parent="1" data-engineering-id="Messaging" data-notation="packaging-component">
+          <mxGeometry x="535" y="1090" width="260" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="platform-execution" value="Execution&lt;br&gt;&lt;div style=&quot;text-align:left;font-size:12px;margin-left:12px&quot;&gt;&lt;span data-engineering-id=&quot;SerialExecutor&quot;&gt;• SerialExecutor&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;SerialScheduledExecutor&quot;&gt;• SerialScheduledExecutor&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;SerialTaskRunner&quot;&gt;• SerialTaskRunner&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;ScheduledTaskRunner&quot;&gt;• ScheduledTaskRunner&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;CooperativeTaskController&quot;&gt;• CooperativeTaskController&lt;/span&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontFamily=Helvetica;fontSize=14;shape=component;container=1;" vertex="1" parent="1" data-engineering-id="PlatformExecution" data-notation="packaging-component">
+          <mxGeometry x="55" y="1332" width="280" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="platform-events" value="Events&lt;br&gt;&lt;div style=&quot;text-align:left;font-size:12px;margin-left:12px&quot;&gt;&lt;span data-engineering-id=&quot;Event&quot;&gt;• Event&amp;lt;T&amp;gt;&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;EventSource&quot;&gt;• EventSource&amp;lt;T&amp;gt;&lt;/span&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontFamily=Helvetica;fontSize=14;shape=component;container=1;" vertex="1" parent="1" data-engineering-id="PlatformEvents" data-notation="packaging-component">
+          <mxGeometry x="355" y="1332" width="180" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="platform-environment" value="PlatformEnvironment&lt;br&gt;&lt;div style=&quot;text-align:left;font-size:12px;margin-left:12px&quot;&gt;• Clock — raw absolute time&lt;br&gt;&lt;span data-engineering-id=&quot;MonotonicClock&quot;&gt;• MonotonicClock — elapsed time&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;OperatingSystem&quot;&gt;• OperatingSystem — platform family&lt;/span&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontFamily=Helvetica;fontSize=14;shape=component;container=1;" vertex="1" parent="1" data-engineering-id="PlatformEnvironment" data-notation="packaging-component">
+          <mxGeometry x="555" y="1332" width="300" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="platform-time" value="Timing time&lt;br&gt;&lt;div style=&quot;text-align:left;font-size:12px;margin-left:12px&quot;&gt;&lt;span data-engineering-id=&quot;TimeSource&quot;&gt;• TimeSource&lt;/span&gt;&lt;br&gt;&lt;span data-engineering-id=&quot;ClockTimeSource&quot;&gt;• ClockTimeSource&lt;/span&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontFamily=Helvetica;fontSize=14;shape=component;container=1;" vertex="1" parent="1" data-engineering-id="PlatformTime" data-notation="packaging-component">
+          <mxGeometry x="875" y="1332" width="250" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="timing-application-runtime" value="TimingApplicationRuntime&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;composition root • lifecycle&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="TimingApplicationRuntime" data-notation="component">
+          <mxGeometry x="1185" y="115" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="simulation-runtime" value="SimulationRuntime&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;simulation composition entry&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="SimulationRuntime" data-notation="component">
+          <mxGeometry x="1185" y="175" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="presentation-runtime" value="PresentationRuntime&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;presentation adapters • lifecycle&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="PresentationRuntime" data-notation="component">
+          <mxGeometry x="1185" y="235" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="runtime-executors" value="RuntimeExecutors&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;physical role workers&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="RuntimeExecutors" data-notation="component">
+          <mxGeometry x="1185" y="295" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="runtime-time-sources" value="RuntimeTimeSources&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;timing source composition&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="RuntimeTimeSources" data-notation="component">
+          <mxGeometry x="1185" y="355" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="application-configuration-runtime" value="ApplicationConfiguration&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;effective running configuration&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="ApplicationConfiguration" data-notation="component">
+          <mxGeometry x="1185" y="415" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="logging-server" value="LoggingServer&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;live diagnostics • external TCP&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="LoggingServer" data-notation="component">
+          <mxGeometry x="1185" y="560" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="logging-infra" value="Logging&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;levels • console • retained file&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="Logging" data-notation="component">
+          <mxGeometry x="1185" y="665" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="build-identity" value="Build / version identity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1185" y="770" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="configuration-infra" value="Configuration&amp;lt;T&amp;gt;&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;values • overrides • events&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="Configuration" data-notation="component">
+          <mxGeometry x="1185" y="870" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="settings-infra" value="Settings&lt;br&gt;&lt;span style=&quot;font-size:12px&quot;&gt;desired • applied • atomic update&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#777777;fontFamily=Helvetica;fontSize=14;shape=component;" vertex="1" parent="1" data-engineering-id="Settings" data-notation="component">
+          <mxGeometry x="1185" y="940" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;" edge="1" parent="1" source="logging-server" target="logging-infra">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.2272727273;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="local-console" target="shared-terminal">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.75;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="remote-shell" target="shared-terminal">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.18;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="shared-terminal" target="presentation-gateway">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="275.0" y="308.0" />
+              <mxPoint x="584.6" y="308.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="web-interface" target="presentation-gateway">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.75;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="remote-api" target="presentation-gateway">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="965" y="290" />
+              <mxPoint x="710" y="290" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="presentation-gateway" target="timing-node-proxy">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="presentation-gateway" target="configuration-control">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="165" y="379" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.7;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.16;entryY=0.0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="configuration-control" target="group-domain-layer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.3;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.13;entryY=0.3007751999999997;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="configuration-control" target="group-io-layer">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="121" y="515" />
+              <mxPoint x="20" y="515" />
+              <mxPoint x="20" y="1018" />
+              <mxPoint x="176" y="1018" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;" edge="1" parent="1" source="timing-node-proxy" target="group-timing-node-aggregate">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
