@@ -707,8 +707,10 @@ For the affected TimingNode, SI-01 shall:
 - keep independently functioning TimingNodes available in a multi-node composition.
 
 The failure remains owned by the recovery/LogBook path and diagnostic logging.
-This baseline deliberately does not introduce a persistent TimingNode
-`INIT`/`OK`/`ERROR` health state.
+An implementation-internal TimingNode startup/execution readiness value is separate from
+child-component health: a LogBook recovery failure shall not by itself put that node
+execution state in ERROR. Such internal readiness is not part of the public current-state
+contract in SI01-REQ-024.
 :::
 
 #### Development, engineering and system testing
@@ -1610,69 +1612,70 @@ Detailed domain semantics belong in `03-domain-baseline.md`.
 
 #### Runtime execution model
 
-Each TimingNode has two **logical lanes**. The Data Lane processes LogBook
-commands, persisted TimingData and ordered history queries. The Task Lane
-processes upstream messages and derived timing data. Each lane runs one
-queued action at a time, in order. The two lanes have separate queues,
-but may use the same Java worker thread. A lane is **not** a thread.
+Each TimingNode has two **logical serial responsibilities**. The Data Lane processes
+LogBook commands and ordered history queries. The Task Lane runs cooperative node tasks
+for startup, upstream messages and derived timing state. A lane/task runner is **not** a
+thread.
 
-`RuntimeExecutors` creates and shuts down the physical executors shared by
-these lanes. The current Java implementation uses four executor roles:
+The Data Lane uses `SerialLane<T>`. The Task Lane uses `SerialTaskRunner`, which owns
+one internal `SerialLane<TaskRun>`. Both use the same Runtime-owned single-worker
+`timingNodeExecutor`.
+
+`RuntimeExecutors` creates and shuts down the physical executors. The current Java
+implementation uses four executor roles:
 
 ```text
 RuntimeExecutors
-  timingNodeExecutor              (one ThreadPoolExecutor worker)
-    TimingNode A: Data Lane       (SerialLane)
-    TimingNode A: Task Lane       (SerialLane)
-    TimingNode B: Data Lane       (SerialLane)
-    TimingNode B: Task Lane       (SerialLane)
+  timingNodeExecutor              (one scheduled worker)
+    TimingNode A: Data Lane       (SerialLane<TimingNodeDataItem>)
+    TimingNode A: Task Lane       (SerialTaskRunner -> SerialLane<TaskRun>)
+    TimingNode B: Data Lane       (SerialLane<TimingNodeDataItem>)
+    TimingNode B: Task Lane       (SerialTaskRunner -> SerialLane<TaskRun>)
 
   tagProcessorScheduledExecutor   (one scheduled worker)
-    TagProcessor A                (ScheduledSerialLane)
-    TagProcessor B                (ScheduledSerialLane)
+    TagProcessor A                (SerialLane<TagObservation> + direct scheduled callbacks)
+    TagProcessor B                (SerialLane<TagObservation> + direct scheduled callbacks)
 
   timingSystemConductorExecutor   (one scheduled worker)
-    TimingSystem A Conductor      (TaskSerialLane)
-    TimingSystem B Conductor      (TaskSerialLane)
+    TimingSystem A Conductor      (SerialTaskRunner)
+    TimingSystem B Conductor      (SerialTaskRunner)
 
   sharedIoScheduledExecutor       (one scheduled worker)
-    AntennaManager                (TaskSerialLane)
-    other bounded I/O work
+    AntennaManager                (SerialTaskRunner)
+    other bounded I/O/simulation work
 ```
 
-A component owns its lane and the state changed on that lane. Runtime
-owns the workers. Two different lanes can take turns on one worker, but
-they cannot execute in parallel on that worker. In particular, a slow
-LogBook write can delay Task Lane work that shares the same thread.
-Tag processing, system coordination and scheduled I/O use their
-separate executor roles for this reason.
+Components own their queues/tasks and mutable state. Runtime owns the physical workers.
+Two logical lanes can take turns on one worker, but they cannot execute in parallel on
+that worker. In particular, a slow LogBook write can delay Task Lane work that shares the
+same node executor. Tag processing, system coordination and scheduled I/O use separate
+executor roles for this reason.
 
 The Java execution types have distinct jobs:
 
-- `SerialLane` keeps bounded work in order.
-- `ScheduledSerialLane` adds delayed admission without putting a worker to sleep.
-- `TaskSerialLane` executes a `YieldingTask` one step per turn.
-- A task returns `TaskStep.AGAIN` to run another turn, `AFTER` to resume
-  later, or `DONE` when finished.
-- `AbstractTask` manages task runs, cancellation and repeated wake signals.
-  The concrete task still decides the next business action.
+- `SerialLane<T>` keeps bounded typed items in FIFO order and processes them in bounded batches.
+- `SerialTaskRunner` runs one `YieldingTask` step per TaskRun queue turn.
+- `TaskStep.AGAIN` re-admits at the queue back.
+- `TaskStep.AFTER` uses the JDK scheduler as a timer before re-admission.
+- `TaskStep.AWAIT` releases the worker until an asynchronous completion becomes ready.
+- `TaskStep.DONE` completes the task run.
+- `AbstractTask` manages reusable run/wake/cancellation lifecycle while the concrete task owns its decisions.
+- JDK `ScheduledExecutorService` callbacks may also run directly where no serial task queue is required; TagProcessor uses this for filter/housekeeping work on the same single thread as its observation lane.
 
-For example, `TimingSystemConductor` uses a task to read the current
-OPEN/CLOSED state of its nodes and tell AntennaManager whether
-inventory is required. AntennaManager uses tasks for startup, inventory
-changes and shutdown. Waiting for antenna power to stabilize schedules
-the next step rather than holding the worker thread.
+For example, `TimingNode.MainTask` loads persisted LogBook data asynchronously after
+node activation has returned. `TimingSystemConductor` uses a task to read current
+OPEN/CLOSED state and tell AntennaManager whether inventory is required. AntennaManager
+uses tasks for startup, inventory changes and shutdown.
 
-Antenna/device callbacks only hand off work. They do not wait for a
-TimingData write. A Task Lane must not synchronously wait for the Data
-Lane when both lanes can share a worker. Long network or device waits
-must not occupy a shared worker indefinitely.
+A Task Lane must not synchronously wait for Data Lane work when both share a worker.
+A task queues the Data Lane operation, returns `AWAIT`, and resumes only after the
+completion is ready. Long network/device waits likewise must not occupy a shared worker
+indefinitely.
 
-Worker counts and priorities are **not** based on the number of TimingNodes
-or CPU cores. The reference configuration starts with one worker for
-each role and default Java thread priority. More workers require
-runtime measurements on the intended target. SDD-02 describes the
-specific Java classes, queue limits, task lifecycle and measurements.
+Worker counts and priorities are **not** based on the number of TimingNodes or CPU cores.
+The reference configuration starts with one worker for each role and default Java thread
+priority. More workers require runtime measurements on the intended target. SDD-02
+describes the concrete queues, runners and measurements.
 
 #### I/O
 
@@ -1931,13 +1934,13 @@ upstream semantic path without direct access to SI-01 Domain objects.
 
 #### Platform
 
-Platform contains the reusable execution, time and event helpers.
+Platform contains reusable execution, time and event helpers.
 It does not know about TimingNodes, devices or user interfaces.
 
 ```text
 execution/
-  lanes/       SerialLane, ScheduledSerialLane, TaskSerialLane
-  tasks/       YieldingTask, TaskStep, AbstractTask
+  lanes/       SerialLane
+  tasks/       SerialTaskRunner, YieldingTask, TaskStep, AbstractTask
 events/        Event<T>, EventSource<T>
 environment/   Clock, MonotonicClock, OperatingSystem
 time/          TimeSource, ClockTimeSource
@@ -1946,50 +1949,44 @@ time/          TimeSource, ClockTimeSource
 :::{arch} PlatformExecution
 :id: PlatformExecution
 
-`PlatformExecution` provides the lane and task classes.
-Each component chooses the lane it needs; Runtime supplies the executor.
+`PlatformExecution` provides the typed serial queue and cooperative task classes.
+Runtime supplies their JDK executors.
 :::
 
 :::{arch} SerialLane
 :id: SerialLane
 
-`SerialLane` admits bounded work and executes one item at a time, in order.
-It has its own queue and metrics but does not own a thread.
+`SerialLane<T>` admits bounded typed items and processes them FIFO with one fixed worker
+scheduled on an externally owned executor. It owns queue/backpressure/metrics, not a thread
+or domain result policy.
 :::
 
-:::{arch} ScheduledSerialLane
-:id: ScheduledSerialLane
+:::{arch} SerialTaskRunner
+:id: SerialTaskRunner
 
-`ScheduledSerialLane` extends `SerialLane` with delayed submission.
-A timer makes work eligible to join the same serial queue later.
-:::
-
-:::{arch} TaskSerialLane
-:id: TaskSerialLane
-
-`TaskSerialLane` extends `ScheduledSerialLane`. It runs one `YieldingTask`
-step per turn and handles immediate or delayed continuation.
+`SerialTaskRunner` owns one `SerialLane<TaskRun>` and runs one `YieldingTask`
+step per TaskRun turn. JDK scheduling is used only to make delayed work eligible again.
 :::
 
 :::{arch} YieldingTask
 :id: YieldingTask
 
-A `YieldingTask` supplies one `runStep()` method. Its caller runs the
-next step only if the result requests it.
+A `YieldingTask` supplies one `runStep()` method. Each invocation performs one
+cooperative step and returns the continuation decision.
 :::
 
 :::{arch} TaskStep
 :id: TaskStep
 
-`TaskStep` tells `TaskSerialLane` whether to continue now (`AGAIN`),
-after a delay (`AFTER`), or stop (`DONE`).
+`TaskStep` tells `SerialTaskRunner` whether to re-admit now (`AGAIN`), after a delay
+(`AFTER`), after an asynchronous completion (`AWAIT`), or finish (`DONE`).
 :::
 
 :::{arch} AbstractTask
 :id: AbstractTask
 
-`AbstractTask` provides reusable run, wake and cancellation handling.
-The concrete task owns its operation state and decisions.
+`AbstractTask` provides reusable run, wake and cancellation handling. The concrete task
+owns its operation state and decisions.
 :::
 
 :::{arch} PlatformEvents  
@@ -2359,22 +2356,24 @@ adapters implement them.
 :::{arch} TimingNode Data Lane
 :id: TimingNodeDataLane
 
-The Data Lane handles `LogBook` commands and ordered queries, startup
-loading of persisted TimingData, and durable commits. `LogBook` owns these
-operations; `LogBookDataLane` handles execution and result waiting.
-The lane publishes committed TimingData to other components through
-events. It does not own live RaceData or a separate worker thread.
+The Data Lane handles normal ordered `LogBook` commands and queries plus durable
+TimingData commits. `TimingNodeDataLane` owns the typed
+`SerialLane<TimingNodeDataItem>`; `LogBookDataLane` owns command/query completion and
+bounded result waiting. Persisted-data recovery is not a Data Lane item: it runs from
+`TimingNode.MainTask` on the same physical node worker after Data Lane admission has
+started. The lane publishes committed TimingData through events and does not own live
+RaceData or a separate worker thread.
 :::
 
 :::{arch} TimingNode Task Lane
 :id: TimingNodeTaskLane
 
-The Task Lane handles live RaceData, derived timing state and
-node-scoped upstream messages. `NodeService` owns the work and
-`NodeTaskLane` submits it to a `SerialLane`. It uses committed TimingData
-events and ordered LogBook requests rather than reading LogBook's
-mutable data directly. It never waits synchronously for Data Lane
-work when both lanes share a worker.
+The Task Lane is the TimingNode's `SerialTaskRunner`. It handles node startup work,
+live RaceData, derived timing state and node-scoped upstream messages. `NodeService`
+submits one-step tasks directly to that runner; multi-step tasks may yield, delay or
+`AWAIT` asynchronous work. Task-owned code consumes committed TimingData events and
+ordered LogBook requests rather than reading LogBook mutable data directly. It never
+waits synchronously for Data Lane work when both lanes share one worker.
 :::
 
 Architecture rules:
@@ -2894,9 +2893,10 @@ own state/ordering ownership.
 Observation delivery does not run on the manager control lane. Concrete providers emit
 `TagObservation` from their device/library callback context through the synchronous local
 event. TagProcessor therefore only attempts a bounded, non-blocking handoff on
-that callback thread. Mapping, filtering and duplicate suppression run
-later on its own ScheduledSerialLane. Accepted registrations are then
-submitted without waiting to the TimingNode Data Lane through LogBook.
+that callback thread. Mapping, filtering and duplicate suppression run later through its
+bounded `SerialLane<TagObservation>`; timed filter/housekeeping callbacks run directly on
+the same Runtime-owned single-thread `ScheduledExecutorService`. Accepted registrations
+are then submitted without waiting to the TimingNode Data Lane through LogBook.
 
 Raw TagObservation retention is optional non-critical diagnostic persistence. When enabled,
 it subscribes to the same observation event but only performs a bounded non-blocking handoff

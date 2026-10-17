@@ -40,8 +40,10 @@ A few words occur repeatedly in the Java design:
   perform the missing work;
 - **event-triggered reconciliation** — let a state-change event wake a task. The
   task reads current state instead of replaying old event values;
-- **serial lane** — a `SerialLane` (or a subclass) that handles queued work
-  one item at a time. A lane is not its own Java thread.
+- **serial lane** — a `SerialLane<T>` that owns one bounded typed FIFO and processes
+  accepted items serially on an externally owned executor. A lane is not its own Java thread;
+- **serial task runner** — a `SerialTaskRunner` that owns one
+  `SerialLane<TaskRun>` and executes one cooperative `YieldingTask` step per TaskRun turn.
 
 Example:
 
@@ -398,8 +400,8 @@ private void onSelfTestCompleted(SelfTestResult result) {
 ```
 
 when both operations are short and `startInventoryTaskIfNeeded()` only admits later work.
-Do not add `taskRunner.execute(...)` merely to bounce the callback through the same lane
-again.
+Do not wrap the callback in another one-step `YieldingTask` merely to bounce it through
+the same `SerialTaskRunner` again.
 
 ---
 
@@ -407,75 +409,82 @@ again.
 
 **Rule**
 
-Queue work once and handle the returned queue result. Do not first inspect executor
-state and then try to queue the work.
+Attempt admission once and handle the result returned by the queue owner. Do not first
+inspect lane/executor state and then try to queue the item.
 
-Follow the established Java execution model at a serial-lane boundary:
+At the generic typed-lane boundary:
 
-- `SerialLane.execute(Runnable)` queues fire-and-forget work and returns without
-  waiting for the later operation result;
-- `SerialLane.submit(Callable<R>)` queues result-bearing work and returns a
-  standard `Future<R>`;
-- when the bounded lane cannot accept work, use the standard
-  `RejectedExecutionException` contract;
-- queue-container vocabulary such as `offer()`, `poll()` and direct
-  `ArrayBlockingQueue` handling belongs **inside the SerialLane implementation**,
-  not in LogBook, NodeService, TagProcessor or other lane users.
+- `SerialLane.offer(T)` performs one non-blocking admission attempt;
+- `ACCEPTED` means the item is now owned by the lane;
+- `FULL` means the bounded FIFO has no waiting capacity;
+- `NOT_RUNNING` means the lane is not accepting items;
+- a backing-executor `RejectedExecutionException` is different: the lane could not
+  schedule its fixed queue worker and can no longer guarantee execution;
+- direct `ArrayBlockingQueue`, `poll()` and queue-worker scheduling stay inside
+  `SerialLane`.
 
-Do not create project-specific admission/result types merely to rename Java's existing
-execute/submit/rejection model. A deviation needs a concrete semantic requirement that the
-JDK contract cannot express. Extra vocabulary without such a requirement adds review noise.
+Do not add a preflight `isRunning()` check before `offer(...)`; that creates a race
+without adding information. The admission operation already decides whether the item was
+accepted.
 
-Domain components may still use domain words where they add real meaning. For the LogBook
-boundary, `process(command)` means execute in LogBook order and return the domain result,
-while `execute(command)` is the fire-and-forget path. The latter may delegate to
-`SerialLane.execute(...)`; lane rejection uses `RejectedExecutionException` rather than
-a separate project-specific queue/admission result.
+The generic lane does not own Runnable/Callable command semantics or result futures.
+Result-bearing Domain adapters put the completion alongside the typed queued item. For
+example, a LogBook query item carries its `CompletableFuture<R>`, while
+`SerialLane<LogBookOperationItem<?>>` remains unaware of query semantics.
+
+Domain boundaries may translate `FULL` / `NOT_RUNNING` when they own a different
+policy. TagProcessor, for example, records ingress counters and drops/reports an observation
+according to its bounded callback contract. A synchronous result-bearing LogBook boundary
+may fail the caller instead.
 
 **Why**
 
-This pattern is both redundant and race-prone:
+This pattern is redundant and race-prone:
 
 ```java
-if (lane.state() == RUNNING) {
-    lane.offer(work);
+if (lane.isRunning()) {
+    lane.offer(item);
 }
 ```
 
-The lane can change state between the two calls. The queue operation already knows
-whether it can accept the work.
+The lane can stop between the two calls. The `offer(...)` result is the only admission
+fact that matters.
 
 **Examples**
 
-A lane user should read like ordinary Java concurrency code:
+A typed lane user should make the admission outcome explicit:
 
 ```java
-lane.execute(this::processNext);
-Future<Result> future = lane.submit(this::calculateResult);
-```
-
-The bounded queue remains an implementation detail inside `SerialLane`:
-
-```java
-private boolean enqueueTaskLocked(TrackedTask task) {
-    return queue.offer(task);
-}
-
-private TrackedTask nextQueuedTaskLocked() {
-    return queue.poll();
+switch (lane.offer(item)) {
+    case ACCEPTED:
+        break;
+    case FULL:
+        metrics.recordQueueFull();
+        break;
+    case NOT_RUNNING:
+        metrics.recordNotRunning();
+        break;
+    default:
+        throw new IllegalStateException("Unsupported offer result");
 }
 ```
 
-A Domain boundary may translate a standard rejection only when that boundary owns a
-different failure policy, for example a synchronous device callback that must log/drop a
-fire-and-forget event instead of propagating the rejection.
+The bounded container remains an implementation detail inside `SerialLane`:
+
+```java
+if (!queue.offer(new QueuedItem<T>(item))) {
+    return OfferResult.FULL;
+}
+```
 
 **Avoid**
 
-A separate `state()` check immediately before queueing.
+- a separate state check immediately before admission;
+- silently ignoring `FULL` or `NOT_RUNNING`;
+- recreating another queue around `SerialLane<T>`;
+- adding Runnable/Callable wrappers when the queued value already has a meaningful type.
 
-Also do not silently ignore a full queue or a meaningful not-running result. See DR-09
-for observability.
+See DR-09 for observability.
 
 ---
 
@@ -570,7 +579,7 @@ Good runtime flow:
 TimingNode.PROPERTIES.CHANGED
         |
         v
-AbstractTask.wake(TaskSerialLane)
+AbstractTask.wake(SerialTaskRunner)
         |
         v
 query current functionalState + derive inventoryRequired
@@ -822,9 +831,10 @@ For LogBook data, name the concrete thing being handled. Prefer `TimingData reco
 generic word `history` for LogBook data because it hides which records or registrations the
 code actually owns.
 
-Do not introduce a `Runner` merely because a component has a task. In the
-current design, `TaskSerialLane` runs `YieldingTask` steps; the concrete task
-keeps its own domain or device state.
+Do not introduce a `Runner` merely because a component has a task. `SerialTaskRunner`
+is an execution mechanism with a narrow responsibility: it runs cooperative
+`YieldingTask` steps. Concrete tasks/components keep their own domain or device state and
+retain responsibility names such as `NodeService`, `AntennaManager` or `MainTask`.
 
 Use `Executor` for objects that implement or concretely represent Java
 `Executor`/`ExecutorService` execution resources. Do not call a
@@ -850,7 +860,9 @@ For counts of actual Java threads, prefer names such as `SHARED_IO_THREADS` rath
 When a logical `SerialLane` depends on such an executor, name the dependency
 `backingExecutor` (or another explicit executor name), not `workerExecutor`.
 Likewise, a field or accessor containing a `SerialLane` should say `Lane` when
-that distinction would otherwise be ambiguous (for example `tagProcessorLane()`).
+that distinction would otherwise be ambiguous (for example `dataLane()` or
+`observationLane`). A `SerialTaskRunner` should be named `taskRunner` or by the
+cooperative responsibility, not disguised as a generic data lane.
 
 Use `Processor` when processing input is the actual responsibility, as with
 `TagProcessor`. Do not add `Processor`, `Manager`, `Controller` or `Service`
@@ -1221,8 +1233,10 @@ self-test started
 ```
 
 The first is a time requirement and fits `TaskStep.after(...)`.
-The second is an operation-completion relationship and should be represented by an event
-or equivalent owner-controlled completion signal.
+The second is an operation-completion relationship. When a `CompletionStage` already
+represents that dependency, a cooperative task can return `TaskStep.await(completion)`;
+otherwise use an event or equivalent owner-controlled completion signal and wake the task
+from that completion.
 
 This keeps provider timing and protocol details inside the device boundary and allows the
 caller to remain event-driven.
@@ -1676,23 +1690,14 @@ predicate, expose that semantic predicate on the owner instead of making every c
 and interpret the owner's full state representation. For example:
 
 ```java
-if (coordinationLane.isRunning()) {
+if (taskRunner.isRunning()) {
     wakeControlTask();
 }
 ```
 
-is preferred over:
-
-```java
-if (coordinationLane.state() == SerialLane.State.RUNNING) {
-    wakeControlTask();
-}
-```
-
-A complete `state()` view may still exist for diagnostics, tests or callers that genuinely
-need to distinguish several states. Do not remove useful state diagnostics merely to force
-Boolean APIs; the rule is that ordinary control flow should not depend on enum representation
-when the owner can answer the semantic question directly.
+Do not expose or interpret a lifecycle enum merely so ordinary control flow can answer this
+Boolean question. A richer state view is justified only when a real caller must distinguish
+those states; the owner should otherwise expose the semantic predicate directly.
 
 **Why**
 
