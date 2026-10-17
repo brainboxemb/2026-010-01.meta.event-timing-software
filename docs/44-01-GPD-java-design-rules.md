@@ -827,6 +827,8 @@ architecture, without first knowing the implementation mechanism.
 | Registration being matched for revoke | `activeRegistration` | `candidate` |
 | Team ID read from static EventData | `configuredTeamId` | `fixed` |
 | Guard that throws when a runtime condition holds | `failIfInactive()` | `requireActive()` when the throw behaviour is otherwise hidden |
+| Required state assertion | `failIfIllegalState(validCondition, ...)` | vague `check...` names or an inverted failure condition |
+| Required argument assertion | `failIfInvalidArgument(validCondition, ...)` | vague `check...` names or an inverted failure condition |
 
 For LogBook data, name the concrete thing being handled. Prefer `TimingData record`,
 `registration`, `committed TimingData` or `persisted TimingData` as appropriate. Avoid the
@@ -1273,81 +1275,68 @@ polling internally. That implementation choice must not leak into the manager co
 
 ---
 
-### DR-16 — Keep contract checks compact
+### DR-16 — Make contract failures explicit
 
 **Rule**
 
-Use compact precondition helpers for programming-contract checks such as required state or
-argument validity.
+Use compact helpers for programming-contract assertions, but keep the runtime failure
+visible in the helper name.
 
-Prefer static `checkState(...)` and `checkArgument(...)` calls over repeated
-`if (...) { throw new IllegalStateException/...; }` blocks when the only purpose of the
-branch is to enforce a contract.
+The Boolean argument has **assert semantics**: it states the condition that must hold.
+`true` means the contract is valid; `false` throws. Use:
 
-Keep normal business decisions as ordinary control flow. A precondition helper must not
-hide a recoverable condition, device result or normal application branch.
+```java
+failIfIllegalState(state == State.NEW, "AntennaManager must be NEW, was %s", state);
+failIfInvalidArgument(controlLane != null, "controlLane must not be null");
+```
+
+The helpers are ordinary always-enabled Java methods, not the Java `assert` keyword.
+They therefore remain active in production and throw `IllegalStateException` or
+`IllegalArgumentException` when the assertion is false.
+
+Do not invert callers into failure conditions merely because the method name contains
+`fail`. The expression should read like an assertion of the valid contract:
+
+```text
+assertion == true   -> continue
+assertion == false  -> fail
+```
+
+Keep normal business decisions as ordinary control flow. A contract helper must not hide
+a recoverable condition, device result or normal application branch.
 
 When a recoverable runtime guard depends only on generic component lifecycle, keep the guard
 with `LifecycleComponent` rather than reimplementing it in each concrete component. For
 example, `LifecycleComponent.failIfInactive()` owns the active-state check. A concrete
-component may configure the caller-visible failure factory so the lifecycle package remains
-independent from domain/application exception types. Avoid a private `requireActive()` or
-`failIfInactive()` wrapper that merely repeats the lifecycle check.
+component may configure the caller-visible failure factory so lifecycle infrastructure
+remains independent from domain/application exception types.
 
 **Why**
 
-Repeated exception boilerplate makes a simple contract dominate the visual structure of a
-method. The reader should see the operation first and the contract as one concise guard.
-
-**Example**
-
-Prefer:
-
-```java
-synchronized (this) {
-    checkState(
-            state == State.NEW,
-            "AntennaManager must be NEW, was %s",
-            state);
-}
-```
-
-over:
-
-```java
-synchronized (this) {
-    if (state != State.NEW) {
-        throw new IllegalStateException(
-                "AntennaManager can only activate from NEW; current state="
-                        + state);
-    }
-}
-```
-
-For arguments:
-
-```java
-checkArgument(
-        controlLane != null,
-        "controlLane must not be null");
-```
-
-The project may provide these small helpers directly rather than adding a broad utility
-dependency solely for precondition syntax. Static imports are preferred at call sites when
-they improve readability.
+The assertion-style condition is easy to compare with the required invariant, while the
+`fail...` name makes the consequence visible. This avoids vague validation-helper names
+and a second convention where every caller must negate its valid condition.
 
 **Avoid**
 
-Using `checkState(...)` as a replacement for normal application flow:
+Do not write the inverse condition:
 
 ```java
-checkState(
-        inventoryRequestedEnabled(),
-        "inventory must be enabled");
+failIfIllegalState(state != State.NEW, "...");
 ```
 
-when disabled inventory is a valid runtime state. That belongs in ordinary task/state
-logic, not in a programming-contract assertion.
+when the contract is that `state == State.NEW`.
+
+Do not use Java assertions for required runtime validation:
+
+```java
+assert state == State.NEW;
+```
+
+because Java assertions may be disabled.
+
+Do not replace normal application flow with a contract assertion. Disabled inventory, for
+example, is a valid runtime state and belongs in ordinary task/state logic.
 
 ---
 
@@ -1461,13 +1450,13 @@ Line breaks should expose structure, not mechanically put every argument on its 
 Prefer:
 
 ```java
-checkState(state == State.NEW, "AntennaManager must be NEW, was %s", state);
+failIfIllegalState(state == State.NEW, "AntennaManager must be NEW, was %s", state);
 ```
 
 over:
 
 ```java
-checkState(
+failIfIllegalState(
         state == State.NEW,
         "AntennaManager must be NEW, was %s",
         state);
@@ -1520,9 +1509,9 @@ Prefer:
 ```java
 public TimingNode(LogBook logBook, NodeService nodeService, TagProcessor tagProcessor) {
 
-    checkArgument(logBook != null, "logBook must not be null");
-    checkArgument(nodeService != null, "nodeService must not be null");
-    checkArgument(tagProcessor != null, "tagProcessor must not be null");
+    failIfInvalidArgument(logBook != null, "logBook must not be null");
+    failIfInvalidArgument(nodeService != null, "nodeService must not be null");
+    failIfInvalidArgument(tagProcessor != null, "tagProcessor must not be null");
 
     this.logBook = logBook;
     this.nodeService = nodeService;
@@ -1574,7 +1563,7 @@ objects merely to restart behaviour.
 Prefer:
 
 ```java
-checkState(
+failIfIllegalState(
         state == State.NEW || state == State.INACTIVE,
         "AntennaManager cannot activate from %s",
         state);
@@ -1590,7 +1579,7 @@ designed.
 **Avoid**
 
 ```java
-checkState(state == State.NEW, "...");
+failIfIllegalState(state == State.NEW, "...");
 ```
 
 for an ordinary reusable component merely because its first implementation happened to be
@@ -1617,7 +1606,7 @@ This is racy:
 
 ```java
 synchronized (this) {
-    checkState(state == State.NEW || state == State.INACTIVE, "...");
+    failIfIllegalState(state == State.NEW || state == State.INACTIVE, "...");
 }
 
 taskRunner.start();
@@ -1630,7 +1619,7 @@ Prefer one atomic lifecycle operation:
 
 ```java
 public synchronized void activate() {
-    checkState(state == State.NEW || state == State.INACTIVE,
+    failIfIllegalState(state == State.NEW || state == State.INACTIVE,
             "AntennaManager cannot activate from %s", state);
 
     taskRunner.start();
@@ -1731,7 +1720,7 @@ public final class Status {
     public final LocationId locationId;
 
     public Status(State state, LocationId locationId) {
-        checkArgument(state != null, "state must not be null");
+        failIfInvalidArgument(state != null, "state must not be null");
         this.state = state;
         this.locationId = locationId;
     }

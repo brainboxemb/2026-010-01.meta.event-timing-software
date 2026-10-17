@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Standardize programming-contract guards on failure-oriented names with assert-style conditions: `failIfIllegalState(validCondition, ...)` and `failIfInvalidArgument(validCondition, ...)` stay always enabled and throw when the positive assertion is false.
+
 - Define the generic grouped-settings pattern: `Setting<T>` retains requested/applied/pending semantics while `SettingKey<T>`, `SettingContainer` and grouped `SettingUpdate` own reusable typed grouping, atomic updates, revision and change publication. `AntennaSettings` becomes a thin antenna-specific declaration/facade.
 
 - Standardize LogBook terminology on concrete `TimingData` records, registrations, committed data and persisted data; avoid generic `history` / `history fact` wording for LogBook data.
