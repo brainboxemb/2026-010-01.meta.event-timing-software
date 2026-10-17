@@ -1647,8 +1647,6 @@ The Java execution types have distinct jobs:
 - `TaskSerialLane` executes a `YieldingTask` one step per turn.
 - A task returns `TaskStep.AGAIN` to run another turn, `AFTER` to resume
   later, or `DONE` when finished.
-- `LaneScheduler` schedules the delay and then returns work to the same
-  lane; it is not a second queue of business actions.
 - `AbstractTask` manages task runs, cancellation and repeated wake signals.
   The concrete task still decides the next business action.
 
@@ -1932,7 +1930,6 @@ It does not know about TimingNodes, devices or user interfaces.
 ```text
 execution/
   lanes/       SerialLane, ScheduledSerialLane, TaskSerialLane
-  scheduling/  LaneScheduler
   tasks/       YieldingTask, TaskStep, AbstractTask
 events/        Event<T>, EventSource<T>
 environment/   Clock, MonotonicClock, OperatingSystem
@@ -1942,7 +1939,7 @@ time/          TimeSource, ClockTimeSource
 :::{arch} PlatformExecution
 :id: PlatformExecution
 
-`PlatformExecution` provides the lane, scheduler and task classes.
+`PlatformExecution` provides the lane and task classes.
 Each component chooses the lane it needs; Runtime supplies the executor.
 :::
 
@@ -1965,13 +1962,6 @@ A timer makes work eligible to join the same serial queue later.
 
 `TaskSerialLane` extends `ScheduledSerialLane`. It runs one `YieldingTask`
 step per turn and handles immediate or delayed continuation.
-:::
-
-:::{arch} LaneScheduler
-:id: LaneScheduler
-
-`LaneScheduler` handles timers for a scheduled lane. It does not
-create another lane or execute the component's work itself.
 :::
 
 :::{arch} YieldingTask

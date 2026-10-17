@@ -409,8 +409,6 @@ nodes:
       object_id: ScheduledSerialLane
     - label: TaskSerialLane
       object_id: TaskSerialLane
-    - label: LaneScheduler
-      object_id: LaneScheduler
     - label: "AbstractTask • YieldingTask • TaskStep"
   kind: platform
   notation: packaging-component
@@ -531,11 +529,6 @@ nodes:
   notation: component
   layout: {x: 1185, y: 870, w: 220, h: 50}
 edges:
-- from: runtime-executors
-  to: platform-execution
-  dashed: true
-  label: "backs logical lanes"
-
 - from: logging-server
   to: logging-infra
   dashed: true

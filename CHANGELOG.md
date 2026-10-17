@@ -10,7 +10,7 @@ The repository is currently in its planning and research phase.
 
 - Align the SI-01 SSD execution/process model, diagrams and Java design rules with SDD-02 and current Java: independent logical Data/Task lanes, four shared executor roles, scheduled cooperative tasks, direct AntennaManager inventory requests and no shared Settings component. Simplify architecture prose and remove stale processor/runner terminology.
 
-- Refresh SDD-02 and Figure SI01-01 to the implemented execution architecture: `SerialLane` / `ScheduledSerialLane` / `TaskSerialLane`, `LaneScheduler`, `AbstractTask`/`YieldingTask`/`TaskStep`, Runtime-owned shared role executors, current `TimingSystemConductor`, and no shared Settings component boundary.
+- Refresh SDD-02 and Figure SI01-01 to the implemented execution architecture: `SerialLane` / `ScheduledSerialLane` / `TaskSerialLane`, `AbstractTask`/`YieldingTask`/`TaskStep`, Runtime-owned shared role executors, current `TimingSystemConductor`, and no shared Settings component boundary. Keep Java-only scheduling helpers out of the logical architecture figure.
 
 - Clarify production API encapsulation: when callers need one stable lifecycle predicate, expose a semantic query such as `isRunning()` instead of requiring caller-side interpretation of a full internal state enum; retain complete state views where diagnostics or genuine multi-state decisions need them.
 

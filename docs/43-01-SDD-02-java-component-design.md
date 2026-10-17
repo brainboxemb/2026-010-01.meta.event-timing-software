@@ -495,7 +495,7 @@ for reimplementing JDK executor internals.
 
 :::{design} Cooperative execution and TimingSystem coordination
 :id: DD-CooperativeExecution
-:elaborates: TimingSystemConductor, PlatformExecution, TaskSerialLane, AbstractTask, YieldingTask, TaskStep, LaneScheduler
+:elaborates: TimingSystemConductor, PlatformExecution, TaskSerialLane, AbstractTask, YieldingTask, TaskStep
 
 Detailed Java design for cooperative task execution and the TimingSystem-scoped
 coordination pattern used by `domain.system.TimingSystemConductor`.
@@ -528,8 +528,9 @@ serial-lane turn. `AGAIN` yields by re-admitting at the back of the same bounded
 `AFTER(delay)` uses delayed admission and does not occupy the physical worker while waiting.
 `DONE` completes the task run.
 
-`LaneScheduler` is the timing helper used by `ScheduledSerialLane`. It owns timer
-registrations only; it is not another lane. When a timer fires, work is admitted back to the
+`ScheduledSerialLane` currently uses the Java helper `LaneScheduler` for timer
+registration. That helper is an implementation detail, not a separate architecture
+component or execution lane. When a timer fires, work is admitted back to the
 existing `SerialLane`, which remains the sole FIFO/admission boundary.
 
 `AbstractTask` is the reusable task lifecycle owner for recurring state machines. A
@@ -574,8 +575,8 @@ TaskSerialLane
   immediate and delayed continuation
   optional bounded await/failure mapping
 
-LaneScheduler
-  timer registration and delayed admission to an existing lane
+ScheduledSerialLane
+  owns the delayed-admission capability; its current helper is LaneScheduler
 
 RuntimeExecutors
   physical role-executor creation, sharing and lifecycle
@@ -2720,7 +2721,7 @@ TagProcessor burst expiry is unrelated to runtime measurement.
 
 :::{design} Runtime execution model
 :id: DD-RuntimeExecution
-:elaborates: RuntimeExecutors, PlatformExecution, SerialLane, ScheduledSerialLane, TaskSerialLane, LaneScheduler
+:elaborates: RuntimeExecutors, PlatformExecution, SerialLane, ScheduledSerialLane, TaskSerialLane
 
 Detailed Java design for Runtime-owned physical role executors and component-owned bounded
 logical lanes.
