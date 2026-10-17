@@ -426,7 +426,7 @@ Runtime owns physical executors. TimingNode, TagProcessor, TimingSystemConductor
 and AntennaManager own their logical lanes/tasks. Physical parallelism remains
 measurement-driven rather than proportional to nodes or logical lanes.
 
-### TimingNode upstream decomposition### TimingNode upstream decomposition
+### TimingNode upstream decomposition
 
 Upstream processing is a TimingNode-owned domain concern, but it is not one
 undifferentiated component. The semantic handler delegates protocol families to
@@ -610,7 +610,7 @@ state as later wake runs.
 The cooperative model remains optional. A component that only needs one short
 ordered action submits it directly to its `SerialLane`.
 
-### EventData and TagProcessor realization### EventData and TagProcessor realization
+### EventData and TagProcessor realization
 
 :::{design} EventData and TagProcessor realization
 :id: DD-EventTagProcessing
@@ -2705,10 +2705,10 @@ Examples:
 tp-main
 tp-pl-console
 tp-pl-remote-shell
-tp-dl-node-worker
-tp-dl-tagproc-worker
-tp-dl-system-worker
-tp-io-shared-worker
+tp-dl-node
+tp-dl-tagproc
+tp-dl-system-conductor
+tp-io-shared
 tp-inf-logging
 tp-inf-live-log
 tp-inf-live-log-writer
@@ -3091,7 +3091,7 @@ shared scheduled I/O executor   -> AntennaManager TaskSerialLane + bounded I/O/s
 All are one-worker baselines today. Increasing physical parallelism is an
 evidence-driven optimization, not a change to logical lane ownership.
 
-### TimingData commit### TimingData commit
+### TimingData commit
 
 The queue does not contain a pre-numbered TimingData record. Sequence is chosen
 on the worker immediately before persistence:

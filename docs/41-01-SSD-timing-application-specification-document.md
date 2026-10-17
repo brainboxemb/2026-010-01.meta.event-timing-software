@@ -2167,7 +2167,7 @@ notification. These mechanics contain no knowledge of TimingNode, TagProcessor,
 IF-11 paths or IF-03 routes.
 :::
 
-#### Cross-cutting concerns#### Cross-cutting concerns
+#### Cross-cutting concerns
 
 Cross-cutting technical concerns include logging, diagnostics, metrics and
 build/version identity. In Java, `infra` is reserved for concrete cross-cutting

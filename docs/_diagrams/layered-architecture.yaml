@@ -532,7 +532,6 @@ nodes:
   notation: component
   layout: {x: 1185, y: 870, w: 220, h: 50}
 edges:
-edges:
 - from: logging-server
   to: logging-infra
   dashed: true
