@@ -1,0 +1,245 @@
+{
+  "$defs": {
+    "type-uc": {
+      "properties": {
+        "type": {
+          "const": "uc"
+        }
+      }
+    },
+    "type-req": {
+      "properties": {
+        "type": {
+          "const": "req"
+        }
+      }
+    },
+    "type-ifreq": {
+      "properties": {
+        "type": {
+          "const": "ifreq"
+        }
+      }
+    },
+    "type-arch": {
+      "properties": {
+        "type": {
+          "const": "arch"
+        }
+      }
+    },
+    "type-vc": {
+      "properties": {
+        "type": {
+          "const": "vc"
+        }
+      }
+    },
+    "requirement-target": {
+      "properties": {
+        "type": {
+          "enum": [
+            "req",
+            "ifreq"
+          ]
+        }
+      }
+    },
+    "type-requirement": {
+      "properties": {
+        "type": {
+          "enum": [
+            "req",
+            "ifreq"
+          ]
+        }
+      }
+    },
+    "type-design": {
+      "properties": {
+        "type": {
+          "const": "design"
+        }
+      }
+    },
+    "design-target": {
+      "properties": {
+        "type": {
+          "const": "design"
+        }
+      }
+    },
+    "type-impl": {
+      "properties": {
+        "type": {
+          "const": "impl"
+        }
+      }
+    },
+    "architecture-target": {
+      "properties": {
+        "type": {
+          "const": "arch"
+        }
+      }
+    }
+  },
+  "schemas": [
+    {
+      "id": "requirement-status-code",
+      "message": "Requirement status may only be D, R, A or O.",
+      "select": {
+        "$ref": "#/$defs/type-requirement"
+      },
+      "validate": {
+        "local": {
+          "properties": {
+            "status": {
+              "enum": [
+                "D",
+                "R",
+                "A",
+                "O"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "requirement-status-required",
+      "message": "Every software/interface requirement must carry an explicit D/R/A/O maturity status.",
+      "select": {
+        "$ref": "#/$defs/type-requirement"
+      },
+      "validate": {
+        "local": {
+          "required": [
+            "status"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "D",
+                "R",
+                "A",
+                "O"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "requirement-typed-links",
+      "message": "Requirement links must specify a use case or refer to a requirement.",
+      "select": {
+        "$ref": "#/$defs/type-requirement"
+      },
+      "validate": {
+        "network": {
+          "specifies": {
+            "items": {
+              "local": {
+                "$ref": "#/$defs/type-uc"
+              }
+            }
+          },
+          "refines": {
+            "items": {
+              "local": {
+                "$ref": "#/$defs/requirement-target"
+              }
+            }
+          },
+          "depends_on": {
+            "items": {
+              "local": {
+                "$ref": "#/$defs/requirement-target"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "architecture-realizes-requirement",
+      "message": "Architecture realizes must target requirements.",
+      "select": {
+        "$ref": "#/$defs/type-arch"
+      },
+      "validate": {
+        "network": {
+          "realizes": {
+            "items": {
+              "local": {
+                "$ref": "#/$defs/requirement-target"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "design-elaborates-architecture",
+      "message": "Detailed design elaborates must target architecture.",
+      "select": {
+        "$ref": "#/$defs/type-design"
+      },
+      "validate": {
+        "network": {
+          "elaborates": {
+            "items": {
+              "local": {
+                "$ref": "#/$defs/architecture-target"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "implementation-links",
+      "message": "Implementation mappings must target detailed design or requirements.",
+      "select": {
+        "$ref": "#/$defs/type-impl"
+      },
+      "validate": {
+        "network": {
+          "implements": {
+            "items": {
+              "local": {
+                "$ref": "#/$defs/design-target"
+              }
+            }
+          },
+          "fulfills": {
+            "items": {
+              "local": {
+                "$ref": "#/$defs/requirement-target"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "verification-verifies-requirement",
+      "message": "Verification cases must reference requirements.",
+      "select": {
+        "$ref": "#/$defs/type-vc"
+      },
+      "validate": {
+        "network": {
+          "verifies": {
+            "items": {
+              "local": {
+                "$ref": "#/$defs/requirement-target"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

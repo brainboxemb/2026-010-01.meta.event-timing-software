@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="950" viewBox="0 0 1360 950">
+<defs>
+<marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+<path d="M0,0 L0,6 L9,3 z" fill="#5f6368"/>
+</marker>
+</defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="30.0" y="38.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#202124">Figure SDE03-05 — API-first Development Client workbench</text>
+<text x="30.0" y="68.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Current UI baseline. Client configuration supplies startup defaults; the active target host is editable. SI-01 remains authoritative for domain results.</text>
+<rect data-notation="wireframe-panel" x="30" y="80" width="1300" height="845" rx="0" ry="0" fill="#ffffff" stroke="#666666" stroke-width="1.5"/>
+<text x="40.0" y="97.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Development Client</text>
+<line x1="30.0" y1="111.0" x2="1330.0" y2="111.0" stroke="#666666" stroke-width="1"/>
+<rect data-notation="wireframe-input" x="55" y="118" width="265" height="54" rx="0" ry="0" fill="#ffffff" stroke="#777777" stroke-width="1.5"/>
+<text x="63.0" y="130.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Target</text>
+<rect x="62.0" y="141.0" width="251.0" height="25.0" fill="#ffffff" stroke="#777777" stroke-width="1"/>
+<text x="70.0" y="153.5" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">127.0.0.1  |  editable host/IP</text>
+<rect data-notation="wireframe-button" x="335" y="121" width="145" height="48" rx="5" ry="5" fill="#eef8ee" stroke="#5b8f5a" stroke-width="1.5"/>
+<text x="407.5" y="136.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">API :8081</text>
+<text x="407.5" y="154.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">CHECK</text>
+<rect data-notation="wireframe-button" x="490" y="121" width="165" height="48" rx="5" ry="5" fill="#eef8ee" stroke="#5b8f5a" stroke-width="1.5"/>
+<text x="572.5" y="136.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Events :eventPort</text>
+<text x="572.5" y="154.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">CONNECTED</text>
+<rect data-notation="wireframe-button" x="665" y="121" width="160" height="48" rx="5" ry="5" fill="#f1f3f4" stroke="#5f6368" stroke-width="1.5"/>
+<text x="745.0" y="136.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Terminal :shellPort</text>
+<text x="745.0" y="154.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">CONNECT</text>
+<rect data-notation="wireframe-button" x="835" y="121" width="175" height="48" rx="5" ry="5" fill="#f1f3f4" stroke="#5f6368" stroke-width="1.5"/>
+<text x="922.5" y="136.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Device log :logPort</text>
+<text x="922.5" y="154.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">CONNECT</text>
+<rect data-notation="wireframe-button" x="1020" y="121" width="135" height="48" rx="5" ry="5" fill="#f1f3f4" stroke="#5f6368" stroke-width="1.5"/>
+<text x="1087.5" y="145.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Apply target</text>
+<rect data-notation="wireframe-status" x="1165" y="121" width="135" height="48" rx="14.0" ry="14.0" fill="#eef8ee" stroke="#5b8f5a" stroke-width="1.5"/>
+<text x="1232.5" y="137.3" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#202124">Client log</text>
+<text x="1232.5" y="152.7" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#202124">ACTIVE</text>
+<rect data-notation="wireframe-tabs" x="55" y="180" width="1245" height="44" rx="0" ry="0" fill="#ffffff" stroke="#666666" stroke-width="1.5"/>
+<text x="210.6" y="202.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#202124">API</text>
+<line x1="366.2" y1="180.0" x2="366.2" y2="224.0" stroke="#666666" stroke-width="1"/>
+<text x="521.9" y="202.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Events</text>
+<line x1="677.5" y1="180.0" x2="677.5" y2="224.0" stroke="#666666" stroke-width="1"/>
+<text x="833.1" y="202.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Device Log</text>
+<line x1="988.8" y1="180.0" x2="988.8" y2="224.0" stroke="#666666" stroke-width="1"/>
+<text x="1144.4" y="202.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Client Log</text>
+<rect data-notation="wireframe-status" x="55" y="232" width="1245" height="44" rx="14.0" ry="14.0" fill="#eef8ee" stroke="#5b8f5a" stroke-width="1.5"/>
+<text x="677.5" y="254.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#202124">Timing view</text>
+<rect data-notation="wireframe-tabs" x="55" y="292" width="615" height="255" rx="0" ry="0" fill="#ffffff" stroke="#666666" stroke-width="1.5"/>
+<text x="131.9" y="419.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#202124">TimingNode</text>
+<line x1="208.8" y1="292.0" x2="208.8" y2="547.0" stroke="#666666" stroke-width="1"/>
+<text x="285.6" y="419.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Registration</text>
+<line x1="362.5" y1="292.0" x2="362.5" y2="547.0" stroke="#666666" stroke-width="1"/>
+<text x="439.4" y="419.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Simulation</text>
+<line x1="516.2" y1="292.0" x2="516.2" y2="547.0" stroke="#666666" stroke-width="1"/>
+<text x="593.1" y="419.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Terminal</text>
+<rect data-notation="wireframe-input" x="80" y="350" width="150" height="54" rx="0" ry="0" fill="#ffffff" stroke="#777777" stroke-width="1.5"/>
+<text x="88.0" y="362.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">LocationId</text>
+<rect x="87.0" y="373.0" width="136.0" height="25.0" fill="#ffffff" stroke="#777777" stroke-width="1"/>
+<text x="95.0" y="385.5" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">24</text>
+<rect data-notation="wireframe-button" x="245" y="359" width="90" height="36" rx="5" ry="5" fill="#f1f3f4" stroke="#5f6368" stroke-width="1.5"/>
+<text x="290.0" y="377.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Open</text>
+<rect data-notation="wireframe-button" x="345" y="359" width="90" height="36" rx="5" ry="5" fill="#f1f3f4" stroke="#5f6368" stroke-width="1.5"/>
+<text x="390.0" y="377.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Close</text>
+<rect data-notation="wireframe-input" x="80" y="420" width="555" height="54" rx="0" ry="0" fill="#ffffff" stroke="#777777" stroke-width="1.5"/>
+<text x="88.0" y="432.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Last API operation</text>
+<rect x="87.0" y="443.0" width="541.0" height="25.0" fill="#ffffff" stroke="#777777" stroke-width="1"/>
+<text x="95.0" y="455.5" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">seq 1</text>
+<rect data-notation="wireframe-panel" x="685" y="292" width="615" height="72" rx="0" ry="0" fill="#ffffff" stroke="#666666" stroke-width="1.5"/>
+<text x="695.0" y="309.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">API / application identity</text>
+<line x1="685.0" y1="323.0" x2="1300.0" y2="323.0" stroke="#666666" stroke-width="1"/>
+<text x="695.0" y="337.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">application  |  version  |  API version  |  Version  |  Status</text>
+<rect data-notation="wireframe-table" x="685" y="376" width="615" height="171" rx="0" ry="0" fill="#ffffff" stroke="#666666" stroke-width="1.5"/>
+<text x="695.0" y="393.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Registrations</text>
+<line x1="685.0" y1="407.0" x2="1300.0" y2="407.0" stroke="#666666" stroke-width="1"/>
+<text x="695.0" y="421.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Interpreted view — Time | Type | TeamID | Code | action</text>
+<text x="695.0" y="438.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Time        | Type | TeamID | Code |</text>
+<line x1="685.0" y1="448.8" x2="1300.0" y2="448.8" stroke="#666666" stroke-width="0.7"/>
+<text x="695.0" y="459.6" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">12:00:00.25 | AUTO | 0001   |      | [trash]</text>
+<line x1="685.0" y1="470.4" x2="1300.0" y2="470.4" stroke="#666666" stroke-width="0.7"/>
+<rect data-notation="wireframe-panel" x="55" y="565" width="615" height="142" rx="0" ry="0" fill="#ffffff" stroke="#666666" stroke-width="1.5"/>
+<text x="65.0" y="582.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Device Log</text>
+<line x1="55.0" y1="596.0" x2="670.0" y2="596.0" stroke="#666666" stroke-width="1"/>
+<text x="65.0" y="610.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Live SI-01 diagnostics</text>
+<rect data-notation="wireframe-panel" x="55" y="719" width="615" height="142" rx="0" ry="0" fill="#ffffff" stroke="#666666" stroke-width="1.5"/>
+<text x="65.0" y="736.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">Client Log</text>
+<line x1="55.0" y1="750.0" x2="670.0" y2="750.0" stroke="#666666" stroke-width="1"/>
+<text x="65.0" y="764.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Development Client diagnostics</text>
+<rect data-notation="wireframe-table" x="685" y="565" width="615" height="296" rx="0" ry="0" fill="#ffffff" stroke="#666666" stroke-width="1.5"/>
+<text x="695.0" y="582.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#202124">LogBook / committed TimingData</text>
+<line x1="685.0" y1="596.0" x2="1300.0" y2="596.0" stroke="#666666" stroke-width="1"/>
+<text x="695.0" y="610.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Immutable technical/audit view; raw canonical profile values</text>
+<text x="695.0" y="627.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Seq | Type     | Code | Location | Registration | Effective</text>
+<line x1="685.0" y1="637.8" x2="1300.0" y2="637.8" stroke="#666666" stroke-width="0.7"/>
+<text x="695.0" y="648.6" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">1   | AUTO_REG | ADD  | 24       | RT-A-0001    | 2026-10-01T10:00:00.25Z</text>
+<line x1="685.0" y1="659.4" x2="1300.0" y2="659.4" stroke="#666666" stroke-width="0.7"/>
+<rect data-notation="wireframe-input" x="55" y="875" width="1245" height="36" rx="0" ry="0" fill="#ffffff" stroke="#777777" stroke-width="1.5"/>
+<text x="63.0" y="887.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Raw response / selected record</text>
+<rect x="62.0" y="898.0" width="1231.0" height="18.0" fill="#ffffff" stroke="#777777" stroke-width="1"/>
+<text x="70.0" y="907.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">Collapsed by default; complete API JSON remains available for diagnosis.</text>
+</svg>

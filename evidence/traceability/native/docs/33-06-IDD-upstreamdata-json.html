@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>UpstreamData JSON Interface Design Description (IDD) &#8212; Event timing engineering graph migration-013 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-data-viewer/jsonview.bundle.css?v=f6ef2277" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/libs/html/datatables.min.css?v=4b4fd840" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/needstable.css?v=5e1b6797" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_links.css?v=2150a916" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_core.css?v=f5b60a78" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_style.css?v=92936fa5" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/common_css/need_toggle.css?v=5c6620df" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-needs/modern.css?v=803738c0" />
+    <script src="../_static/jquery.js?v=5d32c60e"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+    <script src="../_static/documentation_options.js?v=567e79b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/sphinx-data-viewer/jsonview.bundle.js?v=18cd53c5"></script>
+    <script src="../_static/sphinx-data-viewer/jsonview_loader.js?v=f7ff7e7d"></script>
+    <script src="../_static/sphinx-needs/libs/html/datatables.min.js?v=8a4aee21"></script>
+    <script src="../_static/sphinx-needs/libs/html/datatables_loader.js?v=a2cae175"></script>
+    <script src="../_static/sphinx-needs/libs/html/sphinx_needs_collapse.js?v=dca66431"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Timing Application Verification Test Specification (VTS)" href="61-01-VTS-timing-application-verification-test-specification.html" />
+    <link rel="prev" title="TimingData Interchange Interface Design Description (IDD)" href="33-05-IDD-timingdata-interchange.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="upstreamdata-json-interface-design-description-idd">
+<h1>UpstreamData JSON Interface Design Description (IDD)<a class="headerlink" href="#upstreamdata-json-interface-design-description-idd" title="Link to this heading">¶</a></h1>
+<p>Status: draft</p>
+<p>Representation: <strong>default/reference v1 JSON</strong></p>
+<p>System interface: <strong>IF-06 — Backend Integration</strong></p>
+<section id="purpose">
+<h2>Purpose<a class="headerlink" href="#purpose" title="Link to this heading">¶</a></h2>
+<p>This Interface Design Description defines the public/default JSON representation of
+IF-06 UpstreamData.</p>
+<p>The matching ISD owns the semantic contract. This IDD defines only the public/reference
+representation used by development, SI-02 engineering tooling and integration tests.</p>
+<p>The representation is deliberately generic. It does not encode deployment-specific
+queue names, private identifiers or proprietary protocol fields.</p>
+</section>
+<section id="relationship-to-other-documents">
+<h2>Relationship to other documents<a class="headerlink" href="#relationship-to-other-documents" title="Link to this heading">¶</a></h2>
+<p>This IDD implements the public/default representation of
+<code class="docutils literal notranslate"><span class="pre">32-06-ISD-backend-integration.md</span></code>.</p>
+<p>Contained TimingData values conform to IF-05 and its public/default JSON mapping in
+<code class="docutils literal notranslate"><span class="pre">32-05-ISD-timingdata-interchange.md</span></code> and
+<code class="docutils literal notranslate"><span class="pre">33-05-IDD-timingdata-interchange.md</span></code>.</p>
+<p>Connector/session realization belongs to
+<code class="docutils literal notranslate"><span class="pre">43-01-SDD-03-backoffice-transport-design.md</span></code>.</p>
+</section>
+<section id="design-baseline">
+<h2>Design baseline<a class="headerlink" href="#design-baseline" title="Link to this heading">¶</a></h2>
+<p>The default/reference representation uses <strong>one UTF-8 JSON message format for
+both directions</strong> of IF-06. Every exchange uses the same envelope; its <code class="docutils literal notranslate"><span class="pre">type</span></code>
+selects the message family and its <code class="docutils literal notranslate"><span class="pre">data</span></code> contains the type-specific payload.
+The envelope is the message. A TimingData record (the semantic counterpart of
+an individual log entry) is an item <em>inside</em> the <code class="docutils literal notranslate"><span class="pre">data</span></code> payload of a
+<code class="docutils literal notranslate"><span class="pre">TIMING_DATA</span></code> message; it is not a second, unrelated top-level wire format.</p>
+<p>The common envelope is intentionally small:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">v</span></code></p></td>
+<td><p>integer</p></td>
+<td><p>UpstreamData representation version</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">type</span></code></p></td>
+<td><p>string</p></td>
+<td><p>semantic message family/type</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nodeId</span></code></p></td>
+<td><p>string, type-dependent</p></td>
+<td><p>addressed/owning TimingNode when the message is node-scoped</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">seq</span></code></p></td>
+<td><p>integer, type-dependent</p></td>
+<td><p>source sequence for an ordered top-level data stream; currently RACE_DATA</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">data</span></code></p></td>
+<td><p>object/array, type-dependent</p></td>
+<td><p>semantic payload</p></td>
+</tr>
+</tbody>
+</table>
+<p>The representation does not require a transport/delivery/session identifier in the
+semantic envelope. A concrete transport may carry such metadata outside the encoded
+UpstreamData object.</p>
+</section>
+<section id="message-families">
+<h2>Message families<a class="headerlink" href="#message-families" title="Link to this heading">¶</a></h2>
+<p>The current public v1 design reserves these semantic families:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">TIMING_DATA</span></code>;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">RACE_DATA</span></code>;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SYNC</span></code>;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ACK</span></code>;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">REQ</span></code>;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PING</span></code> (REQ and ANS);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">STATUS</span></code>.</p></li>
+</ul>
+<p>Only fields whose semantics are promoted by the IF-06 ISD and its Step-7 refinements
+become normative public members.</p>
+<section id="timing-data">
+<h3>TIMING_DATA<a class="headerlink" href="#timing-data" title="Link to this heading">¶</a></h3>
+<p>A TIMING_DATA message carries one or more committed TimingData values as elements
+of its <code class="docutils literal notranslate"><span class="pre">data</span></code> array. The same envelope applies regardless of direction; this
+family ordinarily flows from SI-01 to the backend. For example, one committed
+record is one child of an UpstreamData message:</p>
+<p>Conceptual JSON:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"TIMING_DATA"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"nodeId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"A"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"nodeId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"A"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"seqNr"</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"locId"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"recType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"AUTO_REG"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"time"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-10-13T08:00:00.00Z"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"regId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"RT-A-0042"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"code"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"ADD"</span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The nested TimingData objects use the applicable public IF-05 JSON mapping. The
+UpstreamData wrapper does not change their record key or source sequence.
+The JSON representation does not serialize a LogBook file, nor wrap old LBR
+text lines as opaque strings. It represents committed IF-05 records as structured
+child objects of one UpstreamData message.</p>
+<p>A batch may contain multiple records only from a semantically compatible source scope.
+Batching is delivery convenience and never creates another TimingData sequence.</p>
+</section>
+<section id="race-data">
+<h3>RACE_DATA<a class="headerlink" href="#race-data" title="Link to this heading">¶</a></h3>
+<p>RACE_DATA is the ordered Central System -&gt; SI-01 live race-state stream. It is
+node-scoped and requires both <code class="docutils literal notranslate"><span class="pre">nodeId</span></code> and a positive top-level <code class="docutils literal notranslate"><span class="pre">seq</span></code>.</p>
+<p>Example:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"RACE_DATA"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"nodeId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"A"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"seq"</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"teamAssignments"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"op"</span><span class="p">:</span><span class="w"> </span><span class="s2">"SET"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"regId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"RT-R-0001"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"teamId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0042"</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">"stageStartTimes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"op"</span><span class="p">:</span><span class="w"> </span><span class="s2">"SET"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"teamId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0042"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"start"</span><span class="p">:</span><span class="w"> </span><span class="s2">"23:59:50.00"</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">seq</span></code> is the Central-owned source order for RACE_DATA of the addressed TimingNode.
+It starts at 1 and increases by one for each RaceData message. The JSON-safe range is
+1..9007199254740991.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">data</span></code> object contains <strong>incremental changes</strong>, not a complete snapshot. Supported
+v1 sections are optional:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Section</p></th>
+<th class="head"><p>Key</p></th>
+<th class="head"><p>Operations</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">teamAssignments</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">regId</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SET</span></code> with <code class="docutils literal notranslate"><span class="pre">teamId</span></code>; <code class="docutils literal notranslate"><span class="pre">DEL</span></code> removes the assignment</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">stageStartTimes</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">teamId</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SET</span></code> with one <code class="docutils literal notranslate"><span class="pre">start</span></code> TimingTimestamp value; <code class="docutils literal notranslate"><span class="pre">DEL</span></code> removes the definition</p></td>
+</tr>
+</tbody>
+</table>
+<p>At least one non-empty supported change section is required. An omitted section means
+“no change”; it never means “clear that entire state”.</p>
+<p>Reserve-tag mapping example for removal:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"RACE_DATA"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"nodeId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"A"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"seq"</span><span class="p">:</span><span class="w"> </span><span class="mi">124</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"teamAssignments"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"op"</span><span class="p">:</span><span class="w"> </span><span class="s2">"DEL"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"regId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"RT-R-0001"</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The assignment uses <code class="docutils literal notranslate"><span class="pre">regId</span></code>: EventData resolves physical TagIds to their
+RegistrationId, while RACE_DATA supplies only the live RegistrationId-to-TeamId
+assignment. The UpstreamData contract does not classify that assignment as a
+special reserve-tag concept.</p>
+<p><code class="docutils literal notranslate"><span class="pre">start</span></code> is one textual <code class="docutils literal notranslate"><span class="pre">TimingTimestamp</span></code> value. The default v1 profile accepts:</p>
+<ul class="simple">
+<li><p>time-only: <code class="docutils literal notranslate"><span class="pre">HH:mm:ss[.fraction]</span></code>;</p></li>
+<li><p>local date/time: <code class="docutils literal notranslate"><span class="pre">YYYY-MM-DDTHH:mm:ss[.fraction]</span></code>;</p></li>
+<li><p>absolute UTC: <code class="docutils literal notranslate"><span class="pre">YYYY-MM-DDTHH:mm:ss[.fraction]Z</span></code>.</p></li>
+</ul>
+<p>A source may provide time-only data; the codec shall not invent a date or zone.
+SI-01 StageTiming owns any event/race-time-zone and rollover interpretation needed
+to calculate an absolute start.</p>
+<p>One RACE_DATA message is validated and applied as one ordered unit. A sequence gap is
+not silently skipped and the message is not partially applied before its ACK point
+advances.</p>
+</section>
+<section id="sync">
+<h3>SYNC<a class="headerlink" href="#sync" title="Link to this heading">¶</a></h3>
+<p>SYNC advertises the source head of one ordered stream for one <code class="docutils literal notranslate"><span class="pre">nodeId</span></code>.</p>
+<p>TimingNode -&gt; Central System:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"SYNC"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"nodeId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"A"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"stream"</span><span class="p">:</span><span class="w"> </span><span class="s2">"TIMING_DATA"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"seq"</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Central System -&gt; TimingNode:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"SYNC"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"nodeId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"A"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"stream"</span><span class="p">:</span><span class="w"> </span><span class="s2">"RACE_DATA"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"seq"</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Members:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>Values</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">stream</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">TIMING_DATA</span></code>, <code class="docutils literal notranslate"><span class="pre">RACE_DATA</span></code></p></td>
+<td><p>source stream being advertised</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">seq</span></code></p></td>
+<td><p>integer 0..9007199254740991</p></td>
+<td><p>current highest source sequence; 0 means the source stream is empty</p></td>
+</tr>
+</tbody>
+</table>
+<p>For TIMING_DATA, <code class="docutils literal notranslate"><span class="pre">seq</span></code> is the TimingNode’s LogBook/IF-05 source head. For RACE_DATA,
+<code class="docutils literal notranslate"><span class="pre">seq</span></code> is the Central System’s RaceData source head. A receiver that is behind uses
+REQ from its first missing sequence.</p>
+<p>SYNC carries no stream payload and consumes no source sequence itself.</p>
+</section>
+<section id="ack">
+<h3>ACK<a class="headerlink" href="#ack" title="Link to this heading">¶</a></h3>
+<p>ACK confirms ordered semantic application. Public v1 requires ACK for the
+Central System -&gt; SI-01 RACE_DATA stream.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ACK"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"nodeId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"A"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"stream"</span><span class="p">:</span><span class="w"> </span><span class="s2">"RACE_DATA"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"seq"</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">seq</span></code> means that SI-01 has successfully applied RACE_DATA contiguously through that
+sequence. ACK is emitted only after semantic application. Re-receiving an already
+applied RaceData message does not apply it again; SI-01 may repeat its cumulative ACK.</p>
+</section>
+<section id="req">
+<h3>REQ<a class="headerlink" href="#req" title="Link to this heading">¶</a></h3>
+<p>REQ is bidirectional and requests retransmission from one source sequence.</p>
+<p>Central System requests TimingData:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"REQ"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"nodeId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"A"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"stream"</span><span class="p">:</span><span class="w"> </span><span class="s2">"TIMING_DATA"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"fromSeq"</span><span class="p">:</span><span class="w"> </span><span class="mi">41</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>TimingNode requests RaceData:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"REQ"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"nodeId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"A"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"stream"</span><span class="p">:</span><span class="w"> </span><span class="s2">"RACE_DATA"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"fromSeq"</span><span class="p">:</span><span class="w"> </span><span class="mi">121</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">fromSeq</span></code> is in the range 1..9007199254740991 and is inclusive. <code class="docutils literal notranslate"><span class="pre">fromSeq</span> <span class="pre">=</span> <span class="pre">1</span></code>
+means replay from the retained beginning of the selected stream.</p>
+<p>A deployment-specific legacy codec may map the semantic request</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>REQ stream=TIMING_DATA fromSeq=1
+</pre></div>
+</div>
+<p>to a legacy “receive all” sentinel such as <code class="docutils literal notranslate"><span class="pre">RECV</span> <span class="pre">package-id</span> <span class="pre">=</span> <span class="pre">0000</span></code>, and decode
+that sentinel back to the same semantic request. The public source sequence still
+starts at 1; <code class="docutils literal notranslate"><span class="pre">0000</span></code> remains a legacy wire representation detail. Arbitrary
+<code class="docutils literal notranslate"><span class="pre">fromSeq</span></code> values are available only when the selected legacy representation can
+express them.</p>
+</section>
+<section id="ping-request-answer">
+<h3>PING (REQUEST / ANSWER)<a class="headerlink" href="#ping-request-answer" title="Link to this heading">¶</a></h3>
+<p>PING uses the <strong>same UpstreamData message type</strong> in both directions and for both
+request and answer. The <code class="docutils literal notranslate"><span class="pre">data</span></code> object has one required field and two optional fields:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Member</p></th>
+<th class="head"><p>Values</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">op</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">REQ</span></code>, <code class="docutils literal notranslate"><span class="pre">ANS</span></code> (required)</p></td>
+<td><p>request or answer</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">mode</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HB</span></code> (optional)</p></td>
+<td><p>scheduled heartbeat; absence means manual/explicit</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pingId</span></code></p></td>
+<td><p>string (optional)</p></td>
+<td><p>reference correlation token for a specific exchange</p></td>
+</tr>
+</tbody>
+</table>
+<p>PING is system/upstream-scoped and does not require <code class="docutils literal notranslate"><span class="pre">nodeId</span></code>. A receiver of
+<code class="docutils literal notranslate"><span class="pre">op</span> <span class="pre">=</span> <span class="pre">REQ</span></code> issues one <code class="docutils literal notranslate"><span class="pre">op</span> <span class="pre">=</span> <span class="pre">ANS</span></code>. The answer preserves the
+request’s optional <code class="docutils literal notranslate"><span class="pre">mode</span></code>: if absent in the request, it is absent in the
+answer. Neither party shall answer an <code class="docutils literal notranslate"><span class="pre">ANS</span></code>. A <code class="docutils literal notranslate"><span class="pre">REQ</span></code> may originate from
+SI-01 or from the backend.</p>
+<p>Heartbeat request (<code class="docutils literal notranslate"><span class="pre">REQ</span></code>):</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"PING"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"op"</span><span class="p">:</span><span class="w"> </span><span class="s2">"REQ"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"mode"</span><span class="p">:</span><span class="w"> </span><span class="s2">"HB"</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Heartbeat answer (<code class="docutils literal notranslate"><span class="pre">ANS</span></code>):</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"PING"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"op"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ANS"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"mode"</span><span class="p">:</span><span class="w"> </span><span class="s2">"HB"</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Manual request (<code class="docutils literal notranslate"><span class="pre">REQ</span></code>, no <code class="docutils literal notranslate"><span class="pre">mode</span></code>):</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"PING"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"op"</span><span class="p">:</span><span class="w"> </span><span class="s2">"REQ"</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Manual answer (<code class="docutils literal notranslate"><span class="pre">ANS</span></code>):</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"PING"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"op"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ANS"</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The default v1 reader accepts missing <code class="docutils literal notranslate"><span class="pre">mode</span></code> as manual/explicit. It rejects an
+unsupported <code class="docutils literal notranslate"><span class="pre">mode</span></code> value rather than guessing it means manual. A manual request
+does not reset the periodic heartbeat cycle. There is <strong>no separate PONG
+message family</strong> in the default representation.</p>
+<p>A reference implementation may include optional <code class="docutils literal notranslate"><span class="pre">pingId</span></code> on a <code class="docutils literal notranslate"><span class="pre">REQ</span></code> and
+echo it on the corresponding <code class="docutils literal notranslate"><span class="pre">ANS</span></code>, for example <code class="docutils literal notranslate"><span class="pre">&quot;pingId&quot;:</span> <span class="pre">&quot;p-0001&quot;</span></code>.
+It is not mandatory IF-06 semantics, TimingData identity or transport sequence.
+Legacy fixed-field protocol positions are not normative public JSON fields.</p>
+<p>PING REQUEST/ANSWER carries no TimingData record and consumes no TimingData
+sequence identity. Its lifecycle/timing semantics are defined by
+IF06-REQ-011/012/013.</p>
+</section>
+<section id="status">
+<h3>STATUS<a class="headerlink" href="#status" title="Link to this heading">¶</a></h3>
+<p>The envelope and type are reserved in v1. Common semantic status members are added only
+when their interface meaning is stable.</p>
+</section>
+</section>
+<section id="json-rules">
+<h2>JSON rules<a class="headerlink" href="#json-rules" title="Link to this heading">¶</a></h2>
+<p>The default/reference v1 writer:</p>
+<ul class="simple">
+<li><p>emits UTF-8 JSON without BOM;</p></li>
+<li><p>emits integer <code class="docutils literal notranslate"><span class="pre">v</span> <span class="pre">=</span> <span class="pre">1</span></code>;</p></li>
+<li><p>emits a known <code class="docutils literal notranslate"><span class="pre">type</span></code>;</p></li>
+<li><p>emits only members defined by the selected message family;</p></li>
+<li><p>emits semantic payload values without embedding transport-specific routing metadata.</p></li>
+</ul>
+<p>The reader:</p>
+<ul class="simple">
+<li><p>rejects malformed JSON;</p></li>
+<li><p>rejects missing required members;</p></li>
+<li><p>rejects unsupported representation versions;</p></li>
+<li><p>reports unknown message types as unsupported rather than reinterpreting them;</p></li>
+<li><p>may ignore unknown additional members when all required known members remain valid.</p></li>
+</ul>
+</section>
+<section id="timingdata-composition">
+<h2>TimingData composition<a class="headerlink" href="#timingdata-composition" title="Link to this heading">¶</a></h2>
+<p>The public UpstreamData codec shall compose the public TimingData representation rather
+than invent another timing-record mapping.</p>
+<p>Conceptually:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>DefaultUpstreamDataCodec
+        |
+        +--&gt; DefaultTimingDataCodec
+</pre></div>
+</div>
+<p>This relationship is representation composition only. IF-05 remains the semantic
+authority for TimingData.</p>
+</section>
+<section id="transport-mapping">
+<h2>Transport mapping<a class="headerlink" href="#transport-mapping" title="Link to this heading">¶</a></h2>
+<p>The same UpstreamData JSON envelope is used for inbound and outbound
+messages; only its <code class="docutils literal notranslate"><span class="pre">type</span></code>, payload and any type-dependent scope differ. The
+encoded semantic object can be carried by different connector transports.
+Transport-specific or deployment-specific direction-dependent framing belongs
+in the adapter/codec rather than defining a second default message format.</p>
+<section id="engineering-if-03-transport">
+<h3>Engineering IF-03 transport<a class="headerlink" href="#engineering-if-03-transport" title="Link to this heading">¶</a></h3>
+<p>The Engineering API connector may map inbound UpstreamData to an IF-03 HTTP request and
+outbound UpstreamData to a typed IF-03 WebSocket event.</p>
+<p>The WebSocket event carries structured UpstreamData JSON; it does not tunnel a
+pre-serialized RabbitMQ/private message as an opaque string.</p>
+</section>
+<section id="rabbitmq-transport">
+<h3>RabbitMQ transport<a class="headerlink" href="#rabbitmq-transport" title="Link to this heading">¶</a></h3>
+<p>The RabbitMQ connector may use the encoded UpstreamData JSON as its public/reference
+message body while RabbitMQ exchanges, queues, routing keys, delivery tags and connection
+state remain transport metadata outside the UpstreamData JSON object.</p>
+<p>SI-02 may use the same JSON representation when acting as the backend-side RabbitMQ test
+peer.</p>
+</section>
+</section>
+<section id="provider-codec-boundary">
+<h2>Provider / codec boundary<a class="headerlink" href="#provider-codec-boundary" title="Link to this heading">¶</a></h2>
+<p>The public/default implementation is expected to expose a typed provider/codec family
+parallel to the existing TimingData representation boundary:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>UpstreamDataProvider
+  id()
+  createCodec()
+
+UpstreamDataCodec
+  encode(UpstreamData)
+  decode(bytes)
+</pre></div>
+</div>
+<p>The built-in public provider uses stable id <code class="docutils literal notranslate"><span class="pre">reference</span></code> and the JSON v1 codec.</p>
+<p>A deployment-specific provider may supply a different representation without changing
+the public UpstreamData semantic model or requiring private representation classes in
+public application/domain code.</p>
+<p>Concrete Java package/API details remain SI-01 detailed design and are not normative
+IF-06 interface requirements.</p>
+</section>
+<section id="compatibility-and-versioning">
+<h2>Compatibility and versioning<a class="headerlink" href="#compatibility-and-versioning" title="Link to this heading">¶</a></h2>
+<p>The integer <code class="docutils literal notranslate"><span class="pre">v</span></code> identifies the default UpstreamData JSON representation version.</p>
+<p>Compatible additions may add optional members whose absence preserves existing meaning.
+Breaking changes require another representation version.</p>
+<p>A custom representation is not required to use JSON or this version member. It conforms
+through preservation of the applicable IF-06 semantics, not by copying the default wire
+format.</p>
+</section>
+<section id="isd-mapping">
+<h2>ISD mapping<a class="headerlink" href="#isd-mapping" title="Link to this heading">¶</a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>IF-06 requirement</p></th>
+<th class="head"><p>Default JSON realization</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>IF06-REQ-001</p></td>
+<td><p>JSON represents transport-independent UpstreamData</p></td>
+</tr>
+<tr class="row-odd"><td><p>IF06-REQ-002</p></td>
+<td><p>TIMING_DATA embeds IF-05-compatible TimingData values</p></td>
+</tr>
+<tr class="row-even"><td><p>IF06-REQ-003</p></td>
+<td><p>no transport/session ID replaces Node ID + sequence</p></td>
+</tr>
+<tr class="row-odd"><td><p>IF06-REQ-004/005</p></td>
+<td><p>RACE_DATA carries node-scoped ordered incremental changes and explicit application outcome</p></td>
+</tr>
+<tr class="row-even"><td><p>IF06-REQ-014</p></td>
+<td><p>top-level RACE_DATA <code class="docutils literal notranslate"><span class="pre">seq</span></code> + cumulative ACK realize ordered application</p></td>
+</tr>
+<tr class="row-odd"><td><p>IF06-REQ-015</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">teamAssignments</span></code> carries live <code class="docutils literal notranslate"><span class="pre">regId</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">teamId</span></code> SET/DEL changes</p></td>
+</tr>
+<tr class="row-even"><td><p>IF06-REQ-016</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">stageStartTimes</span></code> carries TeamId-scoped SET/DEL changes</p></td>
+</tr>
+<tr class="row-odd"><td><p>IF06-REQ-006</p></td>
+<td><p>SYNC/REQ preserve the authoritative source identity/order of each stream</p></td>
+</tr>
+<tr class="row-even"><td><p>IF06-REQ-017</p></td>
+<td><p>SYNC uses <code class="docutils literal notranslate"><span class="pre">stream</span></code> + current source-head <code class="docutils literal notranslate"><span class="pre">seq</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>IF06-REQ-018</p></td>
+<td><p>transport acknowledgement does not replace RACE_DATA semantic ACK/source sync</p></td>
+</tr>
+<tr class="row-even"><td><p>IF06-REQ-019</p></td>
+<td><p>TIMING_DATA replay reuses original TimingData identity/content</p></td>
+</tr>
+<tr class="row-odd"><td><p>IF06-REQ-020</p></td>
+<td><p>REQ uses <code class="docutils literal notranslate"><span class="pre">stream</span></code> + inclusive <code class="docutils literal notranslate"><span class="pre">fromSeq</span></code> in either direction</p></td>
+</tr>
+<tr class="row-even"><td><p>IF06-REQ-021</p></td>
+<td><p>fresh source-head SYNC/REQ re-establish state after connect/reconnect</p></td>
+</tr>
+<tr class="row-odd"><td><p>IF06-REQ-007</p></td>
+<td><p>representation does not couple local commit to transport delivery</p></td>
+</tr>
+<tr class="row-even"><td><p>IF06-REQ-008</p></td>
+<td><p>v1 JSON is the public/default representation</p></td>
+</tr>
+<tr class="row-odd"><td><p>IF06-REQ-009</p></td>
+<td><p>provider/codec boundary permits alternative representations</p></td>
+</tr>
+<tr class="row-even"><td><p>IF06-REQ-010</p></td>
+<td><p>same JSON semantics can be mapped to IF-03 or RabbitMQ</p></td>
+</tr>
+<tr class="row-odd"><td><p>IF06-REQ-011/012/013</p></td>
+<td><p>PING carries required op REQ/ANS and optional mode HB (omission means manual); optional <code class="docutils literal notranslate"><span class="pre">pingId</span></code> supports reference correlation without consuming TimingData identity</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="open-design-points">
+<h2>Open design points<a class="headerlink" href="#open-design-points" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Final common STATUS JSON members.</p></li>
+<li><p>Whether TIMING_DATA remains single-source per message or permits an explicit
+multi-source batch envelope in a later version.</p></li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Event timing engineering graph</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="30-UC-system-use-cases.html">System use cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="41-01-SSD-timing-application-specification-document.html">Timing Application Specification Document (SSD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="41-02-SSD-gui-application-specification-document.html">Engineering Desktop Client Specification Document (SSD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="43-01-SDD-02-java-component-design.html">Java component, package and artifact detailed design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32-03-ISD-application-control-status.html">API Interface Specification (ISD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32-04-ISD-web-interface.html">Web Interface Specification (ISD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32-05-ISD-timingdata-interchange.html">TimingData Interchange Interface Specification (ISD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="32-06-ISD-backend-integration.html">Backend Integration Interface Specification (ISD)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="33-05-IDD-timingdata-interchange.html">TimingData Interchange Interface Design Description (IDD)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">UpstreamData JSON Interface Design Description (IDD)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#purpose">Purpose</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#relationship-to-other-documents">Relationship to other documents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#design-baseline">Design baseline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#message-families">Message families</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#json-rules">JSON rules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#timingdata-composition">TimingData composition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#transport-mapping">Transport mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#provider-codec-boundary">Provider / codec boundary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#compatibility-and-versioning">Compatibility and versioning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#isd-mapping">ISD mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#open-design-points">Open design points</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="61-01-VTS-timing-application-verification-test-specification.html">Timing Application Verification Test Specification (VTS)</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="33-05-IDD-timingdata-interchange.html" title="previous chapter">TimingData Interchange Interface Design Description (IDD)</a></li>
+      <li>Next: <a href="61-01-VTS-timing-application-verification-test-specification.html" title="next chapter">Timing Application Verification Test Specification (VTS)</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/docs/33-06-IDD-upstreamdata-json.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
