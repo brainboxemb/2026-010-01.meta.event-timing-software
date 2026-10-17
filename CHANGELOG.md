@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Remove the final simulation-only execution wrappers from SDD-02: `SimulatedTagScenarioRunner` now uses the Runtime-owned JDK `ScheduledExecutorService` directly with bounded one-next-step scheduling and lifecycle-generation protection; `RunnableSerialLane` and `LaneScheduler` are no longer part of the current Java design.
+
 - Refresh the Java execution architecture after implementation PR #750: use `SerialLane<T>` as the typed bounded FIFO, `SerialTaskRunner` for cooperative yielded tasks with `AWAIT`, direct JDK scheduling for TagProcessor timed work, asynchronous `TimingNode.MainTask` LogBook recovery, and separate LogBook versus TimingNode health; update Figure SI01-01 and the Java design rules, and remove the obsolete `ScheduledSerialLane` / `TaskSerialLane` / `NodeTaskLane` model.
 
 - Clarify SerialLane worker batching: queue capacity bounds backlog while configurable `maxItemsPerRun` independently bounds one worker run; each run processes only items already queued at its start, and later arrivals wait for the next run.
