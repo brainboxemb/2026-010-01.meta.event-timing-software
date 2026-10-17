@@ -2392,15 +2392,20 @@ TagObservation(TagId, RSSI, observedAt)
                   per-TagId attribution
                   strongest observation
                   |
-                  +--> LogBook.execute(addAutomaticRegistration)
+                  +--> selected registration
                           |
-                          +--> QUEUED -> record duplicate window
-                          +--> QUEUE_FULL -> do not suppress retry
-                          +--> NOT_RUNNING -> do not suppress retry
+                          +--> record RegistrationId duplicate window
+                          +--> emit TagProcessor.NEW_REGISTRATION
+                                  |
+                                  +--> TimingNode OPEN -> LogBook.execute(...)
+                                  +--> TimingNode CLOSED -> ignore registration
 ```
 
-Record duplicate-window state only after `LogBook.execute(...)` returns
-`QUEUED`. Once R-123 is suppressed, observations from TAG-A and TAG-B are both
+The duplicate window belongs to TagProcessor's accepted passage selection, before the
+fire-and-forget TimingNode/LogBook handoff. `LogBook.execute(...)` has no admission result:
+it returns after attempting to queue the command and reports a later queue rejection only as
+a LogBook diagnostic. A persistence/admission failure therefore does not reopen TagProcessor's
+duplicate window. Once R-123 is suppressed, observations from TAG-A and TAG-B are both
 suppressed because EventData resolves both to the same RegistrationId.
 
 #### Engineering diagnostic view
