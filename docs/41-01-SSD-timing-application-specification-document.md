@@ -166,12 +166,12 @@ browser session and expose the actual current state after reconnection.
 :specifies: UC-001, UC-002, UC-009  
 :depends_on: SI01-REQ-024, SI01-REQ-040  
 
-A lifecycle/location command accepted by SI-01 shall return an explicit semantic
-outcome: applied, rejected/invalid, unavailable, or outcome unknown when the
-request may have crossed a presentation boundary but current state cannot yet
-confirm its effect. Command outcome shall remain distinct from the subsequently
-observed TimingNode state and from the success or failure of the separate
-lifecycle-history recording required by SI01-REQ-087.
+A processed lifecycle/location command shall return an explicit semantic result for
+the state transition, such as applied or already in the requested state. Invalid input
+and technical execution failure are handled separately and shall not be encoded as
+additional TimingNode state or result-enum values. Command result remains distinct from
+the subsequently observed TimingNode state and from the success or failure of the
+separate lifecycle-history recording required by SI01-REQ-087.
 :::
 
 :::{req} Log result-bearing TimingNode operation failures  
@@ -182,7 +182,9 @@ lifecycle-history recording required by SI01-REQ-087.
 
 When a result-bearing TimingNode command or ordered LogBook query cannot return
 its normal result, SI-01 shall emit an operational log record containing at least
-the TimingNode identity, operation name and stable failure category.
+the TimingNode identity, operation name and diagnostic failure category. These
+categories are retained operational diagnostics and shall not require a second
+caller-visible TimingNode operation-state model.
 
 A caller wait timeout shall include the configured wait duration. For an accepted
 state-changing command, the log shall state that the final outcome may be unknown.
