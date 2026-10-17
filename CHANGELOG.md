@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Remove the TimingNode committed-TimingData relay from the Java component design: LogBook publishes the fact once, NodeService consumes it directly, and TimingNodeProxy exposes the same source through LogBookAccessor; TimingNode remains focused on functional state and coordination.
+
 - Clarify Java API guidance for construction helpers: Runtime composition should use ordinary Java collections rather than adding nested mutable builders or unused convenience factories to immutable Domain objects; introduce a generic reusable builder only when the pattern is genuinely shared.
 
 - Simplify the Java command/failure design: Application owns `CommandResult`, LogBook registration commands return committed `TimingData`, `TimingNodeTypes` contains only real node values/results, and technical Data Lane failures remain owning-boundary diagnostics instead of a caller-visible reason-state model; align IF-03 failure mapping and Java design rules.
