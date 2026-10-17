@@ -10,7 +10,7 @@ The repository is currently in its planning and research phase.
 
 - Define validation guards as explicit runtime failures with positive assertion conditions: `failIfInvalidArgument(assertion, ...)` and `failIfIllegalState(assertion, ...)`; `true` means the contract holds and `false` throws. Do not use Java's optional `assert` mechanism or invert callers into failure conditions.
 
-- Define the generic grouped-settings pattern: `Setting<T>` retains requested/applied/pending semantics while `SettingKey<T>`, `SettingContainer` and grouped `SettingUpdate` own reusable typed grouping, atomic updates, revision and change publication. `AntennaSettings` becomes a thin antenna-specific declaration/facade.
+- Simplify TimingSystem antenna control: TimingSystemConductor calls the optional AntennaManager's idempotent desired-inventory API directly, while AntennaManager privately retains requested/applied/retry bookkeeping and all physical device mechanics. Remove the unnecessary shared grouped-settings bridge.
 
 - Standardize LogBook terminology on concrete `TimingData` records, registrations, committed data and persisted data; avoid generic `history` / `history fact` wording for LogBook data.
 

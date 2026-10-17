@@ -664,27 +664,22 @@ Each TimingSystem `Conductor` uses `SerialTaskRunner` and
 `TimingNode.PROPERTIES.CHANGED` is emitted after one committed property update.
 For TimingSystemConductor it only wakes the existing control task. The later run reads
 each TimingNode's current functional state directly. It computes
-`inventoryEnabled = any node OPEN` as a local boolean and publishes the
-desired result directly to the shared `AntennaSettings`; no cached
-`SourceProperty` or `DerivedProperty` is needed.
+`inventoryRequired = any node OPEN` as a local boolean and calls the optional
+AntennaManager's semantic control method; no cached `SourceProperty`,
+`DerivedProperty` or shared settings bridge is needed.
 
 ```java
-antennaSettings.update(edit -> {
-    edit.set(
-            AntennaSettings.INVENTORY_ENABLED,
-            Boolean.valueOf(inventoryRequired));
-});
+if (antennaManager != null) {
+    antennaManager.setInventoryRequired(inventoryRequired);
+}
 ```
 
-The edit lambda runs synchronously under the settings transaction boundary.
-It changes an unpublished candidate; after successful completion all desired
-values commit together. An unchanged update emits no event; a failed edit
-publishes nothing. The editor must not escape the callback. A settings change
-event is emitted after publication, outside the lock, and only wakes
-AntennaManager's existing control task. `update()` does **not** wait for
-hardware. AntennaManager compares requested and applied inventory, controls
-the devices asynchronously and records applied state only after success.
-Retry and recovery belong to AntennaManager, not the settings editor.
+The call records desired state without waiting for hardware. Repeating the same value is
+idempotent and does not become an implicit retry. AntennaManager wakes its existing control
+task when reconciliation is needed, compares requested and applied inventory, controls the
+devices asynchronously and records applied state only after success. Explicit repeated
+operator/engineering requests may still request a retry. Retry and recovery remain owned by
+AntennaManager.
 
 Current functional state and LocationId are directly and safely published TimingNode
 values and require no result-bearing cross-lane query timeout.
@@ -1140,8 +1135,9 @@ The normal dependency direction follows the layer order and is intentionally
 easy to read from imports. I/O code does not import Application or Domain merely
 to reverse a dependency. Domain may call an I/O component directly when the
 domain behaviour requires it. In the current design,
-`domain.system.SystemConductor` updates shared `AntennaSettings` without depending on
-`AntennaManager`. Runtime wires the settings object to both components.
+`domain.system.TimingSystemConductor` calls the optional `AntennaManager` through its
+semantic desired-inventory API. TimingSystem owns that composition relationship; AntennaManager
+retains all device mechanics and never depends on Domain.
 
 For example:
 
@@ -1434,8 +1430,8 @@ TimingNode initial persisted-data load:
 system control run:
   -> read functionalState of every TimingNode directly
   -> calculate whether any node is OPEN
-  -> atomically publish desired inventory through AntennaSettings
-  -> AntennaManager wakes and reconciles hardware asynchronously
+  -> call AntennaManager.setInventoryRequired(...)
+  -> AntennaManager reconciles hardware asynchronously
 ```
 
 Runtime owns construction and physical executor lifetime. The
@@ -1448,18 +1444,14 @@ rollback and reverse deactivation across complete TimingSystems.
 `TimingSystemConductor` coordinates the TimingNodes and their Domain inventory
 decision.
 
-The `TimingSystemConductor` itself holds only the associated
-antenna-specific `AntennaSettings`, not `AntennaManager`. Generic setting mechanics belong to
-Infrastructure / cross-cutting: `Setting<T>` owns requested/applied/pending state and
-`SettingContainer` owns typed keys, atomic grouped requested-value updates, group revision
-and the grouped change source. The component-specific `AntennaSettings` belongs beside the
-antenna manager in I/O and only declares the antenna-specific setting identities/handles.
-The settings object is shared control state, not an inventory-control interface. Runtime resolves the IF-11
-`io.devices.antennaManagers` binding by `timingSystemId`; at most one manager
-is composed for each TimingSystem. It may read manager status or request
-manager-wide inventory as system behaviour requires; the manager still owns
-antenna power, self-test, initialization, multiplexing, recovery and shutdown
-mechanics.
+TimingSystem composes the optional AntennaManager and supplies it to
+TimingSystemConductor. The Conductor uses only `setInventoryRequired(boolean)`; it does not
+call power, initialize, start/stop inventory or multiplexing operations. AntennaManager may
+keep a private `Setting<Boolean>` for requested/applied state and retry revision bookkeeping,
+but that state is not a cross-component settings API. Runtime resolves the IF-11
+`io.devices.antennaManagers` binding by `timingSystemId`; at most one manager is composed
+for each TimingSystem. The manager still owns antenna power, self-test, initialization,
+multiplexing, recovery and shutdown mechanics.
 
 `TimingSystemConductor` uses its own logical serial lane with
 `SerialTaskRunner`; TimingSystemConductor lanes may share one backing executor.
@@ -1950,10 +1942,10 @@ application.ApplicationConductor
       +--> reusable AntennaShutdownTask
 ```
 
-`domain.system.SystemConductor` publishes desired inventory through a shared
-`AntennaSettings` while any TimingNode in that system is OPEN.
+`domain.system.TimingSystemConductor` calls
+`AntennaManager.setInventoryRequired(anyNodeOpen)` on its system's optional manager.
 It does not issue device-mechanism commands such as power-on, initialize,
-power-cycle or antenna switching. `application.ApplicationConductor` owns the lifecycle
+power-cycle or antenna switching. `domain.system.TimingSystem` owns the lifecycle
 ordering between the AntennaManager and the system Conductor.
 
 `AntennaManager` is the single controller for the configured 1..N antenna capability of
@@ -1963,26 +1955,18 @@ directly. The physical multi-step sequences live in those task classes under `ma
 The task classes work directly on manager-owned `ManagedAntenna` objects; there is no
 second task-facing antenna interface.
 
-The generic `Setting<T>`, `SettingKey<T>`, `SettingContainer` and
-`SettingUpdate` belong to cross-cutting `infra.setting`, alongside
-`infra.configuration`. `Setting<T>` tracks desired versus applied values without knowing
-any device or Conductor. `SettingContainer` groups one or more typed settings, commits
-requested values atomically, increments one group revision per effective grouped update and
-publishes one grouped `SettingUpdate`.
-
-The antenna-specific `AntennaSettings` belongs with I/O antenna management and is a thin
-specialization that declares `INVENTORY_ENABLED` and keeps the manager-owned mutable
-`Setting<Boolean>` handle. It does not reimplement transaction, revision or event
-mechanics. The Conductor only sees this shared settings object, which Runtime composes once
-for each TimingSystem:
+AntennaManager may keep one private `Setting<Boolean>` for inventory reconciliation:
 
 ```text
 requestedValue
 appliedValue
 changePending = requestedValue != appliedValue
+requestRevision = identity of the latest explicit request
 ```
 
-`Setting` and `SettingContainer` own no executor, lifecycle, retry policy or device action.
+`Setting` is passive bookkeeping and owns no executor, lifecycle, retry policy or device
+action. A single inventory demand does not justify a shared setting key, grouped transaction
+or setting-change event.
 `AntennaManager` calls `markApplied(value)` only after the corresponding task has
 completed successfully. A
 newer request may therefore arrive while an older transition is executing; once the older
@@ -2110,10 +2094,7 @@ read node.functionalState() for all nodes
 inventoryRequired = any node OPEN
        |
        v
-AntennaSettings.update(
-        edit -> edit.set(
-                AntennaSettings.INVENTORY_ENABLED,
-                Boolean.valueOf(inventoryRequired)))
+AntennaManager.setInventoryRequired(inventoryRequired)
        |
        v
 AntennaManager wakes and reconciles desired versus applied state
@@ -2122,8 +2103,8 @@ AntennaManager wakes and reconciles desired versus applied state
 InventoryTask -> managed antennas / optional power
 ```
 
-An unchanged `AntennaSettings.update(...)` publishes no new change.
-Explicit `requestEnableInventory()` / `requestDisableInventory()`
+An unchanged desired value does not schedule a new attempt.
+Explicit repeated `requestEnableInventory()` / `requestDisableInventory()`
 calls are separate retry attempts. AntennaManager owns all physical
 mechanics: self-test, power, initialization, multiplexing and shutdown.
 Runtime separately wires antenna observations to configured TimingNode
@@ -3577,7 +3558,7 @@ persisted/LogBookData state and its own recovery/delivery mechanism.
 
 State events may wake the owning control task. The task rereads CURRENT state
 and computes its desired outcome directly. For inventory, it publishes through
-`AntennaSettings.update(...)`, and the AntennaManager reconciles that desired
+`AntennaManager.setInventoryRequired(...)`, and the manager reconciles that desired
 value to applied device state on its own lane. Passive `Setting<T>` owns no
 executor or source reread mechanism.
 
