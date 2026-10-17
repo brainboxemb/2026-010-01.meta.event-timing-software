@@ -405,11 +405,11 @@ nodes:
   items:
     - label: SerialLane
       object_id: SerialLane
-    - label: ScheduledSerialLane
-      object_id: ScheduledSerialLane
-    - label: TaskSerialLane
-      object_id: TaskSerialLane
-    - label: "AbstractTask • YieldingTask • TaskStep"
+    - label: SerialTaskRunner
+      object_id: SerialTaskRunner
+    - label: "YieldingTask • TaskStep"
+    - label: AbstractTask
+      object_id: AbstractTask
   kind: platform
   notation: packaging-component
   layout: {x: 55, y: 1313, w: 280, h: 135}
