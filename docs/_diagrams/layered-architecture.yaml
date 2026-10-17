@@ -412,7 +412,7 @@ nodes:
     - label: "AbstractTask • YieldingTask • TaskStep"
   kind: platform
   notation: packaging-component
-  layout: {x: 55, y: 1332, w: 300, h: 160}
+  layout: {x: 55, y: 1332, w: 280, h: 160}
 - id: platform-events
   object_id: PlatformEvents
   group: platform-layer
