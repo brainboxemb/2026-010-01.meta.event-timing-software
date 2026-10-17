@@ -931,6 +931,20 @@ over:
 return submitAndWait(() -> applyCommand(command), command.name());
 ```
 
+The same rule applies to a real synchronous lock/transaction boundary. Name the deferred
+work first when that makes the operation easier to read:
+
+```java
+Supplier<RegistrationResult> processRevocation =
+        () -> logBook.process(command);
+
+return timingNode.processLocked(processRevocation);
+```
+
+A method such as `processLocked(...)` must document what the boundary actually does:
+the Supplier runs synchronously on the caller thread while the lock is held; it is not
+queued work and it must not imply commit/rollback semantics that do not exist.
+
 Do not introduce a callback merely to express a direct semantic request. For example,
 `antennaManager.setInventoryRequired(inventoryRequired)` is clearer than wrapping one
 Boolean in a transaction/callback abstraction. Use an explicitly named callback variable

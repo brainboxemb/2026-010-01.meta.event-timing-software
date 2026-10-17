@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Define the compact TimingNode locked-operation boundary for presentation-triggered LogBook writes: meaningful `Supplier<T>` work is named before `processLocked(...)`, state-sensitive registration ADD keeps OPEN/LocationId stable with OPEN/CLOSE, revocation keeps caller-supplied original values, and stale automatic-registration examples are removed.
+
 - Align the SI-01 SSD execution/process model, diagrams and Java design rules with SDD-02 and current Java: independent logical Data/Task lanes, four shared executor roles, scheduled cooperative tasks, direct AntennaManager inventory requests and no shared Settings component. Simplify architecture prose and remove stale processor/runner terminology.
 
 - Refresh SDD-02 and Figure SI01-01 to the implemented execution architecture: `SerialLane` / `ScheduledSerialLane` / `TaskSerialLane`, `AbstractTask`/`YieldingTask`/`TaskStep`, Runtime-owned shared role executors, current `TimingSystemConductor`, and no shared Settings component boundary. Keep Java-only scheduling helpers out of the logical architecture figure.

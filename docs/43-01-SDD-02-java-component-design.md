@@ -837,25 +837,51 @@ NODE_OPEN/NODE_CLOSE TimingData records never drive functional state.
 NodeId, LocationId and `CLOSED`/`OPEN` state. IF-03 maps those values directly to
 `id`, `locId` and `state`.
 
-The visible Domain component boundary uses typed commands and queries rather than
-mirroring every `LogBook` method:
+The Domain boundary stays small. `TimingNode` owns OPEN/CLOSED state and
+`LocationId`, exposes OPEN/CLOSE directly, exposes the LogBook through
+`LogBookAccessor`, and provides one synchronous `processLocked(Supplier<R>)`
+scope for application work that must stay ordered with OPEN/CLOSE. The Supplier runs
+on the caller thread while the TimingNode operation lock is held. The method does not
+queue work and is not a commit/rollback transaction.
+
+State-sensitive presentation writes build the concrete typed LogBook command inside that
+locked scope so the OPEN check and current LocationId cannot change between the check and
+the ordered LogBook commit. Meaningful deferred work is named before it is passed to the
+boundary:
+
+```java
+Supplier<RegistrationResult> addRegistration = () -> {
+    RegistrationResult result;
+    if (node.functionalState() != FunctionalState.OPEN) {
+        result = RegistrationResult.nodeNotOpen();
+    } else {
+        LogBookCommand<RegistrationResult> command =
+                LogBookCommands.commitManualRegistration(
+                        node.locationId(),
+                        registrationId,
+                        time,
+                        timeSource);
+        result = logBook.process(command);
+    }
+    return result;
+};
+
+RegistrationResult result =
+        node.processLocked(addRegistration);
+```
+
+A revocation already carries the original LocationId and registration values supplied by
+the interpreting layer. It therefore does not gain an OPEN requirement or substitute the
+current LocationId. It still uses the same `processLocked(...)` scope so
+presentation-triggered LogBook writes do not overlap an OPEN/CLOSE operation. This keeps
+TimingNode compact when more append-only ADD/REV record families are introduced; the node
+does not need one public method per TimingData record type.
+
+LogBook reads remain direct through `LogBookAccessor`. They do not need the TimingNode
+operation lock merely because they read history:
 
 ```java
 LogBookAccessor logBook = node.logBook();
-
-TimingNodeTypes.OpenResult opened =
-        node.open(locationId);
-
-logBook.execute(
-        LogBookCommands.commitAutomaticRegistration(
-                locationId,
-                registrationId,
-                time,
-                TimingData.TagSource.API,
-                TimingData.AutomaticTimeSource.API));
-
-TimingNodeTypes.FunctionalState functionalState = node.functionalState();
-LocationId currentLocation = node.locationId();
 
 LogBookRecoveryStatus recovery =
         logBook.process(
@@ -870,16 +896,16 @@ TimingNodeProxy node =
         presentationGateway.timingNode(nodeId);
 
 node.open(locationId);
-node.applyAutomaticRegistration(
-        AutomaticRegistrationAction.ADD,
+node.addManualRegistration(
         registrationId,
-        time);
+        time,
+        ManualTimeSource.OPERATOR_ENTERED);
 node.STATUS_CHANGED.subscribe(statusListener);
 node.NEW_DATA_ENTRY.subscribe(timingDataListener);
 ```
 
-`process(command)` is the result-bearing path: presentation/application callers wait
-for the processed domain result. `execute(command)` is the fire-and-forget path: it
+`process(command)` is the result-bearing LogBook path: the caller waits for the
+processed domain result. `execute(command)` is the fire-and-forget LogBook path: it
 returns after the command is queued and deliberately does not wait for the later domain
 result. Because this path has no caller result, LogBook owns queue-rejection handling:
 it records the rejection as a LogBook diagnostic and does not push lane-specific
@@ -896,14 +922,6 @@ reads directly because its ordering requirement is already satisfied; callers ou
 lane queue the query and wait for its ordered result. State-changing commands remain
 non-reentrant. Typed command/query objects are local operation descriptions, not another
 component, central dispatcher or generic message bus.
-
-The presentation-facing automatic-registration boundary is
-`applyAutomaticRegistration(action, registrationId, time)`. The action is explicit
-because an automatic-registration record can express more than one semantic
-action; the current implemented action set contains only `ADD` until REV semantics
-are defined. The Domain command for that implemented action is
-`addAutomaticRegistration(...)`. The short IF-03 engineering resource name
-`auto-reg` remains a transport concern.
 
 `ApplicationId`, internal `TimingSystemId` and functional
 `TimingNodeId` are separate Java identities. `TimingSystemId` distinguishes
