@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Clarify Java API guidance for construction helpers: Runtime composition should use ordinary Java collections rather than adding nested mutable builders or unused convenience factories to immutable Domain objects; introduce a generic reusable builder only when the pattern is genuinely shared.
+
 - Simplify the Java command/failure design: Application owns `CommandResult`, LogBook registration commands return committed `TimingData`, `TimingNodeTypes` contains only real node values/results, and technical Data Lane failures remain owning-boundary diagnostics instead of a caller-visible reason-state model; align IF-03 failure mapping and Java design rules.
 
 - Define the compact TimingNode locked-operation boundary for presentation-triggered LogBook writes: meaningful `Supplier<T>` work is named before `processLocked(...)`, state-sensitive registration ADD keeps OPEN/LocationId stable with OPEN/CLOSE, revocation keeps caller-supplied original values, and stale automatic-registration examples are removed.
