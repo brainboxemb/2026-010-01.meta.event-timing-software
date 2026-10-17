@@ -3116,6 +3116,8 @@ AntennaManager
 All are JDK-backed logical lanes. Physical parallelism remains a Runtime decision; adding
 lanes does not imply adding threads.
 
+:::
+
 ## Shared TimingData library and concrete profiles
 
 :::{design} TimingData shared contract and profiles

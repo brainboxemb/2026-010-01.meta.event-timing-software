@@ -270,12 +270,12 @@ published the event and can accidentally propagate downstream problems back into
 
 **Example**
 
-For SystemConductor, a TimingNode status event is only a short wake signal:
+For `TimingSystemConductor`, a TimingNode functional-state change only wakes its control task:
 
 ```java
-timingNode.STATUS_CHANGED
-        .subscribe(
-                status -> systemConductor.onTimingNodeStatusChanged(timingNode, status));
+node.PROPERTIES.CHANGED.subscribe(
+        update -> update.contains(TimingNode.FUNCTIONAL_STATE),
+        ignored -> wakeMainTask());
 ```
 
 The handler may validate source identity and wake the existing control task, then returns.
@@ -293,9 +293,9 @@ second registration style such as `onChange(Consumer<T>)`, `addListener(...)` or
 Use these naming roles consistently:
 
 ```text
-statusChangedEvent            private Event<Status> backing object
-STATUS_CHANGED                public EventSource<Status>
-onTimingNodeStatusChanged()   listener/handler method that reacts to the fact
+statusChangedEvent           private Event<Status> backing object
+STATUS_CHANGED               public EventSource<Status> (illustrative)
+onTimingNodeStatusChanged()  listener/handler method; TimingNode uses PROPERTIES.CHANGED
 ```
 
 Private mutable `Event<T>` backing fields use lowerCamelCase and end in
@@ -329,8 +329,8 @@ Apply the same ownership rule at every level:
 Current examples:
 - `TimingNode` owns node-internal links among LogBook, NodeService and
   TagProcessor;
-- `domain.system.TimingSystem` connects TimingNode status to
-  `TimingSystemConductor` and AntennaManager observations to TimingNode ingress;
+- `TimingSystemConductor` subscribes to the TimingNodes it owns;
+- `TimingSystem` binds AntennaManager observations to TimingNode ingress;
 - `ApplicationConductor` orchestrates application lifecycle across complete
   TimingSystems but does not implement their internal event graph.
 

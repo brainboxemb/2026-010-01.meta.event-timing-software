@@ -3017,7 +3017,7 @@ Architecture-level boundaries are:
 - the public IF-05 Java contract must be independently consumable by SI-01 and
   engineering/test tooling without depending on SI-01 internal Domain packages;
 - dependencies normally follow the layer order downward; I/O code does not import Application or Domain merely to reverse a dependency;
-- Domain may call a concrete I/O component when the design requires that relationship; for example, `domain.system.Conductor` calls `AntennaManager` for manager-wide inventory control;
+- Domain may call a concrete I/O component when the design requires that relationship; for example, `domain.system.TimingSystemConductor` calls `AntennaManager` for inventory control;
 - public reference/core implementation code compiles and verifies without private
   production implementations.
 
