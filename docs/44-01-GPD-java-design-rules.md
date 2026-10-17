@@ -1694,6 +1694,22 @@ need to distinguish several states. Do not remove useful state diagnostics merel
 Boolean APIs; the rule is that ordinary control flow should not depend on enum representation
 when the owner can answer the semantic question directly.
 
+The same rule applies to construction helpers. Do not add a nested mutable `Builder`
+to an immutable Domain object merely because Runtime composition needs to accumulate
+children before construction. Let Runtime use ordinary Java collection types while it
+assembles the graph, then construct the immutable Domain object once at the boundary:
+
+```java
+List<TimingNode> nodes = new ArrayList<TimingNode>();
+...
+return new TimingNodeList(nodes);
+```
+
+Do not add unused convenience factories such as `of(...)` only to shorten test or
+composition code. Keep that convenience in the caller or test helper. If the same builder
+mechanic later proves useful across several unrelated types, prefer one generic reusable
+utility outside the Domain objects instead of repeating component-specific nested builders.
+
 **Why**
 
 Test-only convenience methods and pass-through getters slowly become accidental production
