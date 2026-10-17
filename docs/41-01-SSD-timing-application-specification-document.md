@@ -1304,12 +1304,17 @@ multi-node composition does not change the boundary shape. Each proxy exposes pr
 node status, commands, bounded LogBook queries and post-fact events while keeping the
 Domain `TimingNode` itself behind the Application boundary.
 
-The proxy does not own mutable TimingNode state. It maps presentation intent to the
-TimingNode's typed ordered operations and maps node status to the node-scoped,
-presentation-facing `TimingNodeStatus`. Normal OPEN is `open(LocationId)`; there is no separate
-Set Location presentation operation. Automatic registration uses
-`applyAutomaticRegistration(action, registrationId, time)`; the implemented action set
-contains `ADD`, while any additional action requires its own defined TimingData semantics.
+The proxy does not own mutable TimingNode state. It maps node status to the
+node-scoped, presentation-facing `TimingNodeStatus`. Normal OPEN is
+`open(LocationId)`; there is no separate Set Location presentation operation.
+
+For presentation-triggered TimingData writes, the proxy builds the typed LogBook command
+and uses the TimingNode's synchronous locked operation scope when that write must stay
+ordered with OPEN/CLOSE. A new registration checks OPEN and reads the current LocationId
+inside that scope. A revoke operation keeps the original LocationId and record values
+supplied by the interpreting layer and does not gain a new OPEN requirement. LogBook reads
+remain direct through the node's LogBook access boundary. This keeps TimingNode from
+growing one public method for every future ADD/REV TimingData record family.
 :::
 
 Once code is executing for a TimingNode, normal direct Java calls are preferred;
