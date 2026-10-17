@@ -610,6 +610,8 @@ state as later wake runs.
 The cooperative model remains optional. A component that only needs one short
 ordered action submits it directly to its `SerialLane`.
 
+:::
+
 ### EventData and TagProcessor realization
 
 :::{design} EventData and TagProcessor realization
