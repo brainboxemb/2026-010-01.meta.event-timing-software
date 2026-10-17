@@ -36,13 +36,12 @@ A few words occur repeatedly in the Java design:
 - **owner** — the component that is responsible for a piece of behaviour or state;
 - **desired state** — what the application currently wants to be true;
 - **actual state** — what is currently true in the component or device;
-- **reconcile** — read the current authoritative state and do the work needed to make the
-  owned state match what is required;
-- **event-triggered reconciliation** — use a change event as a wake signal, then reread
-  authoritative current state and derive/apply the required behaviour instead of replaying
-  the event payload as control history;
-- **serial lane** — a `SerialExecutor` or `SerialScheduledExecutor` ordering boundary.
-  A lane is not automatically its own Java thread.
+- **reconcile** — read the current state, compare it with the requested state and
+  perform the missing work;
+- **event-triggered reconciliation** — let a state-change event wake a task. The
+  task reads current state instead of replaying old event values;
+- **serial lane** — a `SerialLane` (or a subclass) that handles queued work
+  one item at a time. A lane is not its own Java thread.
 
 Example:
 
@@ -122,7 +121,7 @@ infra.setting.Setting<T>
         optional manager-private requested/applied/retry bookkeeping
 ```
 
-A Setting is state, not a scheduler. It must not own a SerialExecutor, Future,
+A Setting is state, not a scheduler. It must not own a SerialLane, Future,
 queue admission, retry loop, coalescing controller or component lifecycle merely
 because its value can change asynchronously.
 
@@ -271,12 +270,12 @@ published the event and can accidentally propagate downstream problems back into
 
 **Example**
 
-For SystemConductor, a TimingNode status event is only a short wake signal:
+For `TimingSystemConductor`, a TimingNode functional-state change only wakes its control task:
 
 ```java
-timingNode.STATUS_CHANGED
-        .subscribe(
-                status -> systemConductor.onTimingNodeStatusChanged(timingNode, status));
+node.PROPERTIES.CHANGED.subscribe(
+        update -> update.contains(TimingNode.FUNCTIONAL_STATE),
+        ignored -> wakeMainTask());
 ```
 
 The handler may validate source identity and wake the existing control task, then returns.
@@ -294,9 +293,9 @@ second registration style such as `onChange(Consumer<T>)`, `addListener(...)` or
 Use these naming roles consistently:
 
 ```text
-statusChangedEvent            private Event<Status> backing object
-STATUS_CHANGED                public EventSource<Status>
-onTimingNodeStatusChanged()   listener/handler method that reacts to the fact
+statusChangedEvent           private Event<Status> backing object
+STATUS_CHANGED               public EventSource<Status> (illustrative)
+onTimingNodeStatusChanged()  listener/handler method; TimingNode uses PROPERTIES.CHANGED
 ```
 
 Private mutable `Event<T>` backing fields use lowerCamelCase and end in
@@ -330,8 +329,8 @@ Apply the same ownership rule at every level:
 Current examples:
 - `TimingNode` owns node-internal links among LogBook, NodeService and
   TagProcessor;
-- `domain.system.TimingSystem` connects TimingNode status to
-  `TimingSystemConductor` and AntennaManager observations to TimingNode ingress;
+- `TimingSystemConductor` subscribes to the TimingNodes it owns;
+- `TimingSystem` binds AntennaManager observations to TimingNode ingress;
 - `ApplicationConductor` orchestrates application lifecycle across complete
   TimingSystems but does not implement their internal event graph.
 
@@ -557,7 +556,7 @@ Data Lane recovery
         +--> report recovery failure separately when needed
         +--> does not define or reconstruct TimingNode functional state
 
-SystemConductor control run
+TimingSystemConductor control run
         |
         +--> read TimingNode functionalState() directly
         |
@@ -571,7 +570,7 @@ Good runtime flow:
 TimingNode.PROPERTIES.CHANGED
         |
         v
-CooperativeTaskController.wake()
+AbstractTask.wake(TaskSerialLane)
         |
         v
 query current functionalState + derive inventoryRequired
@@ -823,9 +822,9 @@ For LogBook data, name the concrete thing being handled. Prefer `TimingData reco
 generic word `history` for LogBook data because it hides which records or registrations the
 code actually owns.
 
-Use `Runner` for an execution mechanism that runs work, such as
-`SerialTaskRunner` or `YieldingTaskRunner`. Do not use `Runner` for a component
-that also owns domain state, protocol state or business decisions.
+Do not introduce a `Runner` merely because a component has a task. In the
+current design, `TaskSerialLane` runs `YieldingTask` steps; the concrete task
+keeps its own domain or device state.
 
 Use `Executor` for objects that implement or concretely represent Java
 `Executor`/`ExecutorService` execution resources. Do not call a
@@ -1030,10 +1029,10 @@ For Conductor:
 - TimingNode Status is readable as CLOSED/no-location independently from LogBook recovery;
 - a persistence command waits for ordered LogBook recovery before it can commit;
 - a recovery failure is reported separately and does not redefine OPEN/CLOSED Status;
-- a status event only wakes the control task and does not publish Settings itself;
+- a functional-state change only wakes the control task; no shared Settings object is used;
 - every control run reads current TimingNode Status before deriving desired inventory;
 - rapid state changes converge to the final desired inventory while control wakes coalesce;
-- one OPEN node among several nodes keeps shared inventory desired state enabled;
+- one OPEN node among several nodes keeps the AntennaManager inventory request enabled;
 - CURRENT-state failure after readiness is explicit and is never interpreted as CLOSED;
 - no downstream control failure throws back through TimingNode event delivery.
 

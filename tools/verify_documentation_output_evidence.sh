@@ -34,7 +34,7 @@ for ui_diagram in \
   test -f "bld/docs/assets/architecture/${ui_diagram}.svg"
   test -f "bld/docs/assets/architecture/${ui_diagram}.drawio"
 done
-for object_id in TimingNode PresentationGateway ApplicationConductor SystemConductor Api; do
+for object_id in TimingNode PresentationGateway ApplicationConductor TimingSystemConductor Api; do
   grep -F "data-engineering-id=\"$object_id\"" bld/docs/assets/architecture/layered-architecture.svg
   grep -F "data-engineering-id=\"$object_id\"" bld/docs/assets/architecture/layered-architecture.drawio
 done

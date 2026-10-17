@@ -3,8 +3,8 @@ diagram:
   title: Figure SI01-04 — SI-01 runtime ingress — ordered TimingNode state changes
   width: 1580
   height: 930
-  description: Architecture process view of concurrent ingress, explicit TimingNode routing and per-TimingNode ordered state mutation.
-  note: External work crosses an ordered TimingNode state-change boundary. Concrete Java queue/worker/executor mechanics belong to SDD-02.
+  description: Concurrent ingress reaches each TimingNode's separately ordered Data and Task lanes.
+  note: Each lane orders its own work. Data and Task lanes are distinct and may share one physical worker; see SDD-02.
 
 groups:
   - id: ingress
@@ -72,7 +72,7 @@ nodes:
     layout: {x: 845, y: 410, w: 300, h: 105}
 
   - id: state-executor
-    label: "Per-TimingNode ordering guarantee\none state change at a time\nmechanism defined in SDD-02"
+    label: "Data and Task lanes\nordered separately per lane\nphysical workers may be shared"
     kind: platform
     group: execution
     layout: {x: 1300, y: 260, w: 180, h: 125}

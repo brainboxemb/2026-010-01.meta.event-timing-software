@@ -3,7 +3,7 @@ diagram:
   title: Headless timing application — component and interface overview
   width: 1520
   height: 1030
-  description: Existing architecture overview migrated from hard-coded Python semantics to declarative YAML.
+  description: Overview of the Timing Point Application's external interfaces and internal responsibilities.
 
 groups: []
 
@@ -26,7 +26,7 @@ nodes:
   - {id: domain, label: "TimingNode\nUpstream port • Processing • Data • Timing", kind: service, layout: {x: 870, y: 545, w: 390, h: 110}}
   - {id: memory, label: "Node / application state\nLogBook • live race/reference data", kind: core, layout: {x: 170, y: 745, w: 350, h: 90}}
   - {id: device_ports, label: "Device I/O + NetworkDeviceService", kind: port, layout: {x: 575, y: 750, w: 300, h: 80}}
-  - {id: platform_ports, label: "Clock + Settings + Platform ports", kind: port, layout: {x: 930, y: 745, w: 330, h: 90}}
+  - {id: platform_ports, label: "Clock + execution + platform ports", kind: port, layout: {x: 930, y: 745, w: 330, h: 90}}
   - {id: backup, label: "Simple file backup / restore", kind: adapter, layout: {x: 200, y: 900, w: 290, h: 70}}
   - {id: device_adapters, label: "Devices + Device Networks\nAntenna • CAN • beeper • network devices", kind: adapter, layout: {x: 575, y: 885, w: 300, h: 95}}
   - {id: platform_adapters, label: "Windows / Linux /\nPi Zero adapters", kind: adapter, layout: {x: 955, y: 885, w: 260, h: 95}}
