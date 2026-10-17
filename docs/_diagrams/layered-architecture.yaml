@@ -2,14 +2,14 @@ diagram:
   id: layered-architecture
   title: Figure SI01-01 — SI-01 layered architecture
   width: 1440
-  height: 1520
+  height: 1476
   description: Working responsibility view of the Timing Point Application core and executable composition.
   note: Selected arrows show principal relationships only; high-level arrows may terminate on a layer boundary when component-level ownership is intentionally deferred.
 
 # Authored layout grid for this figure.
 # - Main architecture stack: x=30, width=1120.
 # - Right technical column: x=1170, width=250; 20 px gutter from the main stack.
-# - Principal layers use a 30 px vertical gap.
+# - Principal layer separation follows the compact Application -> Domain reference: about 18-20 px.
 # - Flat-layer content starts 25 px from the left edge (x=55).
 # - Normal sibling component gap is 20 px.
 # - A normal layer title baseline is 22 px below its local top edge.
@@ -70,15 +70,15 @@ groups:
 - id: io-layer
   label: "I/O (per TimingSystem)"
   kind: layer-infrastructure
-  layout: {x: 30, y: 978, w: 1120, h: 282}
+  layout: {x: 30, y: 971, w: 1120, h: 282}
   label_offset: {x: 0, y: 78}
   # The I/O top edge is a translated copy of the Domain lower edge. Keeping the
   # same x breakpoints and diagonal rise gives a constant visible gap.
   outline:
     corner_radius: 10
     points:
-      - {x: 0.0, y: 0.3007752}
-      - {x: 0.7187500, y: 0.3007752}
+      - {x: 0.0, y: 0.2765957}
+      - {x: 0.7187500, y: 0.2765957}
       - {x: 0.7767857, y: 0.0}
       - {x: 1.0, y: 0.0}
       - {x: 1.0, y: 1.0}
@@ -86,8 +86,8 @@ groups:
 - id: platform-layer
   label: Platform abstractions / execution environment
   kind: layer-platform
-  # 42 px header/row offset + 160 px Execution block + 18 px bottom padding.
-  layout: {x: 30, y: 1290, w: 1120, h: 220}
+  # 42 px header/row offset + 135 px Execution block + 18 px bottom padding.
+  layout: {x: 30, y: 1271, w: 1120, h: 195}
 - id: runtime-layer
   label: Runtime
   kind: layer-crosscutting
@@ -98,7 +98,7 @@ groups:
   label: "Infrastructure /\ncross-cutting"
   kind: layer-crosscutting
   # Align the technical column bottom with Platform.
-  layout: {x: 1170, y: 520, w: 250, h: 990}
+  layout: {x: 1170, y: 520, w: 250, h: 946}
 nodes:
 # External interface ports belong to the in-process Presentation adapters.
 # Their downward relationships remain ordinary internal application connections.
@@ -412,7 +412,7 @@ nodes:
     - label: "AbstractTask • YieldingTask • TaskStep"
   kind: platform
   notation: packaging-component
-  layout: {x: 55, y: 1332, w: 280, h: 160}
+  layout: {x: 55, y: 1313, w: 280, h: 135}
 - id: platform-events
   object_id: PlatformEvents
   group: platform-layer
@@ -424,7 +424,7 @@ nodes:
       object_id: EventSource
   kind: platform
   notation: packaging-component
-  layout: {x: 355, y: 1332, w: 180, h: 95}
+  layout: {x: 355, y: 1313, w: 180, h: 95}
 - id: platform-environment
   object_id: PlatformEnvironment
   group: platform-layer
@@ -437,7 +437,7 @@ nodes:
       object_id: OperatingSystem
   kind: platform
   notation: packaging-component
-  layout: {x: 555, y: 1332, w: 300, h: 115}
+  layout: {x: 555, y: 1313, w: 300, h: 115}
 - id: platform-time
   object_id: PlatformTime
   group: platform-layer
@@ -449,7 +449,7 @@ nodes:
       object_id: ClockTimeSource
   kind: platform
   notation: packaging-component
-  layout: {x: 875, y: 1332, w: 250, h: 95}
+  layout: {x: 875, y: 1313, w: 250, h: 95}
 
 - id: timing-application-runtime
   object_id: TimingApplicationRuntime
