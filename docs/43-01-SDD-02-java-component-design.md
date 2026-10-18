@@ -717,7 +717,7 @@ It composes `LogBook`, `NodeService`, its node-local `TagProcessor` and one
 
 `LogBook` owns Data Lane command/query execution, durable TimingData commit, recovery
 state and post-commit publication. Normal Data Lane items use
-`TimingNodeDataLane -> SerialLane<TimingNodeDataItem>`. Persisted-data recovery is **not**
+`TimingNodeDataLane -> SerialLane<TimingNodeDataItem>`. Persisted-data loading is **not**
 a Data Lane item: `TimingNode.MainTask` calls `LogBook.loadPersistedData()` as its
 startup step on the shared node worker.
 
@@ -733,7 +733,7 @@ processor's direct timer/execution facility for policy changes, passage expiry a
 housekeeping. No second scheduled lane or observation queue is layered around it.
 
 TimingNode itself owns functional OPEN/CLOSED state, current LocationId and its internal
-startup/execution readiness. A LogBook recovery failure remains LogBook health; it does not
+startup/execution readiness. A LogBook load failure remains LogBook health; it does not
 make the TimingNode execution path itself ERROR and does not replace functional state.
 
 A production `TimingNode` is always constructed as a complete capability.
@@ -749,7 +749,7 @@ activation hook first starts the node `SerialTaskRunner`, then uses
 `ComponentLifecycleManager` to activate `NodeService`, `LogBook` and `TagProcessor`.
 LogBook activation starts normal Data Lane admission; TagProcessor activation starts its
 observation `SerialLane`. TimingNode then admits `MainTask` and returns without waiting
-for persisted-data recovery. No public TimingNode activate/deactivate API is exposed.
+for persisted-data loading. No public TimingNode activate/deactivate API is exposed.
 
 When a public component operation must reject an inactive lifecycle, the reusable
 `failIfInactive()` guard belongs to `LifecycleComponent` together with the active/inactive
@@ -758,9 +758,9 @@ fact. A concrete component supplies the failure factory; TimingNode uses an ordi
 The lifecycle package therefore remains independent from TimingNode-specific failure types.
 
 Functional state is immediately available as CLOSED with no LocationId. Persisted
-TimingData recovery runs asynchronously in `TimingNode.MainTask` on the shared node
-worker and rebuilds LogBookData outside the Data Lane item queue. Recovery never defines
-or reconstructs functional OPEN/CLOSED state. A recovery failure remains LogBook health
+TimingData loading runs asynchronously in `TimingNode.MainTask` on the shared node
+worker and rebuilds LogBookData outside the Data Lane item queue. Loading never defines
+or reconstructs functional OPEN/CLOSED state. A load failure remains LogBook health
 and does not by itself make the TimingNode execution path ERROR.
 
 LogBook queries expose two explicit consistency modes:
@@ -790,7 +790,7 @@ properties that changed in that logical update.
 
 Lifecycle deactivation resets the transient values to CLOSED/no-location and calls
 `PropertyContainer.sync()`, so teardown does not emit a normal runtime state-change
-event. LogBook recovery/commit failures remain owned by LogBook/diagnostic behaviour and
+event. LogBook load/commit failures remain owned by LogBook/diagnostic behaviour and
 do not create a second TimingNode health-state model.
 
 The runtime transition and lifecycle-record submission share the same short
@@ -820,8 +820,7 @@ start reentrant state-changing LogBook commands.
 `FunctionalState`, the implementation-internal `OperationalState`, and the
 `OpenResult` / `CloseResult` values. It has no runtime state, lifecycle or
 architectural responsibility and therefore does not appear as another component in
-Figure SI01-01. LogBook recovery state remains in `LogBookRecoveryStatus` rather than
-being folded into `TimingNodeTypes.OperationalState`.
+Figure SI01-01. `LogBookStatus` remains LogBook-owned and is not folded into `TimingNodeTypes.OperationalState`.
 
 :::
 
@@ -910,10 +909,7 @@ operation lock merely because they read history:
 ```java
 LogBookAccessor logBook = node.logBook();
 
-LogBookRecoveryStatus recovery =
-        logBook.process(
-                LogBookQueries.recoveryStatus(),
-                LogBookQuery.ReadConsistency.ORDERED);
+LogBookStatus status = logBook.status();
 ```
 
 Presentation adapters use the node-scoped Application boundary:
@@ -1160,12 +1156,12 @@ mutable collaborators:
 `RaceDataState` validates a RACE_DATA change set against copies and installs
 `TeamAssignments` and `StageStartTimes` atomically on the Task Lane. The
 RACE_DATA ACK follows that successful Task Lane application; no Data Lane hop
-is required for RaceData. LogBook recovery publishes `LogBookRecoveryStatus` with the recovered TimingData head,
-not the complete recovered record set. NodeService then chooses its own bounded
-`timingDataRange(...)` reads and yields between those reads while rebuilding
-Task Lane-owned `ActiveRegistrations` and timing views. Each later successful commit
-publishes only that committed TimingData record for incremental update. This is a data
-dependency, not a Task Lane lifecycle dependency.
+is required for RaceData. LogBook publishes `LogBookStatus.LOADED` after persisted TimingData has loaded and
+`LogBookStatus.ERROR` after load failure. NodeService.MainTask handles only that status.
+DataTask then chooses its own bounded `timingDataRange(...)` reads and yields between
+those reads while rebuilding Task Lane-owned `ActiveRegistrations` and timing views.
+Each later successful commit publishes only that committed TimingData record as a wake
+signal for DataTask. This is a data dependency, not a Task Lane lifecycle dependency.
 
 `LogBookData` remains passive and owns no event. This is deliberate: only
 `LogBook` knows that persistence succeeded and LogBookData visibility has
@@ -1403,7 +1399,7 @@ TimingNode MainTask:
   -> run LogBook.loadPersistedData() synchronously on the shared node worker
   -> Data Lane items may be admitted meanwhile but cannot run on that same worker yet
   -> rebuild/publish LogBook recovery state and INITIAL_DATA_LOADED
-  -> LogBook recovery failure remains a LogBook problem
+  -> LogBook load failure remains a LogBook problem
   -> yield once so queued NodeService derived-state rebuild work can run
   -> mark the TimingNode execution path OK
   -> only a MainTask/execution failure marks TimingNode execution ERROR
