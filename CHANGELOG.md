@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Clarify Java contract-guard formatting in DR-10: keep short `failIfInvalidArgument(...)` and `failIfIllegalState(...)` calls on one source line; when a condition is genuinely complex, name the condition or extract a meaningful helper instead of vertically spreading a trivial guard.
+
 - Remove the final simulation-only execution wrappers from SDD-02: `SimulatedTagScenarioRunner` now uses the Runtime-owned JDK `ScheduledExecutorService` directly with bounded one-next-step scheduling and lifecycle-generation protection; `RunnableSerialLane` and `LaneScheduler` are no longer part of the current Java design.
 
 - Refresh the Java execution architecture after implementation PR #750: use `SerialLane<T>` as the typed bounded FIFO, `SerialTaskRunner` for cooperative yielded tasks with `AWAIT`, direct JDK scheduling for TagProcessor timed work, asynchronous `TimingNode.MainTask` LogBook recovery, and separate LogBook versus TimingNode health; update Figure SI01-01 and the Java design rules, and remove the obsolete `ScheduledSerialLane` / `TaskSerialLane` / `NodeTaskLane` model.
