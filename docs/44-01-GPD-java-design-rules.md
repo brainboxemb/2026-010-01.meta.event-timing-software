@@ -1937,6 +1937,17 @@ bounded result and invoke the external callback outside the owning lane.
 Do not use `Integer.MAX_VALUE`, an omitted limit, or another sentinel as a disguised
 unbounded query.
 
+When a component is notified that authoritative data changed, the event does not need to
+transport the complete data set. Prefer a small wake/change signal when the receiving
+component can schedule its own task and read the authoritative source in bounded chunks.
+The scheduled task owns its cursor/batch size and catches up until the source head is
+reached. Repeated signals may coalesce while that task is already active.
+
+This is especially useful when the event payload is already available for other consumers:
+the receiving component may deliberately ignore that payload and use the event only to wake
+its own catch-up task. Document that choice so a future maintainer does not accidentally
+reintroduce duplicate state or large event payloads.
+
 **Why**
 
 Unbounded collection APIs hide both time and memory cost at an innocent-looking call site.
@@ -1959,13 +1970,21 @@ nodeService.visitStageTiming(
 
 where StageTiming retains at most 64 candidate rows while calculating the ranking.
 
-For recovered TimingData, prefer repeated bounded reads such as:
+For LogBook-driven derived state, prefer a wake-and-catch-up flow:
+
+```java
+private void onTimingDataChanged(TimingData ignored) {
+    mainTask.wake(taskRunner);
+}
+```
+
+The task then reads the current source head and fetches only what it still misses:
 
 ```java
 logBook.submit(LogBookQueries.timingDataRange(nextSequence, 64));
 ```
 
-and yield between reads.
+Yield between reads and continue until `nextSequence` has passed the current head.
 
 **Avoid**
 
@@ -1979,7 +1998,9 @@ when `ranking(...)` scans every active registration and allocates complete inter
 and result lists.
 
 Also avoid returning a complete persisted TimingData list from a recovery event merely so
-each consumer can decide afterwards which subset it needed.
+each consumer can decide afterwards which subset it needed. Likewise, do not copy each
+post-commit TimingData object into another queue when a coalescing wake signal plus the
+consumer's own source cursor is sufficient.
 
 ---
 
