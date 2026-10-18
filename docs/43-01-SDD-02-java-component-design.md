@@ -2947,7 +2947,13 @@ through `LogBookAccessor` and yielding while each Data Lane read completes. The 
 implementation reads at most 64 TimingData records per recovery batch. `NodeServiceState`
 owns `RaceDataState`, `TeamAssignments`, `StageStartTimes` and
 `ActiveRegistrations`; it does not retain a second complete committed-TimingData
-collection. Later committed TimingData records update that compact state incrementally.
+collection.  Later committed TimingData records update that compact state incrementally.
+
+Derived collection reads are bounded at the service boundary. StageTiming does not return
+an unbounded `List<StageTime>`; NodeService exposes a caller-supplied row limit and visitor.
+The ranking calculation retains at most that many candidate rows while scanning active
+registrations, orders only those retained rows and invokes the visitor in ranking order.
+A visitor executed on the Task Lane must remain short and non-blocking.
 
 A failed LogBook recovery remains in `LogBookRecoveryStatus` and LogBook diagnostics.
 The TimingNode MainTask still completes its own startup path to operational `OK`;
