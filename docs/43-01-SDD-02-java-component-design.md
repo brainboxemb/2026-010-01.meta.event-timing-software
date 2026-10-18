@@ -276,14 +276,15 @@ domain/
       LogBook.java                      Data Lane component facade + command/query/event boundary
       LogBookAccessor.java              intentional external/internal access boundary
       LogBookDataLane.java              LogBook-specific ordered execution/wait adapter
-      LogBookOperations.java            state-changing operations + TimingData commit/recovery
+      LogBookOperations.java            state-changing operations + TimingData commit/load
       LogBookState.java                 passive node/logbook facts + committed-TimingData owner
       LogBookData.java                  passive committed TimingData records
       persistence/
         TimingDataPersistence.java      TimingData load/append domain port
         DefaultTimingDataPersistence.java codec/node/sequence mapping to I/O storage
     service/
-      NodeService.java                  Task Lane coordination + reusable MainTask
+      NodeService.java                  Task Lane coordination + LogBook-status MainTask
+      DataTask.java                     bounded TimingData catch-up from LogBook
       NodeServiceQuery.java             ordered result-bearing service reads
     upstream/
       UpstreamHandler.java              node-scoped semantic upstream dispatch / bounded lane turns
@@ -2916,7 +2917,8 @@ TimingNode
   └── Task Lane -> SerialTaskRunner -> SerialLane<TaskRun>
                    ├── TimingNode.MainTask -> startup LogBook recovery
                    └── NodeService
-                        ├── MainTask -> current head + bounded TimingData range reads
+                        ├── MainTask -> LogBook INIT / LOADED / ERROR
+                        ├── DataTask -> current head + bounded TimingData range reads
                         ├── NodeServiceQuery -> ordered result-bearing reads
                         ├── RaceDataState -> TeamAssignments + StageStartTimes
                         ├── ActiveRegistrations
@@ -2935,20 +2937,20 @@ Persisted TimingData loading is **not** a Data Lane item. After child activation
 normal Data Lane admission, `TimingNode.MainTask` calls
 `LogBook.loadPersistedData()` synchronously on the same physical node worker. Commands
 may queue during that load but cannot execute until the MainTask step releases the worker.
-A successful load publishes `LogBookRecoveryStatus` with the recovered TimingData head;
-it does not publish a list containing every recovered record. Each later successful commit
-publishes the committed TimingData record.
+A successful load publishes `LogBookStatus.LOADED`; load failure publishes
+`LogBookStatus.ERROR`. Status is directly readable and is not another Data Lane query.
+Each later successful commit publishes the committed TimingData record.
 
-The **Task Lane** is the TimingNode's `SerialTaskRunner`. `NodeService` owns one reusable
-`MainTask`. Successful LogBook recovery and each later commit only wake that task; the
-task reads the current LogBook head itself and continues from its own `nextSequence`.
-Missing records are fetched with bounded ordered `timingDataRange(...)` queries through
-`LogBookAccessor`, yielding while each Data Lane read completes. The current implementation
-reads at most 64 TimingData records per batch.
+The **Task Lane** is the TimingNode's `SerialTaskRunner`. `NodeService.MainTask` handles
+only LogBook availability: LOADED starts a full DataTask load and ERROR makes DataTask
+unavailable. `DataTask` owns the source cursor, bounded asynchronous LogBook reads and
+catch-up completion. It reads the current LogBook head and continues from its own
+`nextSequence`, fetching missing records with bounded ordered `timingDataRange(...)`
+queries through `LogBookAccessor` and yielding while each Data Lane read completes.
+The current implementation reads at most 64 TimingData records per batch.
 
-This same catch-up path is used for startup and steady-state commits. NodeService does not
-depend on the TimingData object carried by the post-commit event; that event is only a wake
-signal for this responsibility. `RaceDataState`, `ActiveRegistrations`, `StageTiming`
+Later committed TimingData does not pass through NodeService as state. The post-commit
+event only wakes DataTask; DataTask then catches up from the authoritative LogBook source. `RaceDataState`, `ActiveRegistrations`, `StageTiming`
 and `TeamRanking` remain separate data/derived-view objects coordinated by NodeService.
 No aggregate `NodeServiceState` exists, and NodeService does not retain a second complete
 committed-TimingData collection.
@@ -2970,9 +2972,10 @@ elapsed time. A team-ranking query resolves only one selected StageTime per team
 temporary top-N ranking storage within the caller-supplied limit and never scans the full
 passage list. Visitors executed on the Task Lane must remain short and non-blocking.
 
-A failed LogBook recovery remains in `LogBookRecoveryStatus` and LogBook diagnostics.
-The TimingNode MainTask still completes its own startup path to operational `OK`;
-`TimingNode.ERROR` is reserved for failure of the node's own startup/execution path.
+A failed persisted-data load leaves LogBook in `LogBookStatus.ERROR` with the concrete
+failure retained in LogBook diagnostics. The TimingNode MainTask still completes its own
+startup path to operational `OK`; `TimingNode.ERROR` is reserved for failure of the
+node's own startup/execution path.
 Neither condition replaces functional OPEN/CLOSED state or current LocationId.
 
 RACE_DATA therefore does **not** cross to the Data Lane: sequence validation,
@@ -3012,7 +3015,7 @@ node.logBook().execute(
 // LogBookOperations owns state-changing command/commit work.
 // LogBookState owns passive state and committed TimingData; LogBookStatus owns published status.
 // SerialTaskRunner owns cooperative TaskRun execution for the TimingNode Task Lane.
-// NodeService.MainTask catches loose Task Lane data objects up to the LogBook head.
+// NodeService.MainTask handles LogBook status; DataTask catches data up to the LogBook head.
 // RaceDataState and ActiveRegistrations remain separate state owners.
 // StageTiming resolves every active passage; TeamRanking maintains one selected candidate per team.
 // UpstreamDataSync invokes NodeService.applyRaceData(...) synchronously on the Task Lane.
@@ -3108,7 +3111,7 @@ TimingData commit command
   default caller wait guard: 5000 ms
 
 ORDERED LogBook query
-  count/range/recovery reads that enter the Data Lane
+  count/range reads that enter the Data Lane
   default caller wait guard: 2000 ms
 
 CURRENT LogBook query
