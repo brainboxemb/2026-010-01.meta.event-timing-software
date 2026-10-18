@@ -1905,6 +1905,105 @@ boilerplate.
 
 ---
 
+### DR-25 — Bound collection-producing reads
+
+**Rule**
+
+Do not let a component query silently materialize a collection whose size grows with
+runtime data.
+
+When a caller may ask for many records or rows, make the bound part of the contract. Prefer
+one of these shapes:
+
+- a scalar or maintained index when the caller needs only a count/current fact;
+- a bounded range/page/batch with an explicit maximum size;
+- a bounded visitor such as `visitXxx(limit, Consumer<T>)` when the caller only needs to
+  process rows;
+- an incremental maintained projection when recomputing the complete result on every query
+  would be expensive.
+
+A `List<T>` return is fine when the domain itself guarantees a small fixed maximum. It is
+not fine merely because current test data is small.
+
+If ordering requires temporary materialization, keep that storage within the same explicit
+bound. For a top-N ranking, for example, retain at most N candidates while scanning and
+then order those N rows. Do not scan N input records into one list and build a second
+equally large result list.
+
+A visitor executed on a serial lane must document that fact. Its callback must stay short
+and non-blocking. If an external caller cannot satisfy that rule, copy only the already
+bounded result and invoke the external callback outside the owning lane.
+
+Do not use `Integer.MAX_VALUE`, an omitted limit, or another sentinel as a disguised
+unbounded query.
+
+When a component is notified that authoritative data changed, the event does not need to
+transport the complete data set. Prefer a small wake/change signal when the receiving
+component can schedule its own task and read the authoritative source in bounded chunks.
+The scheduled task owns its cursor/batch size and catches up until the source head is
+reached. Repeated signals may coalesce while that task is already active.
+
+This is especially useful when the event payload is already available for other consumers:
+the receiving component may deliberately ignore that payload and use the event only to wake
+its own catch-up task. Document that choice so a future maintainer does not accidentally
+reintroduce duplicate state or large event payloads.
+
+**Why**
+
+Unbounded collection APIs hide both time and memory cost at an innocent-looking call site.
+They also encourage repeated full rescans of state that could have been maintained
+incrementally.
+
+The caller normally knows how much data it can use. Making that limit explicit keeps
+memory, queue turns and presentation work predictable.
+
+**Example**
+
+Prefer:
+
+```java
+nodeService.visitStageTiming(
+        raceTimeZone,
+        64,
+        this::onStageTime);
+```
+
+where StageTiming retains at most 64 candidate rows while calculating the ranking.
+
+For LogBook-driven derived state, prefer a wake-and-catch-up flow:
+
+```java
+private void onTimingDataChanged(TimingData ignored) {
+    mainTask.wake(taskRunner);
+}
+```
+
+The task then reads the current source head and fetches only what it still misses:
+
+```java
+logBook.submit(LogBookQueries.timingDataRange(nextSequence, 64));
+```
+
+Yield between reads and continue until `nextSequence` has passed the current head.
+
+**Avoid**
+
+```java
+public List<StageTime> stageTiming(ZoneId raceTimeZone) {
+    return stageTiming.ranking(activeRegistrations, raceTimeZone);
+}
+```
+
+when `ranking(...)` scans every active registration and allocates complete intermediate
+and result lists.
+
+Also avoid returning a complete persisted TimingData list from a recovery event merely so
+each consumer can decide afterwards which subset it needed. Likewise, do not copy each
+post-commit TimingData object into another queue when a coalescing wake signal plus the
+consumer's own source cursor is sufficient.
+
+---
+
 ## Pull-request review check
 
 For Java component changes, a reviewer can use this short check:
@@ -1933,6 +2032,7 @@ For Java component changes, a reviewer can use this short check:
 21. **Tests** — Is the risky behaviour tested, not only the happy path?
 22. **Failure contract** — Do normal result types contain only semantic outcomes, with technical execution failures kept out of a duplicate public state model?
 23. **Failure logging** — Is an operational failure logged once at its owning boundary with stable identity, operation and reason, without forwarding-layer duplicates?
+24. **Bounded reads** — Can any query or derived view grow with runtime data, and if so is its batch/page/visitor limit explicit and enforced internally?
 
 A review can cite a rule such as `DR-05`, but the rule text and example should remain
 clear enough that the identifier is not required to understand the review comment.

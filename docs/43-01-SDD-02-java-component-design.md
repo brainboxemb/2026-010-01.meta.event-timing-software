@@ -282,15 +282,14 @@ domain/
       persistence/
         TimingDataPersistence.java      TimingData load/append domain port
         DefaultTimingDataPersistence.java codec/node/sequence mapping to I/O storage
-    task/
-      NodeService.java                  Task Lane semantic service / derived-state orchestration
-      NodeServiceState.java             passive Task Lane-owned node state
+    service/
+      NodeService.java                  Task Lane coordination + reusable MainTask
+      NodeServiceQuery.java             ordered result-bearing service reads
     upstream/
       UpstreamHandler.java              node-scoped semantic upstream dispatch / bounded lane turns
       UpstreamHeartbeat.java            PING/heartbeat protocol state
       UpstreamDataSync.java             RACE_DATA sequence/ACK/REQ/SYNC ownership
       LogBookSync.java                  TIMING_DATA head/SYNC/REQ/batch synchronization
-      UpstreamTaskState.java            typed Task Lane RaceData/derived-state access
     racedata/
       RaceDataState.java                Task Lane-owned transactional RACE_DATA state
       TeamAssignments.java              received RegistrationId -> TeamId assignments
@@ -301,8 +300,8 @@ domain/
       RegistrationDuplicateFilter.java registration duplicate suppression
       TagProcessingPolicy.java          compiled processing policy
     timing/
-      UniqueTeamRegistrations.java      derived active-registration timing state
-      StageTiming.java                  current elapsed-time list + ranking
+      ActiveRegistrations.java          active ADD/REV state + maintained team counts
+      StageTiming.java                  bounded current ranking visitor
       StageTime.java                    one ranked team/registration time
 io/
   messaging/
@@ -458,7 +457,7 @@ TimingNode Task Lane
     │     ├── RaceDataState
     │     ├── TeamAssignments
     │     ├── StageStartTimes
-    │     └── UniqueTeamRegistrations
+    │     └── ActiveRegistrations
     │
     └── UpstreamHandler
           ├── UpstreamHeartbeat
@@ -1158,12 +1157,12 @@ mutable collaborators:
 `RaceDataState` validates a RACE_DATA change set against copies and installs
 `TeamAssignments` and `StageStartTimes` atomically on the Task Lane. The
 RACE_DATA ACK follows that successful Task Lane application; no Data Lane hop
-is required for RaceData. Data Lane startup-load/commit instead publishes immutable TimingData facts so
-Task Lane-owned `UniqueTeamRegistrations` and timing views can rebuild/update
-without receiving mutable LogBookData. This is a data dependency, not a Task Lane
-lifecycle dependency. The normal post-commit publication is
-`LogBook.newDataEntryEvent()`; the initial load has a separate loaded-data
-publication because loading an existing LogBook record is not new data.
+is required for RaceData. LogBook recovery publishes `LogBookRecoveryStatus` with the recovered TimingData head,
+not the complete recovered record set. NodeService then chooses its own bounded
+`timingDataRange(...)` reads and yields between those reads while rebuilding
+Task Lane-owned `ActiveRegistrations` and timing views. Each later successful commit
+publishes only that committed TimingData record for incremental update. This is a data
+dependency, not a Task Lane lifecycle dependency.
 
 `LogBookData` remains passive and owns no event. This is deliberate: only
 `LogBook` knows that persistence succeeded and LogBookData visibility has
@@ -2914,9 +2913,12 @@ TimingNode
   │                     └── LogBookState -> recovery state + LogBookData records
   └── Task Lane -> SerialTaskRunner -> SerialLane<TaskRun>
                    ├── TimingNode.MainTask -> startup LogBook recovery
-                   └── NodeService -> one-step tasks over NodeServiceState
-                        -> RaceDataState, TeamAssignments, StageStartTimes,
-                           UniqueTeamRegistrations, StageTiming, upstream state
+                   └── NodeService
+                        ├── MainTask -> current head + bounded TimingData range reads
+                        ├── NodeServiceQuery -> ordered result-bearing reads
+                        ├── RaceDataState -> TeamAssignments + StageStartTimes
+                        ├── ActiveRegistrations
+                        └── StageTiming
 ```
 
 The **Data Lane** is the sole writer for normal ordered LogBook commands and queries.
@@ -2931,15 +2933,29 @@ Persisted TimingData loading is **not** a Data Lane item. After child activation
 normal Data Lane admission, `TimingNode.MainTask` calls
 `LogBook.loadPersistedData()` synchronously on the same physical node worker. Commands
 may queue during that load but cannot execute until the MainTask step releases the worker.
-A successful load publishes immutable initially loaded TimingData; each later successful
-commit publishes the committed TimingData record.
+A successful load publishes `LogBookRecoveryStatus` with the recovered TimingData head;
+it does not publish a list containing every recovered record. Each later successful commit
+publishes the committed TimingData record.
 
-The **Task Lane** is the TimingNode's `SerialTaskRunner`. `NodeService` submits
-one-step tasks directly to that runner, while multi-step work such as `MainTask` may
-yield, delay or await asynchronous completion. `NodeServiceState` owns `RaceDataState`,
-`TeamAssignments`, `StageStartTimes`, `UniqueTeamRegistrations` and the committed
-TimingData view used by derived timing. Initial-loaded/committed TimingData facts rebuild
-or incrementally update that derived state.
+The **Task Lane** is the TimingNode's `SerialTaskRunner`. `NodeService` owns one reusable
+`MainTask`. Successful LogBook recovery and each later commit only wake that task; the
+task reads the current LogBook head itself and continues from its own `nextSequence`.
+Missing records are fetched with bounded ordered `timingDataRange(...)` queries through
+`LogBookAccessor`, yielding while each Data Lane read completes. The current implementation
+reads at most 64 TimingData records per batch.
+
+This same catch-up path is used for startup and steady-state commits. NodeService does not
+depend on the TimingData object carried by the post-commit event; that event is only a wake
+signal for this responsibility. `RaceDataState`, `ActiveRegistrations` and `StageTiming`
+remain separate data/derived-view objects coordinated by NodeService. No aggregate
+`NodeServiceState` exists, and NodeService does not retain a second complete
+committed-TimingData collection.
+
+Derived collection reads are bounded at the service boundary. StageTiming does not return
+an unbounded `List<StageTime>`; NodeService exposes a caller-supplied row limit and visitor.
+The ranking calculation retains at most that many candidate rows while scanning active
+registrations, orders only those retained rows and invokes the visitor in ranking order.
+A visitor executed on the Task Lane must remain short and non-blocking.
 
 A failed LogBook recovery remains in `LogBookRecoveryStatus` and LogBook diagnostics.
 The TimingNode MainTask still completes its own startup path to operational `OK`;
@@ -2949,7 +2965,7 @@ Neither condition replaces functional OPEN/CLOSED state or current LocationId.
 RACE_DATA therefore does **not** cross to the Data Lane: sequence validation,
 transactional live-state mutation and ACK happen on Task Lane task turns. TIMING_DATA
 REQ/replay is different because its source is Data Lane-owned LogBookData; that path uses
-bounded asynchronous handoff and immutable history batches. A cooperative task that needs
+bounded asynchronous handoff and bounded TimingData batches. A cooperative task that needs
 a Data Lane query uses `LogBookAccessor.submit(...)` and `TaskStep.await(...)`; it never
 blocks the shared worker waiting on that completion.
 
@@ -2983,9 +2999,9 @@ node.logBook().execute(
 // LogBookOperations owns state-changing command/commit work.
 // LogBookState owns passive state and committed TimingData; LogBookStatus owns published status.
 // SerialTaskRunner owns cooperative TaskRun execution for the TimingNode Task Lane.
-// NodeService submits one-step tasks and owns semantic orchestration.
-// NodeServiceState owns passive RaceData/derived timing state.
-// UpstreamHandler consumes only the narrow UpstreamTaskState port.
+// NodeService.MainTask catches loose Task Lane data objects up to the LogBook head.
+// RaceDataState and ActiveRegistrations remain separate state owners.
+// UpstreamDataSync invokes NodeService.applyRaceData(...) synchronously on the Task Lane.
 ```
 
 The visible `TimingNode` delegates execution mechanics to its child components.
