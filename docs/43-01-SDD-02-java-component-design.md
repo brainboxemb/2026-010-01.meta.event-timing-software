@@ -717,16 +717,16 @@ but it is a composition/lifecycle facade rather than a queue implementation.
 It composes `LogBook`, `NodeService`, its node-local `TagProcessor` and one
 `SerialTaskRunner`.
 
-`LogBook` owns Data Lane command/query execution, durable TimingData commit, recovery
-state and post-commit publication. Normal Data Lane items use
+`LogBook` owns Data Lane command/query execution, durable TimingData commit, load status
+and post-commit publication. Normal Data Lane items use
 `TimingNodeDataLane -> SerialLane<TimingNodeDataItem>`. Persisted-data loading is **not**
 a Data Lane item: `TimingNode.MainTask` calls `LogBook.loadPersistedData()` as its
 startup step on the shared node worker.
 
-`NodeService` owns Task Lane semantic orchestration and submits one-step
-`YieldingTask` work directly to the TimingNode's `SerialTaskRunner`; there is no
-additional Task Lane adapter or second service queue. Passive mutable Task Lane data lives in
-`NodeServiceState`. Other node-owned cooperative tasks use the same runner and therefore
+`NodeService` owns Task Lane semantic orchestration. Its MainTask handles only
+LogBook status while the separate DataTask owns bounded asynchronous TimingData catch-up.
+`RaceDataState`, `ActiveRegistrations`, `StageTiming` and `TeamRanking` remain separate
+state/view objects. Other node-owned cooperative tasks use the same runner and therefore
 the same bounded TaskRun FIFO.
 
 TagProcessor owns one `SerialLane<TagObservation>`. Runtime supplies the same
