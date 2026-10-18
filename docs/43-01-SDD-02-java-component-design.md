@@ -455,38 +455,40 @@ I/O messaging
       | node-scoped semantic messages / non-blocking send
       v
 TimingNode Task Lane
-  NodeService
-    ├── NodeServiceState
-    │     ├── RaceDataState
-    │     ├── TeamAssignments
-    │     ├── StageStartTimes
-    │     └── ActiveRegistrations
-    │
-    └── UpstreamHandler
-          ├── UpstreamHeartbeat
-          ├── UpstreamDataSync
-          └── LogBookSync
-                   |
-                   | LogBookAccessor queries during Data Lane turns
-                   v
+  UpstreamHandler
+    ├── UpstreamHeartbeat
+    ├── UpstreamDataSync
+    │     └── NodeService.applyRaceData(...)
+    └── LogBookSync
+              |
+              | LogBookAccessor queries during Data Lane turns
+              v
 TimingNode Data Lane
   LogBook / LogBookData / TimingData persistence
+
+NodeService
+  ├── MainTask -> LogBook status only
+  ├── DataTask -> bounded TimingData catch-up
+  ├── RaceDataState
+  ├── ActiveRegistrations
+  ├── StageTiming
+  └── TeamRanking
 ```
 
 The ownership rule is responsibility-based:
 
-- `NodeService` owns Task Lane lifecycle, queueing and composition. It does not
-  implement child-specific state ports.
-- `NodeServiceState` owns mutable Task Lane state and implements the narrow
-  `UpstreamTaskState` port required by upstream processing.
+- `NodeService` coordinates Task Lane data. Its MainTask handles only LogBook
+  status and its separate DataTask owns bounded TimingData catch-up.
+- `RaceDataState`, `ActiveRegistrations`, `StageTiming` and `TeamRanking`
+  remain separate state/view owners; there is no aggregate NodeServiceState.
 - `UpstreamHandler` and its protocol helpers dispatch node-scoped upstream work
   on the Task Lane; they do not own transport workers or node state.
 - `UpstreamHeartbeat` is Task Lane-owned protocol state and does not require a
   Data Lane round-trip for ordinary PING request/answer handling.
 - `UpstreamDataSync` owns RACE_DATA sequence/gap/ACK protocol state on the Task
-  Lane. RACE_DATA changes are applied through `UpstreamTaskState` to
-  `NodeServiceState`; TeamAssignments and StageStartTimes never move to the
-  Data Lane. ACK follows successful Task Lane state application.
+  Lane. Successful RACE_DATA is applied synchronously through
+  `NodeService.applyRaceData(...)`; TeamAssignments and StageStartTimes never
+  move to the Data Lane. ACK follows successful Task Lane state application.
 - `LogBookSync` owns TIMING_DATA replay cursor/batch coordination during
   Data Lane upstream turns. It uses the same `LogBookAccessor` contract as
   other LogBook consumers: CURRENT head reads use `LogBookQuery`, while
@@ -1148,12 +1150,7 @@ mutable collaborators:
   changing that public result-bearing contract. `LogBookSync` processes
   `timingDataHead()` and `timingDataRange(...)` through `LogBookQuery`;
   mutable `LogBookData` remains Data Lane-owned.
-- `UpstreamTaskState` exposes only the Task Lane state capabilities required by
-  upstream processing: transactional RACE_DATA application, TeamId/start-time
-  resolution and the unique-team count. `NodeServiceState` implements this
-  port; `NodeService` deliberately does not.
-
-`RaceDataState` validates a RACE_DATA change set against copies and installs
+- `RaceDataState` validates a RACE_DATA change set against copies and installs
 `TeamAssignments` and `StageStartTimes` atomically on the Task Lane. The
 RACE_DATA ACK follows that successful Task Lane application; no Data Lane hop
 is required for RaceData. LogBook publishes `LogBookStatus.LOADED` after persisted TimingData has loaded and
