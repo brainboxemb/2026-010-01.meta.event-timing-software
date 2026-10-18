@@ -301,8 +301,10 @@ domain/
       TagProcessingPolicy.java          compiled processing policy
     timing/
       ActiveRegistrations.java          active ADD/REV state + maintained team counts
-      StageTiming.java                  bounded current ranking visitor
-      StageTime.java                    one ranked team/registration time
+      StageTiming.java                  bounded active-passage resolver/visitor
+      StageTime.java                    one resolved active registration passage
+      TeamRanking.java                  incremental per-location team candidate index + ranking
+      TeamRank.java                     one ranked team + selected StageTime
 io/
   messaging/
     UpstreamStream.java                 node-scoped non-blocking semantic mailbox
@@ -2946,16 +2948,27 @@ reads at most 64 TimingData records per batch.
 
 This same catch-up path is used for startup and steady-state commits. NodeService does not
 depend on the TimingData object carried by the post-commit event; that event is only a wake
-signal for this responsibility. `RaceDataState`, `ActiveRegistrations` and `StageTiming`
-remain separate data/derived-view objects coordinated by NodeService. No aggregate
-`NodeServiceState` exists, and NodeService does not retain a second complete
+signal for this responsibility. `RaceDataState`, `ActiveRegistrations`, `StageTiming`
+and `TeamRanking` remain separate data/derived-view objects coordinated by NodeService.
+No aggregate `NodeServiceState` exists, and NodeService does not retain a second complete
 committed-TimingData collection.
 
-Derived collection reads are bounded at the service boundary. StageTiming does not return
-an unbounded `List<StageTime>`; NodeService exposes a caller-supplied row limit and visitor.
-The ranking calculation retains at most that many candidate rows while scanning active
-registrations, orders only those retained rows and invokes the visitor in ranking order.
-A visitor executed on the Task Lane must remain short and non-blocking.
+`StageTime` is one resolved active registration passage, not a team-ranking row. Multiple
+active passages for the same team remain separate StageTime values. NodeService exposes
+those passages through a caller-bounded visitor.
+
+Team ranking is a separate maintained projection. `TeamRanking` indexes actual
+`ActiveRegistrations.Change` mutations per LocationId and TeamId. Each team keeps its
+active candidate registrations ordered by effective finish time, so the currently selected
+ranking registration is directly available. A matched REV removes exactly that candidate
+and the next active candidate becomes selected without rescanning all active registrations.
+A live RegistrationId-to-TeamId change moves only candidates for that RegistrationId.
+
+For the current rule, the earliest active finish represents a team at a location; because
+all candidates for one team use the same stage start, this is also that team's lowest
+elapsed time. A team-ranking query resolves only one selected StageTime per team, keeps
+temporary top-N ranking storage within the caller-supplied limit and never scans the full
+passage list. Visitors executed on the Task Lane must remain short and non-blocking.
 
 A failed LogBook recovery remains in `LogBookRecoveryStatus` and LogBook diagnostics.
 The TimingNode MainTask still completes its own startup path to operational `OK`;
@@ -3001,6 +3014,7 @@ node.logBook().execute(
 // SerialTaskRunner owns cooperative TaskRun execution for the TimingNode Task Lane.
 // NodeService.MainTask catches loose Task Lane data objects up to the LogBook head.
 // RaceDataState and ActiveRegistrations remain separate state owners.
+// StageTiming resolves every active passage; TeamRanking maintains one selected candidate per team.
 // UpstreamDataSync invokes NodeService.applyRaceData(...) synchronously on the Task Lane.
 ```
 

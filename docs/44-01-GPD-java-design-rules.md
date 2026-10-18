@@ -1926,9 +1926,13 @@ A `List<T>` return is fine when the domain itself guarantees a small fixed maxim
 not fine merely because current test data is small.
 
 If ordering requires temporary materialization, keep that storage within the same explicit
-bound. For a top-N ranking, for example, retain at most N candidates while scanning and
-then order those N rows. Do not scan N input records into one list and build a second
-equally large result list.
+bound. For a top-N ranking, for example, retain at most N result candidates and then order
+those N rows.
+
+When a derived result first needs to choose one representative record from an unbounded
+record set, maintain that selection incrementally when the source mutates. Do not rescan
+all records on every query merely to rediscover the same representative. Keep enough
+ordered/indexed candidates to handle removal of the current selection without a full scan.
 
 A visitor executed on a serial lane must document that fact. Its callback must stay short
 and non-blocking. If an external caller cannot satisfy that rule, copy only the already
@@ -1959,16 +1963,30 @@ memory, queue turns and presentation work predictable.
 
 **Example**
 
-Prefer:
+Prefer a bounded visitor for the complete passage view:
 
 ```java
-nodeService.visitStageTiming(
+nodeService.visitStageTimes(
         raceTimeZone,
         64,
         this::onStageTime);
 ```
 
-where StageTiming retains at most 64 candidate rows while calculating the ranking.
+When a separate team ranking needs one passage per team, maintain that choice as records
+change:
+
+```java
+teamRanking.apply(activeRegistrationChange);
+teamRanking.visit(
+        locationId,
+        raceTimeZone,
+        64,
+        this::onTeamRank);
+```
+
+For example, a per-location TeamId index can keep active candidate registrations ordered
+by finish time. A REV then removes one indexed candidate and the next candidate becomes
+selected directly; the ranking query never scans the complete passage list.
 
 For LogBook-driven derived state, prefer a wake-and-catch-up flow:
 
@@ -1989,13 +2007,13 @@ Yield between reads and continue until `nextSequence` has passed the current hea
 **Avoid**
 
 ```java
-public List<StageTime> stageTiming(ZoneId raceTimeZone) {
-    return stageTiming.ranking(activeRegistrations, raceTimeZone);
+public List<TeamRank> teamRanking(LocationId locationId) {
+    return buildRankingByScanningAllActiveRegistrations(locationId);
 }
 ```
 
-when `ranking(...)` scans every active registration and allocates complete intermediate
-and result lists.
+when the representative passage for each team could have been maintained incrementally
+during ADD, matched REV and team-assignment changes.
 
 Also avoid returning a complete persisted TimingData list from a recovery event merely so
 each consumer can decide afterwards which subset it needed. Likewise, do not copy each
@@ -2033,6 +2051,7 @@ For Java component changes, a reviewer can use this short check:
 22. **Failure contract** — Do normal result types contain only semantic outcomes, with technical execution failures kept out of a duplicate public state model?
 23. **Failure logging** — Is an operational failure logged once at its owning boundary with stable identity, operation and reason, without forwarding-layer duplicates?
 24. **Bounded reads** — Can any query or derived view grow with runtime data, and if so is its batch/page/visitor limit explicit and enforced internally?
+25. **Maintained selection** — If a view repeatedly chooses one representative from many source records, is that selection updated on mutation instead of rediscovered by full scans?
 
 A review can cite a rule such as `DR-05`, but the rule text and example should remain
 clear enough that the identifier is not required to understand the review comment.
