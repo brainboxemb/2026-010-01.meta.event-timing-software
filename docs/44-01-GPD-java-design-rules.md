@@ -826,6 +826,26 @@ architecture, without first knowing the implementation mechanism.
 | Contract assertion that throws `IllegalArgumentException` when false | `failIfInvalidArgument(value != null, ...)` | `checkArgument(...)`, inverted failure conditions |
 | Guard that throws when a runtime condition holds | `failIfInactive()` | `requireActive()` when the throw behaviour is otherwise hidden |
 
+Keep a simple contract guard visually simple. When the condition and message are short,
+keep the complete `failIfInvalidArgument(...)` or `failIfIllegalState(...)` call on one
+source line:
+
+```java
+failIfInvalidArgument(registrationId != null, "registrationId must not be null");
+```
+
+Do not spread the same trivial check over several lines merely because a formatter permits it:
+
+```java
+failIfInvalidArgument(
+        registrationId != null,
+        "registrationId must not be null");
+```
+
+If a contract condition is genuinely too complex to read on one line, name the condition
+or extract a meaningful helper first. Do not make the guard call itself look structurally
+complex when the contract is simple.
+
 For LogBook data, name the concrete thing being handled. Prefer `TimingData record`,
 `registration`, `committed TimingData` or `persisted TimingData` as appropriate. Avoid the
 generic word `history` for LogBook data because it hides which records or registrations the
