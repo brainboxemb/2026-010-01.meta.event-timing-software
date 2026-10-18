@@ -1905,6 +1905,84 @@ boilerplate.
 
 ---
 
+### DR-25 — Bound collection-producing reads
+
+**Rule**
+
+Do not let a component query silently materialize a collection whose size grows with
+runtime data.
+
+When a caller may ask for many records or rows, make the bound part of the contract. Prefer
+one of these shapes:
+
+- a scalar or maintained index when the caller needs only a count/current fact;
+- a bounded range/page/batch with an explicit maximum size;
+- a bounded visitor such as `visitXxx(limit, Consumer<T>)` when the caller only needs to
+  process rows;
+- an incremental maintained projection when recomputing the complete result on every query
+  would be expensive.
+
+A `List<T>` return is fine when the domain itself guarantees a small fixed maximum. It is
+not fine merely because current test data is small.
+
+If ordering requires temporary materialization, keep that storage within the same explicit
+bound. For a top-N ranking, for example, retain at most N candidates while scanning and
+then order those N rows. Do not scan N input records into one list and build a second
+equally large result list.
+
+A visitor executed on a serial lane must document that fact. Its callback must stay short
+and non-blocking. If an external caller cannot satisfy that rule, copy only the already
+bounded result and invoke the external callback outside the owning lane.
+
+Do not use `Integer.MAX_VALUE`, an omitted limit, or another sentinel as a disguised
+unbounded query.
+
+**Why**
+
+Unbounded collection APIs hide both time and memory cost at an innocent-looking call site.
+They also encourage repeated full rescans of state that could have been maintained
+incrementally.
+
+The caller normally knows how much data it can use. Making that limit explicit keeps
+memory, queue turns and presentation work predictable.
+
+**Example**
+
+Prefer:
+
+```java
+nodeService.visitStageTiming(
+        raceTimeZone,
+        64,
+        this::onStageTime);
+```
+
+where StageTiming retains at most 64 candidate rows while calculating the ranking.
+
+For recovered TimingData, prefer repeated bounded reads such as:
+
+```java
+logBook.submit(LogBookQueries.timingDataRange(nextSequence, 64));
+```
+
+and yield between reads.
+
+**Avoid**
+
+```java
+public List<StageTime> stageTiming(ZoneId raceTimeZone) {
+    return stageTiming.ranking(activeRegistrations, raceTimeZone);
+}
+```
+
+when `ranking(...)` scans every active registration and allocates complete intermediate
+and result lists.
+
+Also avoid returning a complete persisted TimingData list from a recovery event merely so
+each consumer can decide afterwards which subset it needed.
+
+---
+
 ## Pull-request review check
 
 For Java component changes, a reviewer can use this short check:
@@ -1933,6 +2011,7 @@ For Java component changes, a reviewer can use this short check:
 21. **Tests** — Is the risky behaviour tested, not only the happy path?
 22. **Failure contract** — Do normal result types contain only semantic outcomes, with technical execution failures kept out of a duplicate public state model?
 23. **Failure logging** — Is an operational failure logged once at its owning boundary with stable identity, operation and reason, without forwarding-layer duplicates?
+24. **Bounded reads** — Can any query or derived view grow with runtime data, and if so is its batch/page/visitor limit explicit and enforced internally?
 
 A review can cite a rule such as `DR-05`, but the rule text and example should remain
 clear enough that the identifier is not required to understand the review comment.
