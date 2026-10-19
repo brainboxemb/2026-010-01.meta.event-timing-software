@@ -2959,7 +2959,12 @@ exists, and NodeService does not retain a second complete committed-TimingData c
 sequence and WP are stable. A matching REV marks the newest matching valid ADD invalid
 rather than removing it from the display list; nonregistration records are ignored.
 The display may visit all registrations for one WP in original source order, including
-invalid entries, and is responsible for tracking which rows it has shown.
+invalid entries, and is responsible for tracking which rows it has shown. A bounded
+`visitAfter(locationId, afterSequence, limit, visitor)` pages through later ADD rows using
+the original registration sequence, avoiding repeated delivery of earlier rows. This
+cursor does **not** detect later revocations of earlier ADDs: the display also needs
+to revisit its already displayed rows to observe changed validity. Domain owns neither
+the display cursor nor a second per-display update index.
 
 `RegisteredTeams` independently maintains per-WP counts for each resolved TeamId, including
 the occurrence counts needed when a RegistrationId is reassigned. It exposes a complete
@@ -2979,7 +2984,9 @@ resolved by `RaceDataState` rather than duplicated inside `StageTiming`.
 at a particular WP. Repeated passages by one team remain separate ranked rows, and equal
 elapsed times share a rank. For the current expected scale of hundreds of registrations
 per WP, the ranking is computed on demand from `ActiveRegistrations` and current race
-data, avoiding the former second persistent per-team registration index. Timing records
+data, avoiding the former second persistent per-team registration index. In particular,
+400 registrations made by 350 teams produce 400 ranked passages but only 350
+distinct registered teams. Timing records
 with unresolved team or stage start are not ranked. Visitors executed on the Task Lane
 must remain short and non-blocking.
 
