@@ -301,11 +301,12 @@ domain/
       RegistrationDuplicateFilter.java registration duplicate suppression
       TagProcessingPolicy.java          compiled processing policy
     timing/
-      ActiveRegistrations.java          active ADD/REV state + maintained team counts
-      StageTiming.java                  bounded active-passage resolver/visitor
-      StageTime.java                    one resolved active registration passage
-      TeamRanking.java                  incremental per-location team candidate index + ranking
-      TeamRank.java                     one ranked team + selected StageTime
+      ActiveRegistrations.java          chronological ADD rows, including invalidated entries
+      RegisteredTeams.java              unique team counts per WP, full visit and + / - changes
+      StageTiming.java                  stateless stage-time calculation
+      StageTimingRecord.java            elapsed time for one resolved registration
+      RegistrationRanking.java          provisional ranking of individual valid registrations
+      RegistrationRank.java             one ranked registration and position
 io/
   messaging/
     UpstreamStream.java                 node-scoped non-blocking semantic mailbox
@@ -470,17 +471,20 @@ NodeService
   ├── MainTask -> LogBook status only
   ├── DataTask -> bounded TimingData catch-up
   ├── RaceDataState
-  ├── ActiveRegistrations
-  ├── StageTiming
-  └── TeamRanking
+  ├── ActiveRegistrations -> ordered ADD list and validity
+  ├── RegisteredTeams -> unique teams per WP and + / - events
+  ├── StageTiming -> stateless elapsed-time calculation
+  └── RegistrationRanking -> on-demand ranking of each valid passage
 ```
 
 The ownership rule is responsibility-based:
 
 - `NodeService` coordinates Task Lane data. Its MainTask handles only LogBook
   status and its separate DataTask owns bounded TimingData catch-up.
-- `RaceDataState`, `ActiveRegistrations`, `StageTiming` and `TeamRanking`
-  remain separate state/view owners; there is no aggregate NodeServiceState.
+- `RaceDataState` resolves assignments and stage starts; `ActiveRegistrations` owns
+  ordered registrations and validity; `RegisteredTeams` owns unique team membership;
+  `StageTiming` calculates times without retaining state; and `RegistrationRanking`
+  derives per-registration positions on demand. There is no aggregate NodeServiceState.
 - `UpstreamHandler` and its protocol helpers dispatch node-scoped upstream work
   on the Task Lane; they do not own transport workers or node state.
 - `UpstreamHeartbeat` is Task Lane-owned protocol state and does not require a
@@ -725,8 +729,9 @@ startup step on the shared node worker.
 
 `NodeService` owns Task Lane semantic orchestration. Its MainTask handles only
 LogBook status while the separate DataTask owns bounded asynchronous TimingData catch-up.
-`RaceDataState`, `ActiveRegistrations`, `StageTiming` and `TeamRanking` remain separate
-state/view objects. Other node-owned cooperative tasks use the same runner and therefore
+`RaceDataState`, `ActiveRegistrations`, `RegisteredTeams`, `StageTiming` and
+`RegistrationRanking` remain separate domain state/calculation/view objects.
+Other node-owned cooperative tasks use the same runner and therefore
 the same bounded TaskRun FIFO.
 
 TagProcessor owns one `SerialLane<TagObservation>`. Runtime supplies the same
@@ -2914,8 +2919,10 @@ TimingNode
                         ├── DataTask -> current head + bounded TimingData range reads
                         ├── NodeServiceQuery -> ordered result-bearing reads
                         ├── RaceDataState -> TeamAssignments + StageStartTimes
-                        ├── ActiveRegistrations
-                        └── StageTiming
+                        ├── ActiveRegistrations -> ordered registration list
+                        ├── RegisteredTeams -> unique team set / + - changes
+                        ├── StageTiming -> stateless time calculation
+                        └── RegistrationRanking -> per-registration ranking
 ```
 
 The **Data Lane** is the sole writer for normal ordered LogBook commands and queries.
@@ -2943,27 +2950,38 @@ queries through `LogBookAccessor` and yielding while each Data Lane read complet
 The current implementation reads at most 64 TimingData records per batch.
 
 Later committed TimingData does not pass through NodeService as state. The post-commit
-event only wakes DataTask; DataTask then catches up from the authoritative LogBook source. `RaceDataState`, `ActiveRegistrations`, `StageTiming`
-and `TeamRanking` remain separate data/derived-view objects coordinated by NodeService.
-No aggregate `NodeServiceState` exists, and NodeService does not retain a second complete
-committed-TimingData collection.
+event only wakes DataTask; DataTask then catches up from the authoritative LogBook source.
+`RaceDataState`, `ActiveRegistrations`, `RegisteredTeams`, `StageTiming` and
+`RegistrationRanking` retain distinct responsibilities. No aggregate `NodeServiceState`
+exists, and NodeService does not retain a second complete committed-TimingData collection.
 
-`StageTime` is one resolved active registration passage, not a team-ranking row. Multiple
-active passages for the same team remain separate StageTime values. NodeService exposes
-those passages through a caller-bounded visitor.
+`ActiveRegistrations` stores one ordered entry per committed registration ADD. Its original
+sequence and WP are stable. A matching REV marks the newest matching valid ADD invalid
+rather than removing it from the display list; nonregistration records are ignored.
+The display may visit all registrations for one WP in original source order, including
+invalid entries, and is responsible for tracking which rows it has shown.
 
-Team ranking is a separate maintained projection. `TeamRanking` indexes actual
-`ActiveRegistrations.Change` mutations per LocationId and TeamId. Each team keeps its
-active candidate registrations ordered by effective finish time, so the currently selected
-ranking registration is directly available. A matched REV removes exactly that candidate
-and the next active candidate becomes selected without rescanning all active registrations.
-A live RegistrationId-to-TeamId change moves only candidates for that RegistrationId.
+`RegisteredTeams` independently maintains per-WP counts for each resolved TeamId, including
+the occurrence counts needed when a RegistrationId is reassigned. It exposes a complete
+visitor of current distinct teams so a smart display can request a compact full synchronization
+burst after power-up or loss of synchronization. Only transitions from zero to nonzero
+registrations and vice versa produce incremental + / - membership notifications.
+The display transport owns CAN encoding, delivery and synchronization state; the Domain
+does not retain any per-display transmission cursor. A full LogBook replay/reset requires
+display resynchronization.
 
-For the current rule, the earliest active finish represents a team at a location; because
-all candidates for one team use the same stage start, this is also that team's lowest
-elapsed time. A team-ranking query resolves only one selected StageTime per team, keeps
-temporary top-N ranking storage within the caller-supplied limit and never scans the full
-passage list. Visitors executed on the Task Lane must remain short and non-blocking.
+`StageTiming` is a stateless calculation of the elapsed time for one valid registration,
+using a resolved TeamId, stage start and race time zone. The result is one
+`StageTimingRecord`. The immutable EventData plus current assignment/start state are
+resolved by `RaceDataState` rather than duplicated inside `StageTiming`.
+
+`RegistrationRanking` computes provisional competition positions **per valid registration**
+at a particular WP. Repeated passages by one team remain separate ranked rows, and equal
+elapsed times share a rank. For the current expected scale of hundreds of registrations
+per WP, the ranking is computed on demand from `ActiveRegistrations` and current race
+data, avoiding the former second persistent per-team registration index. Timing records
+with unresolved team or stage start are not ranked. Visitors executed on the Task Lane
+must remain short and non-blocking.
 
 A failed persisted-data load leaves LogBook in `LogBookStatus.ERROR` with the concrete
 failure retained in LogBook diagnostics. The TimingNode MainTask still completes its own
@@ -3009,8 +3027,9 @@ node.logBook().execute(
 // LogBookState owns passive state and committed TimingData; LogBookStatus owns published status.
 // SerialTaskRunner owns cooperative TaskRun execution for the TimingNode Task Lane.
 // NodeService.MainTask handles LogBook status; DataTask catches data up to the LogBook head.
-// RaceDataState and ActiveRegistrations remain separate state owners.
-// StageTiming resolves every active passage; TeamRanking maintains one selected candidate per team.
+// ActiveRegistrations owns ordered ADD rows and their validity.
+// RegisteredTeams counts unique teams per WP and publishes + / - membership changes.
+// StageTiming calculates an individual stage time; RegistrationRanking ranks all valid passages.
 // UpstreamDataSync invokes NodeService.applyRaceData(...) synchronously on the Task Lane.
 ```
 
