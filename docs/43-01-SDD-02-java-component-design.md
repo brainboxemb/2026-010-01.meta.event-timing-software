@@ -2980,8 +2980,9 @@ using a resolved TeamId, stage start and race time zone. The result is one
 `StageTimingRecord`. The immutable EventData plus current assignment/start state are
 resolved by `RaceDataState` rather than duplicated inside `StageTiming`.
 
-`RegistrationRanking` computes provisional competition positions **per valid registration**
-at a particular WP. Repeated passages by one team remain separate ranked rows, and equal
+`RegistrationRanking` is a stateless calculation of provisional competition
+positions **per valid registration** at a particular WP. It receives current
+`RaceDataState` explicitly rather than retaining an object reference. Repeated passages by one team remain separate ranked rows, and equal
 elapsed times share a rank. For the current expected scale of hundreds of registrations
 per WP, the ranking is computed on demand from `ActiveRegistrations` and current race
 data, avoiding the former second persistent per-team registration index. In particular,
