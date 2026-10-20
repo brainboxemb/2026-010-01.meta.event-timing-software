@@ -301,7 +301,7 @@ domain/
       RegistrationDuplicateFilter.java registration duplicate suppression
       TagProcessingPolicy.java          compiled processing policy
     timing/
-      ActiveRegistrations.java          chronological ADD rows, including invalidated entries
+      ActiveRegistrations.java          compact scalar ADD rows, including invalidated entries
       RegisteredTeams.java              unique team counts per WP, full visit and + / - changes
       StageTiming.java                  stateless stage-time calculation
       StageTimingRecord.java            elapsed time for one resolved registration
@@ -2955,9 +2955,13 @@ event only wakes DataTask; DataTask then catches up from the authoritative LogBo
 `RegistrationRanking` retain distinct responsibilities. No aggregate `NodeServiceState`
 exists, and NodeService does not retain a second complete committed-TimingData collection.
 
-`ActiveRegistrations` stores one ordered entry per committed registration ADD. Its original
-sequence and WP are stable. A matching REV marks the newest matching valid ADD invalid
-rather than removing it from the display list; nonregistration records are ignored.
+`ActiveRegistrations` stores one ordered compact scalar entry per committed registration
+ADD. TimingData is consumed at the input boundary and is not retained: the row keeps only
+sequence, effective epoch milliseconds, packed RegistrationId, numeric LocationId and
+validity. Its original sequence and WP are stable. A matching REV marks the newest matching
+valid ADD invalid rather than removing it from the display list; nonregistration records
+are ignored. Semantic TimingData value objects are reconstructed only for read/output
+boundaries.
 The display may visit all registrations for one WP in original source order, including
 invalid entries, and is responsible for tracking which rows it has shown. A bounded
 `visitAfter(locationId, afterSequence, limit, visitor)` pages through later ADD rows using
