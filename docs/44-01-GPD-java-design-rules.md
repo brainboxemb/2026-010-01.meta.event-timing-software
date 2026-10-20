@@ -2022,6 +2022,77 @@ consumer's own source cursor is sufficient.
 
 ---
 
+### DR-26 — Keep retained state compact; materialize semantic values at boundaries
+
+**Rule**
+
+When a component retains many domain rows or keeps hot mutable working state, store only
+the fields that the component owns and needs. If those fields have a stable scalar
+representation, retain that scalar representation rather than retaining a larger boundary
+object merely so its getters can be called later.
+
+Prefer one small primitive-backed object for an ordered domain row:
+
+```java
+final class Registration {
+    private final long sequenceNumber;
+    private final long effectiveTimeMillis;
+    private final int registrationId;
+    private final int locationId;
+    private boolean valid;
+}
+```
+
+Convert boundary values once when state enters the component. Reconstruct semantic values
+such as `RegistrationId`, `LocationId` or `TimingTimestamp` only when a public/read
+boundary actually needs them.
+
+```text
+TimingData / protocol value
+          |
+          | copy owned fields once
+          v
+compact retained state
+          |
+          | materialize on read/output
+          v
+semantic value / DTO / presentation result
+```
+
+Do **not** retain `TimingData`, a protocol DTO or another aggregate solely because it
+already contains the few fields needed by the component.
+
+**Why**
+
+A retained aggregate keeps its complete object graph alive and makes ownership unclear.
+The component then appears to own the boundary model instead of its own state. Compact
+state makes both memory cost and responsibility visible, while boundary getters keep
+calling code readable.
+
+This is not a rule to replace all Java objects with primitive arrays. Preserve the domain
+shape:
+
+- for an ordered list of registrations, prefer one compact `Registration` object per row;
+- for a tiny temporary result, event or DTO, ordinary semantic value objects are fine;
+- for a short-lived lookup set whose entries have no row identity or ordering meaning,
+  primitive arrays may be appropriate when measurement/design already justifies them;
+- do not replace a clear semantic `Map` with boxed primitive keys merely to claim a
+  primitive representation; that normally changes no allocation advantage;
+- do not duplicate both a primitive field and a retained wrapper of the same value.
+
+**Project examples**
+
+`DefaultTimingDataFactory` stores absolute times as epoch-millisecond `long` values and
+RegistrationId as its packed `int`, then reconstructs the public TimingData value types.
+The TagProcessor passage and duplicate-filter state use the same scalar-boundary pattern.
+
+`ActiveRegistrations` follows this rule as well: committed `TimingData` is input to
+`apply(...)`, not retained state. A registration row retains sequence, effective time,
+packed RegistrationId, numeric LocationId and validity. Stage timing and display reads
+materialize semantic values only when needed.
+
+---
+
 ## Pull-request review check
 
 For Java component changes, a reviewer can use this short check:
