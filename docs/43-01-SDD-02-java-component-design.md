@@ -2982,21 +2982,28 @@ The display transport owns CAN encoding, delivery and synchronization state; the
 does not retain any per-display transmission cursor. A full LogBook replay/reset requires
 display resynchronization.
 
-`StageTiming` is a stateless calculation of the elapsed time for one valid registration,
-using a resolved TeamId, stage start and race time zone. The result is one
-`StageTimingRecord`. The immutable EventData plus current assignment/start state are
-resolved by `RaceDataState` rather than duplicated inside `StageTiming`.
+Stage-start time interpretation belongs to the ordered RACE_DATA ingress boundary.
+`NodeService.applyRaceData(...)` samples the node's shared `TimeSource` once for the
+message and `RaceDataState` normalizes every stage-start SET to an absolute UTC
+epoch-millisecond value before it enters live state. An absolute IF-06 timestamp keeps its
+Instant; a date+time value is interpreted as UTC; a time-only value uses the current UTC
+calendar date from that shared TimeSource. Partial civil time is therefore not retained in
+`StageStartTimes`, and downstream timing code never receives a `ZoneId` to reinterpret it.
 
-`RegistrationRanking` is a stateless calculation of provisional competition
-positions **per valid registration** at a particular WP. It receives current
-`RaceDataState` explicitly rather than retaining an object reference. Repeated passages by one team remain separate ranked rows, and equal
-elapsed times share a rank. For the current expected scale of hundreds of registrations
-per WP, the ranking is computed on demand from `ActiveRegistrations` and current race
-data, avoiding the former second persistent per-team registration index. In particular,
-400 registrations made by 350 teams produce 400 ranked passages but only 350
-distinct registered teams. Timing records
-with unresolved team or stage start are not ranked. Visitors executed on the Task Lane
-must remain short and non-blocking.
+`StageTiming` is a stateless calculation for one valid registration using a resolved
+TeamId and the already-normalized absolute stage start. The result is one
+`StageTimingRecord`; calculation is only the difference between absolute start and finish
+times. The immutable EventData plus current assignment/start state are resolved by
+`RaceDataState` rather than duplicated inside `StageTiming`.
+
+`RegistrationRanking` calculates the provisional competition rank **for one retained
+registration passage**. Repeated passages by one team remain separate competitors and
+equal elapsed times share a rank. The query scans the valid, resolvable registrations at
+the same WP once and returns `1 + number of faster passages`. It does not materialize or
+sort a complete ranking list. Thus a query over 400 passages uses O(n) time and O(1)
+additional collection state, while 400 passages by 350 teams still represent 400 possible
+ranking competitors and only 350 distinct registered teams. A registration with no current
+TeamId or stage start has no rank.
 
 A failed persisted-data load leaves LogBook in `LogBookStatus.ERROR` with the concrete
 failure retained in LogBook diagnostics. The TimingNode MainTask still completes its own
@@ -3005,7 +3012,8 @@ node's own startup/execution path.
 Neither condition replaces functional OPEN/CLOSED state or current LocationId.
 
 RACE_DATA therefore does **not** cross to the Data Lane: sequence validation,
-transactional live-state mutation and ACK happen on Task Lane task turns. TIMING_DATA
+UTC stage-start normalization, transactional live-state mutation and ACK happen on Task
+Lane task turns. TIMING_DATA
 REQ/replay is different because its source is Data Lane-owned LogBookData; that path uses
 bounded asynchronous handoff and bounded TimingData batches. A cooperative task that needs
 a Data Lane query uses `LogBookAccessor.submit(...)` and `TaskStep.await(...)`; it never
@@ -3044,7 +3052,7 @@ node.logBook().execute(
 // NodeService.MainTask handles LogBook status; DataTask catches data up to the LogBook head.
 // ActiveRegistrations owns ordered ADD rows and their validity.
 // RegisteredTeams counts unique teams per WP and publishes + / - membership changes.
-// StageTiming calculates an individual stage time; RegistrationRanking ranks all valid passages.
+// StageTiming subtracts absolute start/finish time; RegistrationRanking ranks one requested passage.
 // UpstreamDataSync invokes NodeService.applyRaceData(...) synchronously on the Task Lane.
 ```
 
