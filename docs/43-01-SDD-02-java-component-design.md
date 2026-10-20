@@ -302,8 +302,8 @@ domain/
       TagProcessingPolicy.java          compiled processing policy
     registration/
       package-info.java                 retained registration-state boundary and exclusions
-      ActiveRegistrations.java          compact chronological ADD rows, including invalidated entries
-      RegisteredTeams.java              unique team counts per WP, full visit and + / - changes
+      ActiveRegistrations.java          compact chronological ADD rows for the open WP
+      RegisteredTeams.java              open-WP unique teams, full visit and + / - changes
 io/
   messaging/
     UpstreamStream.java                 node-scoped non-blocking semantic mailbox
@@ -2967,17 +2967,15 @@ cursor does **not** detect later revocations of earlier ADDs: the display also n
 to revisit its already displayed rows to observe changed validity. Domain owns neither
 the display cursor nor a second per-display update index.
 
-`RegisteredTeams` independently maintains per-WP counts for each resolved TeamId, including
-the occurrence counts needed when a RegistrationId is reassigned. It exposes a complete
-visitor of current distinct teams so a smart display can request a compact full synchronization
-burst after power-up or loss of synchronization. Team order has no domain meaning: the
-visitor streams the retained unique-team set directly and does not build or sort a temporary
-snapshot list. The current CAN team burst represents membership as a bitmap, so encoder
-output is independent of visitation order. Only transitions from zero to nonzero
-registrations and vice versa produce incremental + / - membership notifications.
-The display transport owns CAN encoding, delivery and synchronization state; the Domain
-does not retain any per-display transmission cursor. A full LogBook replay/reset requires
-display resynchronization.
+`RegisteredTeams` maintains the unique-team set of the **currently open WP**. The
+LocationId is scope of the whole projection rather than a key repeated in each retained row/map.
+Occurrence counts are still kept per RegistrationId so a live assignment change can move all
+existing occurrences to the newly resolved TeamId. The complete visitor supports the compact
+full synchronization burst; team order has no domain meaning and the CAN bitmap is independent
+of visitation order. Only post-rebuild zero-to-nonzero and nonzero-to-zero membership
+transitions produce incremental + / - notifications. Historical reconstruction itself is silent:
+the display first takes a full burst after the OPEN projection has caught up. CAN encoding,
+delivery and per-display synchronization state remain outside Domain.
 
 Stage-start time interpretation belongs to the ordered RACE_DATA ingress boundary.
 `NodeService.applyRaceData(...)` samples the node's shared `TimeSource` once for the
@@ -2987,29 +2985,39 @@ Instant; a date+time value is interpreted as UTC; a time-only value uses the cur
 calendar date from that shared TimeSource. Partial civil time is therefore not retained in
 `StageStartTimes`, and downstream timing code never receives a `ZoneId` to reinterpret it.
 
-The `domain.node.registration` package contains only **retained registration-derived state**.
-It does not contain persistence records, presentation result models or speculative query helpers.
+The `domain.node.registration` package contains only **active-WP registration-derived
+state**. It is not a second history store. The LogBook remains authoritative for all
+LocationIds and all earlier OPEN/CLOSE periods.
 
-`ActiveRegistrations` is reconstructed from committed LogBook TimingData in source sequence
-order. Each registration ADD is copied once into one compact primitive-backed row; the
-TimingData object is not retained. Rows are append-only and remain in original sequence
-order. A matching REV searches newest-to-oldest and marks the newest still-valid row with
-the same RegistrationId, WP and effective timestamp invalid. The row is not removed,
-because the chronological display may already have shown it and must be able to observe
-the later validity change.
+While the TimingNode is CLOSED there is no usable registration projection. On
+`OPEN(locationId)`, NodeService/DataTask clears the previous projection and scans the complete
+LogBook from sequence one in bounded batches. `ActiveRegistrations` admits only registration
+ADD/REV records whose LocationId equals the newly open WP. Therefore older registrations from
+earlier OPEN periods of the same WP return, while historical rows of every other WP are excluded.
+On CLOSE the derived projection is deactivated and cleared; reopening the same WP rebuilds it
+again from LogBook rather than relying on stale retained history.
 
-`RegisteredTeams` is a separate retained projection. It counts valid occurrences by
-RegistrationId and WP, resolves them through current RaceData, and maintains the resulting
-unique TeamId membership per WP. Repeated passages of an already present team change only
-the internal occurrence count. Only zero-to-nonzero and nonzero-to-zero membership
-transitions publish + / - events. The complete team visitor exposes the retained set
-directly; team order has no domain meaning and no temporary sorted list is built.
+Because LocationId scopes the whole active projection, an `ActiveRegistrations.Registration`
+row stores only sequence, effective time, packed RegistrationId and validity. Rows remain in
+original ADD sequence order. A matching REV searches newest-to-oldest and marks the newest
+still-valid row with the same RegistrationId and effective timestamp invalid; the row is not
+removed because a display may already have shown it.
 
-These two objects are owned by NodeService/DataTask on the Task Lane. Their public read
-boundary exposes only maintained production facts needed by node/display integration:
-bounded chronological registration visits, unique-team count/full visits and membership
-changes. CAN encoding, display cursor/synchronization state, elapsed-time result models
-and ranking calculations are outside this package.
+`RegisteredTeams` is the second active-WP projection. It counts valid occurrences by
+RegistrationId and resolves those counts through current RaceData to one unique TeamId set.
+Repeated passages change only occurrence counts. A live assignment change can move all active
+occurrences for one RegistrationId. Historical replay after OPEN suppresses +/- events until
+DataTask has caught up; the full team visitor supplies the synchronization snapshot. Only later
+live zero-to-nonzero and nonzero-to-zero transitions publish incremental events.
+
+Open/close requests may supersede a pending bounded LogBook read. DataTask therefore treats the
+requested LocationId as a generation: an obsolete partial batch is discarded, both projections
+are reset, and the newest requested WP restarts from sequence one. NodeService reads wait for
+that reconstruction/catch-up before observing the projection. Its registration/team read methods
+take no LocationId because there is exactly one current OPEN scope.
+
+These objects remain Task Lane-owned. CAN encoding, display cursor/synchronization state,
+persistence, elapsed-time result models and ranking calculations are outside this package.
 
 Do not add a production query/result type merely because a unit or integration test would
 be easier to write with it. A new calculated view belongs in production only when an
@@ -3061,9 +3069,9 @@ node.logBook().execute(
 // LogBookOperations owns state-changing command/commit work.
 // LogBookState owns passive state and committed TimingData; LogBookStatus owns published status.
 // SerialTaskRunner owns cooperative TaskRun execution for the TimingNode Task Lane.
-// NodeService.MainTask handles LogBook status; DataTask catches data up to the LogBook head.
-// ActiveRegistrations owns ordered ADD rows and their validity.
-// RegisteredTeams counts unique teams per WP and publishes + / - membership changes.
+// NodeService.MainTask handles LogBook status; DataTask rebuilds/catches up the OPEN-WP projection.
+// ActiveRegistrations owns ordered ADD rows and validity for the currently open WP.
+// RegisteredTeams owns the current open-WP unique-team set and live + / - changes.
 // Calculated presentation/query models are added only for an actual production consumer.
 // UpstreamDataSync invokes NodeService.applyRaceData(...) synchronously on the Task Lane.
 ```

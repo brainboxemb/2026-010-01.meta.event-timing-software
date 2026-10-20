@@ -1968,10 +1968,9 @@ Prefer the maintained scalar or bounded visitor that matches the real consumer:
 
 ```java
 int teamCount =
-        nodeService.uniqueTeamRegistrationCount(locationId);
+        nodeService.uniqueTeamRegistrationCount();
 
 nodeService.visitRegistrations(
-        locationId,
         64,
         this::onRegistrationRow);
 ```
@@ -2033,7 +2032,6 @@ final class Registration {
     private final long sequenceNumber;
     private final long effectiveTimeMillis;
     private final int registrationId;
-    private final int locationId;
     private boolean valid;
 }
 ```
@@ -2081,11 +2079,15 @@ shape:
 RegistrationId as its packed `int`, then reconstructs the public TimingData value types.
 The TagProcessor passage and duplicate-filter state use the same scalar-boundary pattern.
 
-`ActiveRegistrations` follows this rule as well: committed `TimingData` is input to
-`apply(...)`, not retained state. A registration row retains sequence, effective time,
-packed RegistrationId, numeric LocationId and validity. `StageStartTimes` likewise
+`ActiveRegistrations` follows this rule as well: LocationId scopes the complete active-WP
+projection, so each retained row needs only sequence, effective time, packed RegistrationId and
+validity. Committed `TimingData` is input to `apply(...)`, not retained state. `StageStartTimes` likewise
 retains normalized UTC epoch milliseconds rather than a partial `TimingTimestamp`.
 Registration/display reads materialize semantic values only when needed.
+
+When every row in a retained projection shares one scope value, retain that value once at the
+projection owner instead of repeating it in every row. The current OPEN LocationId is such a
+scope: registration rows do not each need another LocationId field.
 
 ---
 
@@ -2163,6 +2165,7 @@ For Java component changes, a reviewer can use this short check:
 23. **Failure logging** — Is an operational failure logged once at its owning boundary with stable identity, operation and reason, without forwarding-layer duplicates?
 24. **Bounded reads** — Can any query or derived view grow with runtime data, and if so is its batch/page/visitor limit explicit and enforced internally?
 25. **Maintained selection** — If a view repeatedly chooses one representative from many source records, is that selection updated on mutation instead of rediscovered by full scans?
+26. **Projection scope** — Is a current-WP/current-session projection activated and rebuilt by its owning lifecycle instead of silently retaining unrelated historical scopes?
 
 A review can cite a rule such as `DR-05`, but the rule text and example should remain
 clear enough that the identifier is not required to understand the review comment.
