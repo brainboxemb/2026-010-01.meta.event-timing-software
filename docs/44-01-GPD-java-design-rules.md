@@ -1912,8 +1912,9 @@ boilerplate.
 Do not let a component query silently materialize a collection whose size grows with
 runtime data.
 
-When a caller may ask for many records or rows, make the bound part of the contract. Prefer
-one of these shapes:
+When a caller may ask for many records or rows, make the bound part of the contract. If
+the caller asks for one scalar property of one row, calculate that scalar directly instead
+of first materializing the complete derived collection. Prefer one of these shapes:
 
 - a scalar or maintained index when the caller needs only a count/current fact;
 - a bounded range/page/batch with an explicit maximum size;
@@ -1927,7 +1928,9 @@ not fine merely because current test data is small.
 
 If ordering requires temporary materialization, keep that storage within the same explicit
 bound. For a top-N ranking, for example, retain at most N result candidates and then order
-those N rows.
+those N rows. If the caller asks only for the competition rank of one passage, a single
+scan that counts strictly faster eligible passages is preferable to building and sorting
+the complete ranking.
 
 When a derived result first needs to choose one representative record from an unbounded
 record set, maintain that selection incrementally when the source mutates. Do not rescan
@@ -1967,7 +1970,6 @@ Prefer a bounded visitor for the complete passage view:
 
 ```java
 nodeService.visitStageTimes(
-        raceTimeZone,
         64,
         this::onStageTime);
 ```
@@ -2007,10 +2009,15 @@ Yield between reads and continue until `nextSequence` has passed the current hea
 **Avoid**
 
 ```java
-public List<TeamRank> teamRanking(LocationId locationId) {
-    return buildRankingByScanningAllActiveRegistrations(locationId);
+public List<RegistrationRank> registrationRanking(LocationId locationId) {
+    List<StageTimingRecord> all = collectEveryPassage(locationId);
+    all.sort(FASTEST_FIRST);
+    return rankEveryPassage(all);
 }
 ```
+
+when the caller only needs the rank of one known registration passage. Count the faster
+eligible passages in one scan instead.
 
 when the representative passage for each team could have been maintained incrementally
 during ADD, matched REV and team-assignment changes.
@@ -2088,8 +2095,54 @@ The TagProcessor passage and duplicate-filter state use the same scalar-boundary
 
 `ActiveRegistrations` follows this rule as well: committed `TimingData` is input to
 `apply(...)`, not retained state. A registration row retains sequence, effective time,
-packed RegistrationId, numeric LocationId and validity. Stage timing and display reads
-materialize semantic values only when needed.
+packed RegistrationId, numeric LocationId and validity. `StageStartTimes` likewise
+retains normalized UTC epoch milliseconds rather than a partial `TimingTimestamp`.
+Stage timing and display reads materialize semantic values only when needed.
+
+---
+
+### DR-27 — Normalize external civil time at ingress
+
+**Rule**
+
+Keep internal timing state absolute. A component that receives an external protocol value
+containing local time, date+time, offset time or another partial civil representation must
+resolve that value once at the semantic ingress boundary. Downstream domain calculations
+must not receive a `ZoneId` or current-date parameter merely to finish interpreting an
+older packet.
+
+Use the runtime-composed `TimeSource` when the protocol requires current timing context.
+Sample it once per accepted message or operation so every value in that transaction uses
+the same absolute-time basis.
+
+For example, IF-06 RACE_DATA stage starts are normalized before entering live race state:
+
+```text
+IF-06 stage-start value
+        |
+        | RACE_DATA ingress + shared TimeSource
+        v
+UTC epoch milliseconds
+        |
+        +--> StageStartTimes
+        +--> StageTiming
+        +--> RegistrationRanking
+```
+
+An absolute source value keeps its Instant. A source date+time is interpreted according to
+the protocol's documented time basis. A source time-only value uses the protocol-defined
+date rule and the shared TimeSource where current date is required.
+
+**Why**
+
+Deferring civil-time interpretation spreads protocol knowledge through otherwise simple
+domain calculations and lets different callers resolve the same stored value differently.
+Normalizing once makes retained state unambiguous, keeps calculations deterministic and
+removes time-zone/date dependencies from ranking and elapsed-time code.
+
+Do not use `Clock.systemDefaultZone()`, `ZoneId.systemDefault()` or another ambient JVM
+setting inside timing-domain calculations. The composition root owns the timing source and
+the ingress contract owns external time interpretation.
 
 ---
 
