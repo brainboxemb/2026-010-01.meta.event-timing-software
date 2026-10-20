@@ -1927,10 +1927,8 @@ A `List<T>` return is fine when the domain itself guarantees a small fixed maxim
 not fine merely because current test data is small.
 
 If ordering requires temporary materialization, keep that storage within the same explicit
-bound. For a top-N ranking, for example, retain at most N result candidates and then order
-those N rows. If the caller asks only for the competition rank of one passage, a single
-scan that counts strictly faster eligible passages is preferable to building and sorting
-the complete ranking.
+bound. If a caller needs only one scalar or one maintained fact, calculate/read that fact
+directly instead of first constructing a complete derived collection.
 
 When a derived result first needs to choose one representative record from an unbounded
 record set, maintain that selection incrementally when the source mutates. Do not rescan
@@ -1966,29 +1964,20 @@ memory, queue turns and presentation work predictable.
 
 **Example**
 
-Prefer a bounded visitor for the complete passage view:
+Prefer the maintained scalar or bounded visitor that matches the real consumer:
 
 ```java
-nodeService.visitStageTimes(
-        64,
-        this::onStageTime);
-```
+int teamCount =
+        nodeService.uniqueTeamRegistrationCount(locationId);
 
-When a separate team ranking needs one passage per team, maintain that choice as records
-change:
-
-```java
-teamRanking.apply(activeRegistrationChange);
-teamRanking.visit(
+nodeService.visitRegistrations(
         locationId,
-        raceTimeZone,
         64,
-        this::onTeamRank);
+        this::onRegistrationRow);
 ```
 
-For example, a per-location TeamId index can keep active candidate registrations ordered
-by finish time. A REV then removes one indexed candidate and the next candidate becomes
-selected directly; the ranking query never scans the complete passage list.
+Do not create a second complete collection merely because one presentation or test wants
+to inspect the same source state in a different shape.
 
 For LogBook-driven derived state, prefer a wake-and-catch-up flow:
 
@@ -2009,18 +1998,17 @@ Yield between reads and continue until `nextSequence` has passed the current hea
 **Avoid**
 
 ```java
-public List<RegistrationRank> registrationRanking(LocationId locationId) {
-    List<StageTimingRecord> all = collectEveryPassage(locationId);
-    all.sort(FASTEST_FIRST);
-    return rankEveryPassage(all);
+public List<RegistrationView> registrationViews(LocationId locationId) {
+    return buildCompletePresentationList(locationId);
 }
 ```
 
-when the caller only needs the rank of one known registration passage. Count the faster
-eligible passages in one scan instead.
+when the maintained domain state already supports the real bounded/scalar consumer.
 
-when the representative passage for each team could have been maintained incrementally
-during ADD, matched REV and team-assignment changes.
+Also avoid adding a public production query or result type solely so a test can inspect
+private state more conveniently. A test is evidence for behavior; it is not itself a
+production consumer. Prefer testing the existing production boundary or, for true
+implementation invariants, package-local tests that do not widen the public API.
 
 Also avoid returning a complete persisted TimingData list from a recovery event merely so
 each consumer can decide afterwards which subset it needed. Likewise, do not copy each
@@ -2097,7 +2085,7 @@ The TagProcessor passage and duplicate-filter state use the same scalar-boundary
 `apply(...)`, not retained state. A registration row retains sequence, effective time,
 packed RegistrationId, numeric LocationId and validity. `StageStartTimes` likewise
 retains normalized UTC epoch milliseconds rather than a partial `TimingTimestamp`.
-Stage timing and display reads materialize semantic values only when needed.
+Registration/display reads materialize semantic values only when needed.
 
 ---
 
@@ -2125,8 +2113,7 @@ IF-06 stage-start value
 UTC epoch milliseconds
         |
         +--> StageStartTimes
-        +--> StageTiming
-        +--> RegistrationRanking
+        +--> future domain consumers
 ```
 
 An absolute source value keeps its Instant. A source date+time is interpreted according to
@@ -2137,8 +2124,8 @@ date rule and the shared TimeSource where current date is required.
 
 Deferring civil-time interpretation spreads protocol knowledge through otherwise simple
 domain calculations and lets different callers resolve the same stored value differently.
-Normalizing once makes retained state unambiguous, keeps calculations deterministic and
-removes time-zone/date dependencies from ranking and elapsed-time code.
+Normalizing once makes retained state unambiguous, keeps later calculations deterministic
+and prevents time-zone/date interpretation from leaking into downstream domain code.
 
 Do not use `Clock.systemDefaultZone()`, `ZoneId.systemDefault()` or another ambient JVM
 setting inside timing-domain calculations. The composition root owns the timing source and
@@ -2169,7 +2156,7 @@ For Java component changes, a reviewer can use this short check:
 16. **Wrapping** — Are lines kept compact up to the 120-character maximum instead of mechanically wrapped?
 17. **Lifecycle reuse** — Can an ordinary component activate again after clean deactivation?
 18. **State synchronization** — Are lifecycle checks and their state transitions protected by the same synchronization boundary?
-19. **Production API** — Does each public member serve a production boundary, and are intentional test-only seams explicit?
+19. **Production API** — Does each public member serve an actual production boundary? Never add a public query/result type only because a test wants to inspect state.
 20. **Data carriers** — Is a small immutable Java-8 value kept simple instead of wrapped in getter boilerplate without a reason?
 21. **Tests** — Is the risky behaviour tested, not only the happy path?
 22. **Failure contract** — Do normal result types contain only semantic outcomes, with technical execution failures kept out of a duplicate public state model?
