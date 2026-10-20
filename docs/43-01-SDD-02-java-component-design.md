@@ -2973,7 +2973,10 @@ the display cursor nor a second per-display update index.
 `RegisteredTeams` independently maintains per-WP counts for each resolved TeamId, including
 the occurrence counts needed when a RegistrationId is reassigned. It exposes a complete
 visitor of current distinct teams so a smart display can request a compact full synchronization
-burst after power-up or loss of synchronization. Only transitions from zero to nonzero
+burst after power-up or loss of synchronization. Team order has no domain meaning: the
+visitor streams the retained unique-team set directly and does not build or sort a temporary
+snapshot list. The current CAN team burst represents membership as a bitmap, so encoder
+output is independent of visitation order. Only transitions from zero to nonzero
 registrations and vice versa produce incremental + / - membership notifications.
 The display transport owns CAN encoding, delivery and synchronization state; the Domain
 does not retain any per-display transmission cursor. A full LogBook replay/reset requires
