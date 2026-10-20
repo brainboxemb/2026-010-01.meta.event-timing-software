@@ -293,20 +293,17 @@ domain/
       LogBookSync.java                  TIMING_DATA head/SYNC/REQ/batch synchronization
     racedata/
       RaceDataState.java                Task Lane-owned transactional RACE_DATA state
-      TeamAssignments.java              received RegistrationId -> TeamId assignments
-      StageStartTimes.java              received TeamId -> TimingTimestamp starts
+      TeamAssignments.java              package-private RegistrationId -> TeamId state
+      StageStartTimes.java              package-private absolute UTC stage starts
     processing/
       TagProcessor.java                 registration-passage processing
       TagObservationFilter.java         observation selection
       RegistrationDuplicateFilter.java registration duplicate suppression
       TagProcessingPolicy.java          compiled processing policy
-    timing/
-      ActiveRegistrations.java          compact scalar ADD rows, including invalidated entries
+    registration/
+      package-info.java                 retained registration-state boundary and exclusions
+      ActiveRegistrations.java          compact chronological ADD rows, including invalidated entries
       RegisteredTeams.java              unique team counts per WP, full visit and + / - changes
-      StageTiming.java                  stateless stage-time calculation
-      StageTimingRecord.java            elapsed time for one resolved registration
-      RegistrationRanking.java          provisional ranking of individual valid registrations
-      RegistrationRank.java             one ranked registration and position
 io/
   messaging/
     UpstreamStream.java                 node-scoped non-blocking semantic mailbox
@@ -2990,20 +2987,35 @@ Instant; a date+time value is interpreted as UTC; a time-only value uses the cur
 calendar date from that shared TimeSource. Partial civil time is therefore not retained in
 `StageStartTimes`, and downstream timing code never receives a `ZoneId` to reinterpret it.
 
-`StageTiming` is a stateless calculation for one valid registration using a resolved
-TeamId and the already-normalized absolute stage start. The result is one
-`StageTimingRecord`; calculation is only the difference between absolute start and finish
-times. The immutable EventData plus current assignment/start state are resolved by
-`RaceDataState` rather than duplicated inside `StageTiming`.
+The `domain.node.registration` package contains only **retained registration-derived state**.
+It does not contain persistence records, presentation result models or speculative query helpers.
 
-`RegistrationRanking` calculates the provisional competition rank **for one retained
-registration passage**. Repeated passages by one team remain separate competitors and
-equal elapsed times share a rank. The query scans the valid, resolvable registrations at
-the same WP once and returns `1 + number of faster passages`. It does not materialize or
-sort a complete ranking list. Thus a query over 400 passages uses O(n) time and O(1)
-additional collection state, while 400 passages by 350 teams still represent 400 possible
-ranking competitors and only 350 distinct registered teams. A registration with no current
-TeamId or stage start has no rank.
+`ActiveRegistrations` is reconstructed from committed LogBook TimingData in source sequence
+order. Each registration ADD is copied once into one compact primitive-backed row; the
+TimingData object is not retained. Rows are append-only and remain in original sequence
+order. A matching REV searches newest-to-oldest and marks the newest still-valid row with
+the same RegistrationId, WP and effective timestamp invalid. The row is not removed,
+because the chronological display may already have shown it and must be able to observe
+the later validity change.
+
+`RegisteredTeams` is a separate retained projection. It counts valid occurrences by
+RegistrationId and WP, resolves them through current RaceData, and maintains the resulting
+unique TeamId membership per WP. Repeated passages of an already present team change only
+the internal occurrence count. Only zero-to-nonzero and nonzero-to-zero membership
+transitions publish + / - events. The complete team visitor exposes the retained set
+directly; team order has no domain meaning and no temporary sorted list is built.
+
+These two objects are owned by NodeService/DataTask on the Task Lane. Their public read
+boundary exposes only maintained production facts needed by node/display integration:
+bounded chronological registration visits, unique-team count/full visits and membership
+changes. CAN encoding, display cursor/synchronization state, elapsed-time result models
+and ranking calculations are outside this package.
+
+Do not add a production query/result type merely because a unit or integration test would
+be easier to write with it. A new calculated view belongs in production only when an
+actual application, presentation or I/O consumer requires that behavior. Tests verify the
+retained state through the existing production boundary or package-local implementation
+tests rather than defining extra public API.
 
 A failed persisted-data load leaves LogBook in `LogBookStatus.ERROR` with the concrete
 failure retained in LogBook diagnostics. The TimingNode MainTask still completes its own
@@ -3052,7 +3064,7 @@ node.logBook().execute(
 // NodeService.MainTask handles LogBook status; DataTask catches data up to the LogBook head.
 // ActiveRegistrations owns ordered ADD rows and their validity.
 // RegisteredTeams counts unique teams per WP and publishes + / - membership changes.
-// StageTiming subtracts absolute start/finish time; RegistrationRanking ranks one requested passage.
+// Calculated presentation/query models are added only for an actual production consumer.
 // UpstreamDataSync invokes NodeService.applyRaceData(...) synchronously on the Task Lane.
 ```
 
