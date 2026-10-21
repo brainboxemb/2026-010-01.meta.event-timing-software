@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Clarify system-level wiring ownership: Runtime constructs components and resolves mappings, while each `TimingSystem` installs its fixed AntennaManager-to-TimingNode and UpstreamStream-to-NodeUpstream event links before activation; NodeUpstream and TimingNode no longer need composition-only EventInput ports for those links.
+
 - Make `UpstreamConnector` the abstract shared transport base: it owns the one-time gateway input binding and public `CONNECTED`/`DISCONNECTED` EventSource ports, while concrete connectors keep only transport-specific availability/session/framing/send behavior.
 
 - Refine upstream messaging boundaries: resolve NodeId once from connector input to a fixed node-scoped UpstreamStream application port; remove the redundant generic UpstreamMessage envelope; use sender-object typed events for connector/stream post-fact notifications; keep result-bearing inbound admission on an explicit gateway ConnectorPort; and keep IF-06 codec plus heartbeat cadence/state in NodeUpstream.

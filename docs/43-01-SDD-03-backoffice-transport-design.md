@@ -74,8 +74,10 @@ separate `UpstreamMessage(NodeId, payload)` value.
 Once selected, UpstreamStream is the fixed application port: `read()`, `send(...)`
 and availability checks operate through its captured connector/queue binding without
 another NodeId lookup in UpstreamGateway. Stream CONNECTED and DATA_AVAILABLE events
-carry the producing UpstreamStream object itself. Connector CONNECTED/DISCONNECTED
-events likewise carry the producing connector object. `UpstreamConnector` is the
+carry the producing UpstreamStream object itself. The owning TimingSystem installs those
+fixed stream subscriptions before activation and targets ordinary NodeUpstream input
+methods; NodeUpstream does not expose composition-only EventInput ports. Connector
+CONNECTED/DISCONNECTED events likewise carry the producing connector object. `UpstreamConnector` is the
 abstract base that owns those public event ports and the one-time gateway input binding;
 concrete transports only implement their transport-specific state and delivery. Queue
 admission is not modeled as an event because it returns ACCEPTED/UNKNOWN_NODE/INPUT_FULL.

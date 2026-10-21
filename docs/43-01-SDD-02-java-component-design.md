@@ -495,8 +495,10 @@ The ownership rule is responsibility-based:
 - `UpstreamStream.CONNECTED` and `DATA_AVAILABLE` are typed local events whose
   payload is the producing stream object. NodeId is not repeated because fixed
   composition already identifies the node.
-- `NodeUpstream` declares matching `EventInput` ports. Runtime composition wires
-  those stream EventSources once before activation.
+- `NodeUpstream` exposes ordinary semantic input methods for connection-available
+  and data-available facts; it does not expose composition-only EventInput objects.
+- The owning `TimingSystem` installs each fixed `UpstreamStream -> NodeUpstream`
+  subscription before activation, using the node mapping already resolved by Runtime.
 - `RaceDataSync` owns RaceData sequence/gap/ACK state. Node changes are applied through
   the node service boundary before ACK.
 - `TimingDataSync` owns source-head and retained replay coordination through
@@ -1350,7 +1352,9 @@ configuration. Figure SI01-01 shows this explicitly as the **Runtime** block.
 Runtime is not another business/domain layer; it is where the executable object graph is
 assembled.
 
-The executable composition must remain readable as one linear construct-wire-start flow.
+The executable composition must remain readable as one linear construct-system-wire-start flow.
+Runtime constructs and resolves; the constructed TimingSystem fixes its own stable
+inter-component event graph before activation.
 The Runtime composition root constructs 1..N `domain.system.TimingSystem`
 components from validated effective configuration. Each TimingSystem contains
 1..N TimingNodes and one `TimingSystemConductor`, and uses associated I/O
@@ -1364,6 +1368,7 @@ validated effective configuration
   -> construct domain.system.TimingSystem
        -> connect TimingNode status to TimingSystemConductor
        -> connect AntennaManager observations to TimingNode ingress
+       -> connect UpstreamStream events to matching NodeUpstream inputs
   -> register TimingSystem with application.ApplicationConductor
   -> start physical workers
   -> application.ApplicationConductor.activate()   [application lifecycle boundary]
@@ -1406,10 +1411,11 @@ system control run:
   -> AntennaManager reconciles hardware asynchronously
 ```
 
-Runtime owns construction and physical executor lifetime. The
+Runtime owns object construction, mapping resolution and physical executor lifetime.
+It does not install stable inter-component event subscriptions itself. The
 `domain.system.TimingSystem` component contains its TimingNodes and
-`TimingSystemConductor`, uses its optional `AntennaManager`, and fixes the
-system-level event connections before activation. Runtime prepares resolved
+`TimingSystemConductor`, uses its optional `AntennaManager` and system-owned Upstream,
+and fixes the system-level event connections before activation. Runtime prepares resolved
 construction and mapping data and registers the completed TimingSystem with
 `ApplicationConductor`. `ApplicationConductor` orchestrates activation,
 rollback and reverse deactivation across complete TimingSystems.
@@ -1438,17 +1444,27 @@ participate in the inventory calculation. Later committed TimingNode property ch
 PROPERTIES.CHANGED and wake another reconciliation; the later run still derives
 inventory only from current functional state.
 
-Tag events and individual antenna commands do not pass through either
-Conductor. Runtime resolves the configured antenna-to-node mapping as pure
-composition data. The owning `TimingSystem` installs each observation event link
+Tag events, upstream stream events and individual antenna commands do not pass through
+either Conductor. Runtime resolves configured mappings as pure construction/composition
+data. The owning `TimingSystem` installs each observation event link
 to the target `TimingNode` component boundary; TimingNode then delegates the
 observation to its internal TagProcessor. External system composition never
 reaches directly into the node's TagProcessor. Targets must belong to the same
 TimingSystem and one antenna may fan out to multiple nodes.
 
+The same ownership rule applies to upstream. Runtime constructs one NodeUpstream and one
+node-scoped UpstreamStream for each configured node. TimingSystem then installs the fixed
+stream event links to that NodeUpstream's ordinary input methods. Neither TimingNode nor
+NodeUpstream publishes a static composition-only EventInput for these system bindings.
+
 ```java
 antennaManager.tagObservedEvent(antennaId)
     .subscribe(timingNode::onTagObserved);
+
+stream.CONNECTED
+    .subscribe(ignored -> nodeUpstream.connectionAvailable());
+stream.DATA_AVAILABLE
+    .subscribe(ignored -> nodeUpstream.inputAvailable());
 ```
 
 For current component properties, TimingNode uses the generic
