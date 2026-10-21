@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Refine upstream messaging boundaries: one concrete encoded-message UpstreamStream per node; NodeUpstream owns IF-06 codec semantics; generic UpstreamMessage remains NodeId + opaque payload; stream availability/data/heartbeat notifications use typed events; Engineering-specific UpstreamApiMessage and EngineerApiConnector live under io.messaging.engineering.
+
 - Decouple Messaging routing from IF-06 protocol types: define a minimal `UpstreamMessage` envelope containing NodeId plus an opaque semantic payload; `UpstreamGateway` routes only that envelope, while `UpstreamStream` adapts between the envelope and NodeUpstream's semantic `UpstreamData` contract.
 
 - Align SI-02 Step-7 backend simulation with the accepted upstream design: define one CentralSystemSimulator semantic model, use the existing ApiEventClient as a full-duplex `role=upstream` WebSocket transport for ST-2, remove the obsolete HTTP-injection/DebugConnector model, and retain a future RabbitMQ Central transport below the same simulator for ST-3.

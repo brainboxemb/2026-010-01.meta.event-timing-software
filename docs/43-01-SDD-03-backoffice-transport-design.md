@@ -62,14 +62,22 @@ TimingSystem
                 Connector            Connector
 ```
 
-`NodeUpstream` owns node-scoped UpstreamData semantics and protocol ordering.
-`UpstreamStream` is the bidirectional boundary owned by one `NodeUpstream` and
-scoped by that node's NodeId. At the I/O boundary it adapts semantic UpstreamData to a
-small `UpstreamMessage` routing envelope containing NodeId plus an opaque semantic
-payload. `UpstreamGateway` routes only that envelope between node streams and
-configured connectors. It does not inspect UpstreamData family/subtypes. A connector
-owns transport/session resources and the mapping required by its transport, but it
-does not reinterpret UpstreamData semantics.
+`NodeUpstream` owns node-scoped UpstreamData semantics, protocol ordering and the
+`UpstreamDataCodec`. One concrete `UpstreamStream` belongs to each NodeUpstream and
+is scoped by that node's NodeId.
+
+Generic Messaging carries only `UpstreamMessage(NodeId, encodedPayload)`.
+`UpstreamGateway` routes that envelope between node streams and configured connectors
+without decoding its payload. Stream state is notification-driven: `CONNECTED`,
+`DATA_AVAILABLE` and heartbeat cadence are typed local EventSources wired to
+NodeUpstream EventInputs during composition. Gateway queue admission does not depend on
+a NodeUpstream callback return value.
+
+Engineering-specific protocol adaptation is below `io.messaging.engineering`.
+`UpstreamApiMessage` represents the Engineering API / IF-06 message at that boundary;
+it extracts only the NodeId needed for generic routing and retains the complete encoded
+IF-06 message unchanged. `EngineerApiConnector` converts between
+`UpstreamApiMessage` and generic `UpstreamMessage`.
 
 The generic architecture deliberately does not model RabbitMQ's physical queue shape.
 A full-duplex WebSocket can carry both directions on one connection; RabbitMQ may use
@@ -80,30 +88,33 @@ same connector boundary and the same node-scoped streams.
 
 The reusable application-core/domain side should work with semantic source-aware messages, not transport destinations.
 
-Conceptually, Domain sees one bidirectional stream per `NodeUpstream`:
+Conceptually, Domain sees one concrete bidirectional stream per `NodeUpstream`:
 
 ```java
-interface UpstreamStream {
+final class UpstreamStream {
+    EventSource<NodeId> CONNECTED;
+    EventSource<NodeId> DATA_AVAILABLE;
+    EventSource<NodeId> HEARTBEAT_TICK;
+
     boolean isAvailable();
     boolean hasMessage();
-    UpstreamData read();
-    void send(UpstreamData message);
+    String read();
+    void send(String encodedMessage);
 }
 ```
 
-Messaging routes a smaller envelope:
+Generic Messaging routes a protocol-opaque envelope:
 
 ```java
 final class UpstreamMessage {
     NodeId nodeId();
-    UpstreamData payload(); // opaque to UpstreamGateway
+    String payload();
 }
 ```
 
-The concrete Java contract may use equivalent names. The architectural rule is stable:
-NodeUpstream reads and sends semantic UpstreamData through its own node-scoped stream;
-the stream performs the envelope adaptation; UpstreamGateway uses only NodeId for
-routing and treats the payload as opaque.
+NodeUpstream decodes immediately after `read()` and encodes immediately before
+`send(...)`. The stream only adds/removes NodeId routing metadata. No generic
+Messaging type imports `UpstreamData` or branches on IF-06 message families.
 
 `UpstreamData` is the reusable/public semantic message contract defined by IF-06.
 In the default implementation, both inbound and outbound exchanges use the same
@@ -180,9 +191,9 @@ SI-02 Central System Simulator
             ^
             | bidirectional IF-03 WebSocket
             v
-EngineeringApiConnector
+EngineerApiConnector
             ^
-            | UpstreamMessage
+            | UpstreamApiMessage <-> UpstreamMessage
             v
       UpstreamGateway
             ^
@@ -198,11 +209,13 @@ independent and do not receive UPSTREAM_DATA.
 
 ### Engineering connector lifecycle and wiring
 
-`EngineeringApiConnector` is one normal Connector implementation. Presentation/IF-03
-owns the WebSocket mechanics; the connector owns the engineering upstream session and
-hands a decoded semantic payload, wrapped as `UpstreamMessage`, to UpstreamGateway.
-The gateway routes by NodeId only. Outbound traffic follows the same envelope and
-connection in the reverse direction.
+`EngineerApiConnector` is one normal Connector implementation and lives with
+`UpstreamApiMessage` under `io.messaging.engineering`. Presentation/IF-03 owns the
+WebSocket mechanics. The Engineering boundary parses only enough IF-06 JSON to extract
+NodeId into `UpstreamApiMessage`; it does not construct semantic `UpstreamData`.
+The complete encoded IF-06 payload is passed unchanged into generic
+`UpstreamMessage`, routed by UpstreamGateway, and decoded only by the addressed
+NodeUpstream. Outbound traffic follows the same path in reverse.
 
 The SI-02 Central System Simulator owns peer behavior. It can allocate/send RACE_DATA
 source sequences, inspect ACK/REQ/SYNC and TIMING_DATA, answer PING, issue replay
