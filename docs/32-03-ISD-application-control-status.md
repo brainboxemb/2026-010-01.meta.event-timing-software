@@ -334,11 +334,11 @@ The initial profile identifiers are `simple`, `normal` and `edge`. Their
 internal observation pattern is engineering simulation behaviour rather than
 TimingData/domain semantics.
 
-### IF03-OP-014 — Submit engineering upstream UpstreamData
+### IF03-OP-014 — Exchange engineering upstream UpstreamData
 
-This development/engineering operation submits one structured public/reference
-IF-06 UpstreamData message to SI-01 through the configured
-`EngineeringApiUpstreamConnector`.
+This development/engineering operation sends one structured public/reference IF-06
+UpstreamData message from the Engineering Client to SI-01 through the configured
+Engineering API upstream connector.
 
 Inputs:
 
@@ -346,15 +346,17 @@ Inputs:
 - any NodeId scope is carried by that UpstreamData value itself.
 
 The operation is available only when the engineering upstream connector is
-configured/enabled and one IF03-OP-003 event connection has registered the
-`upstream` role. The HTTP adapter does not call TimingNode/domain objects
-directly; the message enters the same semantic upstream routing boundary used by
-other upstream connectors.
+configured/enabled and one IF03-OP-003 WebSocket connection has registered the
+`upstream` role.
 
-The HTTP response reports the submission/application outcome. Semantic outbound
-messages generated while processing the input, such as a PING answer, are delivered
-through the upstream-role IF03-OP-003 event stream rather than being substituted
-as the HTTP response body.
+IF03-OP-014 uses that same upstream-role WebSocket in the client-to-server direction;
+there is no separate HTTP upstream-ingress operation. A valid inbound message enters the
+same UpstreamGateway/UpstreamStream semantic path as every other connector. The IF-03
+adapter does not call TimingNode or NodeUpstream semantics directly.
+
+IF-06 responses such as ACK, REQ, SYNC and PING are returned through the same
+upstream-role connection as outbound `UPSTREAM_DATA` events. IF-03 does not add a
+second request/response result protocol around those semantic exchanges.
 
 ## Operation ordering and concurrency
 
@@ -656,10 +658,10 @@ SI-01 shall preserve the supplied effective time when creating the MAN_REG recor
 :specifies: UC-017  
 :refines: SI01-REQ-068  
 
-IF-03 shall provide IF03-OP-014 as a development-only HTTP/JSON operation that
-accepts structured public/reference UpstreamData and routes it through the configured
-Engineering API upstream connector without direct domain-object access or
-proprietary transport framing.
+IF-03 shall provide IF03-OP-014 on the active `role=upstream` WebSocket. Client
+text frames shall carry structured public/reference UpstreamData and shall enter the
+configured Engineering API upstream connector without direct domain-object access or
+proprietary transport framing. A separate HTTP upstream-ingress resource is not required.
 :::
 
 :::{ifreq} Reuse one IF-03 event connection for the Central System simulator peer  
@@ -669,11 +671,12 @@ proprietary transport framing.
 :refines: SI01-REQ-068  
 
 IF03-OP-003 shall allow one connected client to register the `upstream` role
-using the normal IF-03 WebSocket event connection. That connection shall continue
-to receive the normal live-event stream and shall additionally receive outbound
-structured UpstreamData events. No second SI-01 listener port or second SI-02
-WebSocket lifecycle shall be required. At most one active upstream-role peer
-shall be admitted for one Engineering API connector.
+using the normal IF-03 WebSocket event connection. That connection is bidirectional:
+it shall continue to receive the normal live-event stream plus outbound structured
+UpstreamData events, and it shall accept inbound structured UpstreamData for
+IF03-OP-014. No second SI-01 listener port, HTTP ingress path or second SI-02
+WebSocket lifecycle shall be required. At most one active upstream-role peer shall
+be admitted for one Engineering API connector.
 :::
 
 :::{ifreq} Expose Engineering API upstream connection and sync status  

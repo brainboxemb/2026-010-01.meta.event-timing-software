@@ -73,7 +73,6 @@ GET  /api/v1/node/{id}/logbook?last=...
 
 POST /api/v1/dev/node/{id}/auto-reg
 POST /api/v1/dev/node/{id}/simulation/registration
-POST /api/v1/dev/upstream/message
 POST /api/v1/node/{id}/configuration/tag-processing
 
 WS   /api/v1/events
@@ -627,54 +626,33 @@ already-composed bounded observation queue.
 
 ## IF03-OP-014 — Engineering upstream UpstreamData ingress
 
-HTTP mapping:
+WebSocket mapping:
 
 ```text
-POST /api/v1/dev/upstream/message
+WS /api/v1/events?role=upstream
 ```
 
-The request body is exactly one public/default IF-06 UpstreamData JSON object.
-There is no opaque RabbitMQ/private frame wrapper around it.
+After the initial `STATUS_SNAPSHOT` has been delivered and the Engineering API
+connector is operational, each **client-to-server text frame** on this connection is
+exactly one public/default IF-06 UpstreamData JSON object. There is no opaque
+RabbitMQ/private frame wrapper and no separate HTTP request for upstream ingress.
 
-The development-v1 Engineering API upstream connector accepts Central System
-messages needed for deterministic ST-2, including `RACE_DATA`,
-`SYNC(stream=RACE_DATA,...)`, `REQ(stream=TIMING_DATA,...)` and `PING`.
-A message family or direction not supported by IF-06 is rejected explicitly.
+The development-v1 connector accepts Central System messages needed for deterministic
+ST-2, including RACE_DATA, `SYNC(stream=RACE_DATA,...)`,
+`REQ(stream=TIMING_DATA,...)` and PING. A message family or direction not supported by
+IF-06 is rejected explicitly.
 
-Examples of successful response bodies are:
+There is no separate IF-03 success/result frame for valid semantic input. The
+corresponding IF-06 behaviour is observable on the same connection: RACE_DATA produces
+ACK or REQ as appropriate, PING REQ produces PING ANS, and TIMING_DATA replay produces
+TIMING_DATA messages. Connector/synchronization status remains available through the
+normal status model.
 
-```json
-{"result":"ACCEPTED"}
-```
-
-for accepted control input, and:
-
-```json
-{"result":"APPLIED","seq":123}
-```
-
-after ordered RACE_DATA sequence 123 has been applied. An already-applied RaceData
-sequence may return `DUPLICATE`; it is not applied a second time. A detected sequence
-gap returns `GAP` and causes SI-01 to emit a RACE_DATA REQ from the first missing
-sequence on the upstream event connection.
-
-HTTP mapping:
-
-| Situation | HTTP | Result/error |
-| --- | ---: | --- |
-| semantic control input accepted | 200 | `ACCEPTED` |
-| next RACE_DATA sequence applied | 200 | `APPLIED` + applied `seq` |
-| already-applied RACE_DATA sequence | 200 | `DUPLICATE` |
-| RACE_DATA sequence gap | 409 | `GAP` + expected sequence |
-| malformed/unsupported message or direction | 400 | stable error code |
-| unknown TimingNode | 404 | `UNKNOWN_NODE` |
-| semantic conflict/invalid RaceData change | 409 | `CONFLICT` |
-| no active upstream-role peer | 409 | `UPSTREAM_NOT_CONNECTED` |
-| bounded application admission unavailable | 503 | `BUSY` / `UNAVAILABLE` |
-
-The HTTP result confirms processing of the inbound operation only. IF-06 control
-messages generated while processing it, such as RACE_DATA ACK/REQ or a PING answer,
-are emitted as outbound UpstreamData on the designated upstream event peer.
+Malformed JSON, an invalid/unsupported UpstreamData frame or an unknown NodeId is a
+policy violation for the designated engineering peer and may close that WebSocket with
+code 1008. If bounded connector admission is unavailable, SI-01 may close the peer with
+code 1013 so the simulator reconnects and resynchronizes. Normal event clients without
+`role=upstream` are not accepted as UpstreamData senders.
 
 ## IF03-OP-003 — Live events
 
@@ -685,11 +663,13 @@ WebSocket paths/roles:
 /api/v1/events?role=upstream
 ```
 
-Both forms use the same configured WebSocket listener/port and the same physical
-SI-02 event connection. The optional `role=upstream` marks that event client as the single active
-Central System Simulator peer for the configured Engineering API upstream connector.
-A second simultaneous upstream-role connection is rejected/closed with policy
-violation code 1008. Normal event clients without the role are unaffected.
+Both forms use the same configured WebSocket listener/port. The optional
+`role=upstream` marks that connection as the single active Central System Simulator
+peer for the configured Engineering API upstream connector. Unlike a normal event-only
+client, this connection is full-duplex: server-to-client delivery contains normal live
+events plus `UPSTREAM_DATA`, while client-to-server text frames implement
+IF03-OP-014. A second simultaneous upstream-role connection is rejected/closed with
+policy violation code 1008. Normal event clients without the role are unaffected.
 
 The current realization may use a dedicated configured WebSocket listener/port
 relative to HTTP, but D04 does not add another listener for upstream traffic.
@@ -719,10 +699,12 @@ shape from `GET /api/v1/status`.
 
 For `TIMING_DATA_COMMITTED`, `payload` is one committed public IF-05 TimingData record.
 
-For `UPSTREAM_DATA`, `payload` is exactly one public/default IF-06
-UpstreamData JSON object emitted by the Engineering API upstream connector. This
+For server-to-client `UPSTREAM_DATA`, `payload` is exactly one public/default
+IF-06 UpstreamData JSON object emitted by the Engineering API upstream connector. This
 event is sent only to the designated `role=upstream` connection; other live-event
-clients do not receive upstream semantic traffic.
+clients do not receive upstream semantic traffic. Client-to-server upstream frames are
+the raw UpstreamData JSON object itself as defined under IF03-OP-014; they are not
+wrapped as live events.
 
 For `CONFIGURATION_CHANGED`, `payload` identifies the changed runtime
 configuration branch and contains its resulting current view:
@@ -867,8 +849,8 @@ development-v1 design yet.
 | IF03-OP-011 / IF03-REQ-022 | `POST /api/v1/node/{id}/registration/revoke` |
 | IF03-OP-012 / IF03-REQ-023 | `POST /api/v1/node/{id}/registration/manual` |
 | IF03-OP-013 / IF03-REQ-024 | `POST /api/v1/dev/node/{id}/simulation/registration` |
-| IF03-OP-014 / IF03-REQ-025 | `POST /api/v1/dev/upstream/message` with structured UpstreamData |
-| IF03-OP-003 / IF03-REQ-026/027 | `/api/v1/events?role=upstream` + `UPSTREAM_DATA` + normal status events |
+| IF03-OP-014 / IF03-REQ-025 | client-to-server UpstreamData text frames on `/api/v1/events?role=upstream` |
+| IF03-OP-003 / IF03-REQ-026/027 | full-duplex `/api/v1/events?role=upstream` + server `UPSTREAM_DATA` + normal status events |
 | IF03-OP-003 / IF03-REQ-020 | `CONFIGURATION_CHANGED` on WebSocket `/api/v1/events` |
 
 ## Open design points

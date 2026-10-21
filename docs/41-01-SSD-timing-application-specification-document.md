@@ -768,13 +768,13 @@ application/domain paths.
 :specifies: UC-017  
 :depends_on: SI01-REQ-064  
 
-Upstream transport shall be selectable through external
-configuration/composition. An Engineering API upstream connector shall use the supported
-IF-03 HTTP/WebSocket boundary for loop/integration testing of UpstreamData without
-requiring RabbitMQ. It shall reuse the existing IF-03 HTTP listener and the existing
-SI-02 live-event WebSocket connection; no second SI-01 listener port or second SI-02
-WebSocket lifecycle is required. The connector shall enter the same semantic
-UpstreamData routing boundary as other upstream connectors.
+Upstream transport shall be selectable through external configuration/composition.
+An Engineering API upstream connector shall use the supported IF-03 upstream-role
+WebSocket as a bidirectional loop/integration transport for UpstreamData without
+requiring RabbitMQ. It shall reuse the existing IF-03 WebSocket listener and the same
+SI-02 connection lifecycle; no second SI-01 listener, separate HTTP upstream-ingress
+resource or second SI-02 WebSocket is required. The connector shall enter the same
+UpstreamGateway/UpstreamStream semantic routing boundary as other upstream connectors.
 :::
 
 :::{req} Verify production-shaped RabbitMQ connector behaviour  
