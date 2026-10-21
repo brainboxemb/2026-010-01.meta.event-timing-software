@@ -145,20 +145,24 @@ Mutable responsibilities are split over two bounded serial lanes; contained data
 objects remain passive:
 
 ```text
-TimingNode
-  +-- LogBookProcessor / Data Lane
-  |     +-- lifecycle/location
-  |     +-- TimingData sequence + durable commit
-  |     +-- LogBook
-  |     +-- TimingDataPersistence
+TimingSystem
+  +-- Upstream
+  |     +-- NodeUpstream (1 per TimingNode)
+  |           +-- own logical protocol task runner
   |
-  +-- NodeTaskProcessor / Task Lane
-        +-- RaceDataState
-        |     +-- TeamAssignments
-        |     +-- StageStartTimes
-        +-- UniqueTeamRegistrations
-        +-- StageTiming
-        +-- UpstreamHandler / protocol state
+  +-- TimingNode
+        +-- LogBookProcessor / Data Lane
+        |     +-- lifecycle/location
+        |     +-- TimingData sequence + durable commit
+        |     +-- LogBook
+        |     +-- TimingDataPersistence
+        |
+        +-- NodeTaskProcessor / Task Lane
+              +-- RaceDataState
+              |     +-- TeamAssignments
+              |     +-- StageStartTimes
+              +-- UniqueTeamRegistrations
+              +-- StageTiming
 ```
 
 The Active Object pattern is implemented by composition; neither processor
@@ -187,7 +191,9 @@ admission. LogBook mutation remains on the Data Lane. RaceData and derived timin
 mutations occur only on the Task Lane. TimingData sequence allocation therefore
 needs no producer lock because only the Data Lane performs the commit step.
 Cross-lane information is immutable and bounded: initial-load/commit facts flow
-Data -> Task; LogBook replay requests/results flow Task -> Data.
+Data -> node Task work; NodeUpstream LogBook replay requests/results cross the
+explicit LogBook access boundary asynchronously. NodeUpstream does not become part of
+the TimingNode Task Lane merely because it invokes node services.
 
 ### TimingData commit and sequence
 

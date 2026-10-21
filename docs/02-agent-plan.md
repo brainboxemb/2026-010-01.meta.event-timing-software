@@ -285,15 +285,15 @@ The first Step-7 sequence remains contract-first:
 2. define RaceData, StageStartTimes, TeamID interpretation and StageTiming ownership;
 3. define acknowledgement/retry/idempotency/pending-sync semantics;
 4. align the backoffice transport SDD below those authorities;
-5. implement **EngineeringApiBackofficeConnector + SI-02 Backend pane**, using IF-03 HTTP inbound and typed WebSocket outbound/status events to verify ST-2 through the normal semantic backoffice path;
+5. implement **EngineeringApiConnector + SI-02 Central System Simulator pane**, using the existing IF-03 `role=upstream` WebSocket bidirectionally to verify ST-2 through the normal semantic upstream path;
 6. keep the same SI-02 Backend Simulator but switch it to a RabbitMQ backend-peer transport; qualify ST-3 end-to-end as SI-02 ↔ hosted RabbitMQ ↔ SI-01.
 
 `43-01-SDD-03-backoffice-transport-design.md` is design input, not the authority for
-missing system-interface semantics. The EngineeringApiBackofficeConnector is a normal SI-01 backoffice connector whose
-engineering transport reuses IF-03. SI-02 supplies controls/visualisation; inbound semantic
-messages use HTTP/JSON and outbound/status information uses typed WebSocket events carrying
-structured public/reference UpstreamData. The same normal router and
-application/domain path is shared after the connector boundary. For ST-3, SI-01 uses the
+missing system-interface semantics. The EngineeringApiConnector is a normal SI-01 upstream connector whose engineering
+transport reuses IF-03. SI-02 supplies controls/visualisation; the designated
+`role=upstream` WebSocket carries structured public/reference UpstreamData in both
+directions. UpstreamGateway maps that connector to the normal node-scoped
+UpstreamStream/NodeUpstream path. For ST-3, SI-01 uses the
 RabbitMQ backoffice connector and SI-02 uses a complementary RabbitMQ backend-peer
 transport behind the same Backend Simulator UI/model. Both connect to the same hosted
 broker. External hosted-broker credentials stay outside source control and hosted service
