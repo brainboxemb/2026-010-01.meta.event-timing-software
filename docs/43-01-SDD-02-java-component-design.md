@@ -347,7 +347,8 @@ io/
       NetworkDeviceService.java    bidirectional network-device boundary
 
   messaging/
-    UpstreamGateway.java            when upstream messaging is implemented
+    UpstreamMessage.java            minimal NodeId + semantic payload routing envelope
+    UpstreamGateway.java            routes UpstreamMessage only; no protocol subtype knowledge
     Connector.java                 only if multiple transports justify a shared contract
     engineering/
       EngineeringApiConnector.java       IF-03 engineering transport when implemented
@@ -471,8 +472,9 @@ NodeUpstream A
 
 The ownership rule is responsibility-based:
 
-- `UpstreamGateway` routes semantic UpstreamData between connectors and node-scoped
-  streams; it does not implement RaceData/TimingData protocol rules.
+- `UpstreamGateway` routes only the small `UpstreamMessage` envelope by NodeId.
+  It does not inspect UpstreamData families/subtypes and does not implement
+  RaceData/TimingData protocol rules.
 - `Connector` is a real abstraction because Engineering API and RabbitMQ have
   different transport/session mechanics behind the same semantic boundary.
 - `NodeUpstream` owns node-scoped protocol ordering. Only one inbound semantic message
@@ -483,8 +485,10 @@ The ownership rule is responsibility-based:
   LogBookAccessor.
 - `Heartbeat` owns node-scoped PING request/answer state; connector/session lifecycle
   owns only heartbeat cadence.
-- `UpstreamStream` is bidirectional and transport-neutral. It does not expose RabbitMQ
-  queue/exchange topology or WebSocket mechanics to Domain.
+- `UpstreamStream` is bidirectional and transport-neutral. It is the adaptation
+  boundary between NodeUpstream's semantic UpstreamData and the I/O-layer
+  `UpstreamMessage` routing envelope. It does not expose RabbitMQ queue/exchange
+  topology or WebSocket mechanics to Domain.
 
 These project types exist to realize the SSD execution model; they are not justification
 for reimplementing JDK executor internals.
@@ -999,10 +1003,13 @@ semantics and routing boundaries.
 one `Upstream` component with one `NodeUpstream` per TimingNode.
 
 `UpstreamData` carries semantic RaceData, TimingData, SYNC, ACK, REQ and PING
-messages. I/O `UpstreamGateway` routes by NodeId between configured connectors and one
-bidirectional `UpstreamStream` per node. A connector may be a full-duplex Engineering
-WebSocket or a RabbitMQ transport with asymmetric consumer/publisher resources; that
-difference is hidden below UpstreamStream.
+messages. The I/O layer wraps one semantic UpstreamData value in a minimal
+`UpstreamMessage` containing the routing NodeId plus the opaque semantic payload.
+`UpstreamGateway` routes that envelope between configured connectors and one
+bidirectional `UpstreamStream` per node. It never branches on UpstreamData family or
+subtype. A connector may be a full-duplex Engineering WebSocket or a RabbitMQ
+transport with asymmetric consumer/publisher resources; that difference is hidden
+below UpstreamStream.
 
 NodeUpstream preserves semantic message order and delegates node-state mutation through
 NodeService. TimingData replay uses LogBookAccessor asynchronously and never exposes
