@@ -224,7 +224,7 @@ nodes:
   notation: packaging-component
   layout: {x: 365, y: 722, w: 225, h: 95}
 
-# Live race/reference data remains node-owned and sits below the derived timing views.
+# Live race/reference data remains node-owned and sits below the Registration block.
 - id: node-racedata
   object_id: TimingNodeRaceData
   group: timing-node-aggregate
@@ -238,21 +238,19 @@ nodes:
   notation: packaging-component
   layout: {x: 620, y: 838, w: 255, h: 70}
 
-# Derived timing/read-side information is kept distinct from committed TimingData.
-- id: node-timing
-  object_id: TimingNodeTiming
+# Active-WP registration projections derived from committed TimingData.
+- id: node-registration
+  object_id: TimingNodeRegistration
   group: timing-node-aggregate
-  label: "Timing Views"
+  label: "Registration"
   items:
-    - label: UniqueTeamRegistrations
-      object_id: UniqueTeamRegistrations
-    - label: StagePassageList
-      object_id: StagePassageList
-    - label: StageRanking
-      object_id: StageRanking
+    - label: ActiveRegistrations
+      object_id: ActiveRegistrations
+    - label: RegisteredTeams
+      object_id: RegisteredTeams
   kind: service
   notation: packaging-component
-  layout: {x: 620, y: 717, w: 255, h: 111}
+  layout: {x: 620, y: 717, w: 255, h: 95}
 
 # Node-owned committed history is a functional Data subcomponent; persistence
 # is its domain boundary, not a separate execution lane.
