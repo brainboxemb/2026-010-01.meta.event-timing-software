@@ -1441,6 +1441,21 @@ service boundary. Protocol ordering prevents a later inbound message from overta
 earlier message that is still awaiting node or LogBook work.
 :::
 
+:::{arch} NodeUpstream
+:id: NodeUpstream
+
+One `NodeUpstream` belongs to one TimingNode within the TimingSystem-owned
+`Upstream` component. It owns that node's semantic upstream protocol ordering:
+RaceData synchronization and ACK/REQ state, TimingData source-head/replay
+coordination, and heartbeat request/answer state.
+
+NodeUpstream exchanges semantic UpstreamData only through its bidirectional
+node-scoped `UpstreamStream`. It does not know whether the active connector uses
+WebSocket, RabbitMQ or another transport. When an inbound protocol operation must
+change node-owned state, NodeUpstream calls the normal NodeService boundary; retained
+TimingData replay uses the node LogBook access boundary.
+:::
+
 :::{arch} NextUpTeams
 :id: NextUpTeams
 
@@ -1451,7 +1466,7 @@ state-change path, and keeps the required ready-team change history traceable
 separately from participant TimingData. SI01-REQ-061 consumes this current state for
 passive-display refresh/recovery. It remains separate from `TimingNodeData`
 because it is not received RACE_DATA, and separate from `TimingNodeRegistration`
-because it is not elapsed-time/ranking calculation.
+because it is not part of the active-WP registration projections.
 :::
 
 :::{arch} TimingNode Processing
