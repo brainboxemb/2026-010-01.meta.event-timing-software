@@ -1105,9 +1105,9 @@ Domain
               |     +-- TeamAssignments
               |     +-- StageStartTimes
               +-- timing
-              |     +-- UniqueTeamRegistrations
-              |     +-- StagePassageList
-              |     +-- StageRanking
+              |     +-- ActiveRegistrations
+              |     +-- RegisteredTeams
+              |     +-- RegisteredTeams
         |     +-- Data
         |           +-- LogBook
         |           |     +-- 0..N TimingData
@@ -1131,7 +1131,7 @@ Shared Domain contracts:
 The source for this view is `docs/_diagrams/layered-architecture.yaml`.
 
 Figure SI01-01 is the **logical view** of the 4+1 architecture:
-its contained blocks name functional responsibilities (Processing, Timing Views,
+its contained blocks name functional responsibilities (Processing, Registration,
 RaceData, Data with LogBook, Upstream and NextUpTeams), not execution lanes.
 The Data Lane, Task Lane, scheduled ingress and physical workers belong to the
 **process view**, with implementation detail in SDD-02.
@@ -1350,9 +1350,9 @@ TimingSystem (1..N per Application)
       TeamAssignments
       StageStartTimes
     timing views
-      UniqueTeamRegistrations
-      StagePassageList
-      StageRanking
+      ActiveRegistrations
+      RegisteredTeams
+      RegisteredTeams
     LogBook
       0..N TimingData
     uses / produces TimingData
@@ -1398,7 +1398,7 @@ backed by the **same Runtime-owned physical ExecutorService**:
   LogBook contents. TimingData commands and ORDERED LogBook/history reads execute
   here. Current TimingNode OPEN/CLOSED + LocationId state remains TimingNode-owned.
 - **Task Lane:** the single writer of live RaceData and task-derived timing state:
-  TeamAssignments, StageStartTimes and UniqueTeamRegistrations. It owns
+  TeamAssignments, StageStartTimes and ActiveRegistrations. It owns
   task-derived timing views such as StageTiming. System-owned `NodeUpstream`
   coordinates upstream protocol work and calls the node service boundary when
   node state must be changed.
@@ -1416,7 +1416,7 @@ and LogBook visibility remain one ordered Data Lane transaction, with
 recovery/failure semantics that prevent a later commit from overtaking a failed
 one. After recovery and after each successful commit, the Data Lane publishes an
 immutable TimingData fact/snapshot for Task Lane-derived state. The Task Lane
-updates UniqueTeamRegistrations and its timing views from those facts; it never
+updates ActiveRegistrations and its timing views from those facts; it never
 receives the mutable LogBook.
 
 :::{arch} TimingSystem Upstream
@@ -1446,7 +1446,7 @@ controlled add/remove changes from keypad or operator input through the TimingNo
 state-change path, and keeps the required ready-team change history traceable
 separately from participant TimingData. SI01-REQ-061 consumes this current state for
 passive-display refresh/recovery. It remains separate from `TimingNodeData`
-because it is not received RACE_DATA, and separate from `TimingNodeTiming`
+because it is not received RACE_DATA, and separate from `TimingNodeRegistration`
 because it is not elapsed-time/ranking calculation.
 :::
 
@@ -1476,15 +1476,10 @@ separate Data Lane or worker. `TimingDataPersistence` and
 `DefaultTimingDataPersistence` are detailed in SDD-02.
 :::
 
-:::{arch} TimingNode Timing Views
-:id: TimingNodeTiming
+:::{arch} TimingNode Registration
+:id: TimingNodeRegistration
 
-`TimingNodeTiming` groups derived timing/read-side information and is shown as **Timing Views** in Figure SI01-01. `UniqueTeamRegistrations`
-tracks the active registration identities used by timing views. `StagePassageList`
-maintains the current digital passage/standing state per team from active registration
-history and current race data. `StageRanking` derives the ordered ranking from that
-standing. These capabilities are derived from committed TimingData plus current node
-data and do not become independent writers or workers.
+`TimingNodeRegistration` groups the active-WP registration projections shown as **Registration** in Figure SI01-01. `ActiveRegistrations` retains the chronological ADD/REV projection reconstructed from committed TimingData for the currently open WP. `RegisteredTeams` derives the current unique-team set from valid registrations plus current RaceData assignments. The LogBook remains the historical authority; these projections are rebuilt on OPEN and cleared on CLOSE.
 :::
 
 :::{arch} TagProcessor  
@@ -1507,7 +1502,7 @@ current `TeamId -> TimingTimestamp` values produced by ordered RACE_DATA SET/DEL
 changes. A stage-start timestamp may contain time-of-day only, local date/time, or
 an already absolute time. The state object owns data only; it never invents a
 missing date or time zone. The TimingNode execution boundary owns mutation/order
-and StagePassageList owns passage/elapsed-time interpretation.
+and RegisteredTeams owns passage/elapsed-time interpretation.
 :::
 
 :::{arch} TeamAssignments
@@ -1520,10 +1515,10 @@ mutations occur on the owning TimingNode execution boundary and never rewrite
 EventData or committed TimingData.
 :::
 
-:::{arch} UniqueTeamRegistrations
-:id: UniqueTeamRegistrations
+:::{arch} ActiveRegistrations
+:id: ActiveRegistrations
 
-`UniqueTeamRegistrations` is compact derived TimingNode-local timing state used to
+`ActiveRegistrations` is compact derived TimingNode-local timing state used to
 calculate the current number of unique teams with active registrations. It is updated
 from committed registration ADD/REV lifecycle and stores registration identity rather
 than received race data or resolved TeamId values. TeamId resolution happens at read
@@ -1544,26 +1539,26 @@ EventData and TimingData provider families to each other. Live race state remain
 separate TimingNode-local state populated by ordered RACE_DATA messages.
 :::
 
-:::{arch} StagePassageList
-:id: StagePassageList
+:::{arch} RegisteredTeams
+:id: RegisteredTeams
 
-`StagePassageList` is the TimingNode read-side state for the current digital passage
+`RegisteredTeams` is the TimingNode read-side state for the current digital passage
 standing per team. It interprets active committed registration history together with
 current TeamId resolution and StageStartTimes. The standing retains the information
 needed to determine the currently relevant passage values when a team has multiple
 registrations and when a previously active registration is later revoked. It is not
 another writer and never rewrites TimingData or received race state.
 
-For a time-only start definition, StagePassageList uses the configured event/race time
+For a time-only start definition, RegisteredTeams uses the configured event/race time
 zone and the established rollover rule: resolve the most recent valid occurrence not
 after the registration. When an explicit start date is present, that date is
 authoritative.
 :::
 
-:::{arch} StageRanking
-:id: StageRanking
+:::{arch} RegisteredTeams
+:id: RegisteredTeams
 
-`StageRanking` derives the ordered stage ranking from `StagePassageList`. It owns
+`RegisteredTeams` derives the ordered stage ranking from `RegisteredTeams`. It owns
 ranking/order interpretation, not registration lifecycle reconstruction. A change to
 the standing may invalidate and rebuild the ranking view without changing committed
 TimingData or received race state.
@@ -2196,9 +2191,9 @@ Application
               |     +-- TeamAssignments
               |     +-- StageStartTimes
               +-- timing
-              |     +-- UniqueTeamRegistrations
-              |     +-- StagePassageList
-              |     +-- StageRanking
+              |     +-- ActiveRegistrations
+              |     +-- RegisteredTeams
+              |     +-- RegisteredTeams
               +-- Data
                     +-- LogBook
                     |     +-- 0..N TimingData
@@ -2392,7 +2387,7 @@ Architecture rules:
   Lane; no mutable LogBook object crosses that boundary;
 - state-dependent validation is performed on the lane that owns that state,
   not from a stale pre-queue read;
-- LogBook, TeamAssignments, StageStartTimes, UniqueTeamRegistrations and
+- LogBook, TeamAssignments, StageStartTimes, ActiveRegistrations and
   EventData remain passive objects and do not each receive their own execution
   thread;
 - short read operations may capture immutable snapshots for longer calculations outside the Data Lane;
