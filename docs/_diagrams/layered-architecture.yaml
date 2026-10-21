@@ -268,22 +268,22 @@ nodes:
   notation: packaging-component
   layout: {x: 315, y: 828, w: 235, h: 79}
 
-# Expose semantic upstream responsibilities here, not the execution lanes.
-# I/O transport (UpstreamStream) remains outside this Domain component.
+# Upstream protocol ownership is TimingSystem-scoped. Each NodeUpstream remains
+# paired with exactly one TimingNode through its node-scoped UpstreamStream.
 - id: upstream-message-port
-  object_id: TimingNodeUpstreamHandler
-  group: timing-node-aggregate
+  object_id: TimingSystemUpstream
+  group: timing-system-aggregate
   label: "Upstream"
   items:
-    - label: UpstreamHandler
+    - label: "NodeUpstream (1 per TimingNode)"
+      object_id: NodeUpstream
       items:
-        - label: UpstreamHeartbeat
-        - label: UpstreamDataSync
-        - label: LogBookSync
+        - label: "RACE_DATA order / ACK / REQ"
+        - label: "TIMING_DATA sync / replay"
+        - label: "PING / heartbeat"
   kind: service
   notation: packaging-component
-  # Begins beneath the first-row RaceData block and ends with LogBook.
-  layout: {x: 815, y: 752, w: 280, h: 155}
+  layout: {x: 75, y: 737, w: 200, h: 150}
 
 - id: event-data-domain
   object_id: EventData
@@ -385,7 +385,7 @@ nodes:
     - label: "UpstreamGateway"
       object_id: UpstreamGateway
       items:
-        - label: "UpstreamStream (1 per TimingNode)"
+        - label: "UpstreamStream (1 per TimingNode, bidirectional)"
           object_id: UpstreamStream
         - label: "Connector (1..N)"
           object_id: Connector
