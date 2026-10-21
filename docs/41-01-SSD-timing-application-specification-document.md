@@ -1772,7 +1772,7 @@ rendering/domain behaviour.
 
 `Messaging` owns the external upstream transport/session package. When upstream
 messaging is configured it contains one `UpstreamGateway`; the gateway uses
-1..N connectors and exposes one node-scoped `UpstreamStream` per TimingNode.
+1..N connectors and exposes one node-scoped `UpstreamStream` per `NodeUpstream`.
 Concrete connectors own transport resources, delivery/session mechanics,
 transport-specific addressing and any demultiplexing required when one physical
 connection carries messages for multiple NodeIds.
@@ -1780,7 +1780,7 @@ connection carries messages for multiple NodeIds.
 The semantic `UpstreamData` model remains in Domain. Messaging transports and
 decodes the configured UpstreamData representation without interpreting
 `TimingData` fields or reimplementing synchronization/reference-data rules.
-Each TimingNode consumes only its own node-scoped stream; no separate application-level router is required.
+Each `NodeUpstream` consumes only its own node-scoped stream; no separate application-level router is required.
 :::
 
 ### Nested I/O component identities
@@ -1936,8 +1936,8 @@ production-shaped upstream messaging.
 :id: EngineeringApiConnector  
 
 `EngineeringApiConnector` is the development/engineering implementation of the
-Connector role. It carries the public/reference UpstreamData representation through
-the existing IF-03 engineering API/Event transport so SI-02 can exercise the normal
+Connector role. It carries the public/reference UpstreamData representation over the
+existing full-duplex IF-03 upstream-role WebSocket so SI-02 can exercise the normal
 upstream semantic path without direct access to SI-01 Domain objects.
 :::
 
@@ -2279,7 +2279,7 @@ Device Networks
 
 Messaging
     +-- UpstreamGateway
-          +-- UpstreamStream (1 per TimingNode)
+          +-- UpstreamStream (1 per NodeUpstream)
           +-- Connector (1..N)
                 +-- RabbitMqConnector
                 +-- EngineeringApiConnector
