@@ -1127,7 +1127,7 @@ LogBook
   └── LogBookState -> LogBookData
 ```
 
-`domain.node.logbook` must not import `domain.node.upstream`. A deployment that
+`domain.node.logbook` must not import `domain.system.upstream`. A deployment that
 only commits/persists LogBookData therefore does not require an upstream
 component.
 
@@ -1138,8 +1138,9 @@ mutable collaborators:
   internal and external consumers. `execute(command)` submits a command
   without a caller result; `process(command)` and `process(query)` return a
   result. Query processing may use CURRENT or ORDERED consistency without
-  changing that public result-bearing contract. `LogBookSync` processes
-  `timingDataHead()` and `timingDataRange(...)` through `LogBookQuery`;
+  changing that public result-bearing contract. `TimingDataSync` and
+  `TimingDataReplayTask` process `timingDataHead()` and `timingDataRange(...)`
+  through `LogBookQuery`;
   mutable `LogBookData` remains Data Lane-owned.
 - `RaceDataState` validates a RACE_DATA change set against copies and installs
 `TeamAssignments` and `StageStartTimes` atomically on the Task Lane. The
@@ -3062,7 +3063,7 @@ node.logBook().execute(
 // ActiveRegistrations owns ordered ADD rows and validity for the currently open WP.
 // RegisteredTeams owns the current open-WP unique-team set and live + / - changes.
 // Calculated presentation/query models are added only for an actual production consumer.
-// UpstreamDataSync invokes NodeService.applyRaceData(...) synchronously on the Task Lane.
+// RaceDataTask invokes NodeService.applyRaceData(...) and awaits its CompletableFuture before ACK.
 ```
 
 The visible `TimingNode` delegates execution mechanics to its child components.
