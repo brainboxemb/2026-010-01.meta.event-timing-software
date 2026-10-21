@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Simplify the semantic IF-06 data model: document `UpstreamData` as one node-scoped immutable base with small concrete message values, with `DefaultUpstreamData` retained only as the reference-profile factory rather than a hidden implementation hierarchy.
+
 - Clarify system-level wiring ownership: Runtime constructs components and resolves mappings, while each `TimingSystem` installs its fixed AntennaManager-to-TimingNode and UpstreamStream-to-NodeUpstream event links before activation; NodeUpstream and TimingNode no longer need composition-only EventInput ports for those links.
 
 - Make `UpstreamConnector` the abstract shared transport base: it owns the one-time gateway input binding and public `CONNECTED`/`DISCONNECTED` EventSource ports, while concrete connectors keep only transport-specific availability/session/framing/send behavior.
