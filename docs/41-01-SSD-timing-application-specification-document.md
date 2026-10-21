@@ -1522,12 +1522,14 @@ EventData or committed TimingData.
 :::{arch} ActiveRegistrations
 :id: ActiveRegistrations
 
-`ActiveRegistrations` is compact derived TimingNode-local timing state used to
-calculate the current number of unique teams with active registrations. It is updated
-from committed registration ADD/REV lifecycle and stores registration identity rather
-than received race data or resolved TeamId values. TeamId resolution happens at read
-time through EventData and TeamAssignments so later assignment changes are reflected
-without rewriting committed TimingData.
+`ActiveRegistrations` is the active-WP chronological registration projection for one
+TimingNode. OPEN activates one LocationId, clears the previous projection and rebuilds
+it from committed LogBook TimingData. Matching registration ADD records are retained in
+original sequence order; matching REV records invalidate the corresponding retained
+row without rewriting history. CLOSE deactivates and clears the projection.
+
+The LogBook remains the complete historical authority. ActiveRegistrations owns no
+persistence, RaceData assignment state or transport concerns.
 :::
 
 :::{arch} EventData
@@ -1540,32 +1542,21 @@ event-specific typed provider/profile library supplies the concrete profile.
 That provider may be discovered and loaded at Runtime through the same typed
 extension architecture used for TimingData providers, without coupling the
 EventData and TimingData provider families to each other. Live race state remains
-separate TimingNode-local state populated by ordered RACE_DATA messages.
+separate TimingNode-local state populated by ordered RaceData messages.
 :::
 
 :::{arch} RegisteredTeams
 :id: RegisteredTeams
 
-`RegisteredTeams` is the TimingNode read-side state for the current digital passage
-standing per team. It interprets active committed registration history together with
-current TeamId resolution and StageStartTimes. The standing retains the information
-needed to determine the currently relevant passage values when a team has multiple
-registrations and when a previously active registration is later revoked. It is not
-another writer and never rewrites TimingData or received race state.
+`RegisteredTeams` is the active-WP unique-team projection for one TimingNode.
+It consumes actual ADD/REV validity transitions from `ActiveRegistrations` and
+resolves them through the current RaceData RegistrationId-to-TeamId assignments.
+Repeated passages change occurrence counts without duplicating team membership.
 
-For a time-only start definition, RegisteredTeams uses the configured event/race time
-zone and the established rollover rule: resolve the most recent valid occurrence not
-after the registration. When an explicit start date is present, that date is
-authoritative.
-:::
-
-:::{arch} RegisteredTeams
-:id: RegisteredTeams
-
-`RegisteredTeams` derives the ordered stage ranking from `RegisteredTeams`. It owns
-ranking/order interpretation, not registration lifecycle reconstruction. A change to
-the standing may invalidate and rebuild the ranking view without changing committed
-TimingData or received race state.
+During LogBook reconstruction the projection is rebuilt silently. After catch-up,
+only real zero-to-nonzero and nonzero-to-zero team membership transitions are
+published. A later RaceData team-assignment change reaccounts existing active
+occurrences without rewriting committed TimingData.
 :::
 
 `LogBook` is passive state contained by one TimingNode and keeps that node's
