@@ -62,22 +62,27 @@ TimingSystem
                 Connector            Connector
 ```
 
-`NodeUpstream` owns node-scoped UpstreamData semantics, protocol ordering and the
-`UpstreamDataCodec`. One concrete `UpstreamStream` belongs to each NodeUpstream and
-is scoped by that node's NodeId.
+`NodeUpstream` owns node-scoped UpstreamData semantics, protocol ordering,
+`UpstreamDataCodec` ownership and heartbeat cadence/state. One concrete
+`UpstreamStream` is composed for each NodeUpstream.
 
-Generic Messaging carries only `UpstreamMessage(NodeId, encodedPayload)`.
-`UpstreamGateway` routes that envelope between node streams and configured connectors
-without decoding its payload. Stream state is notification-driven: `CONNECTED`,
-`DATA_AVAILABLE` and heartbeat cadence are typed local EventSources wired to
-NodeUpstream EventInputs during composition. Gateway queue admission does not depend on
-a NodeUpstream callback return value.
+Transport ingress supplies `NodeId + encodedMessage` to an explicit result-bearing
+gateway ConnectorPort. `UpstreamGateway` uses the NodeId exactly there to select the
+already composed node-scoped UpstreamStream application port. Generic Messaging has no
+separate `UpstreamMessage(NodeId, payload)` value.
+
+Once selected, UpstreamStream is the fixed application port: `read()`, `send(...)`
+and availability checks operate through its captured connector/queue binding without
+another NodeId lookup in UpstreamGateway. Stream CONNECTED and DATA_AVAILABLE events
+carry the producing UpstreamStream object itself. Connector CONNECTED/DISCONNECTED
+events likewise carry the producing connector object. Queue admission is not modeled
+as an event because it returns ACCEPTED/UNKNOWN_NODE/INPUT_FULL.
 
 Engineering-specific protocol adaptation is below `io.messaging.engineering`.
-`UpstreamApiMessage` represents the Engineering API / IF-06 message at that boundary;
-it extracts only the NodeId needed for generic routing and retains the complete encoded
-IF-06 message unchanged. `EngineerApiConnector` converts between
-`UpstreamApiMessage` and generic `UpstreamMessage`.
+`UpstreamApiMessage` extracts the IF-06 NodeId needed for inbound routing and retains
+the complete encoded IF-06 message unchanged. `EngineerApiConnector` owns only
+Engineering WebSocket session/delivery mechanics; it does not own PING/heartbeat
+protocol scheduling.
 
 The generic architecture deliberately does not model RabbitMQ's physical queue shape.
 A full-duplex WebSocket can carry both directions on one connection; RabbitMQ may use
@@ -88,13 +93,13 @@ same connector boundary and the same node-scoped streams.
 
 The reusable application-core/domain side should work with semantic source-aware messages, not transport destinations.
 
-Conceptually, Domain sees one concrete bidirectional stream per `NodeUpstream`:
+Conceptually, Domain sees one concrete bidirectional application port per
+`NodeUpstream`:
 
 ```java
 final class UpstreamStream {
-    EventSource<NodeId> CONNECTED;
-    EventSource<NodeId> DATA_AVAILABLE;
-    EventSource<NodeId> HEARTBEAT_TICK;
+    EventSource<UpstreamStream> CONNECTED;
+    EventSource<UpstreamStream> DATA_AVAILABLE;
 
     boolean isAvailable();
     boolean hasMessage();
@@ -103,18 +108,18 @@ final class UpstreamStream {
 }
 ```
 
-Generic Messaging routes a protocol-opaque envelope:
+Transport-side ingress is separate and result-bearing:
 
 ```java
-final class UpstreamMessage {
-    NodeId nodeId();
-    String payload();
+interface ConnectorPort {
+    ReceiveResult receive(NodeId nodeId, String encodedMessage);
 }
 ```
 
 NodeUpstream decodes immediately after `read()` and encodes immediately before
-`send(...)`. The stream only adds/removes NodeId routing metadata. No generic
-Messaging type imports `UpstreamData` or branches on IF-06 message families.
+`send(...)`. NodeId is used once to select the application port on inbound transport
+routing and is otherwise implicit in the composed stream. No generic Messaging type
+wraps each payload in a second NodeId-bearing message object.
 
 `UpstreamData` is the reusable/public semantic message contract defined by IF-06.
 In the default implementation, both inbound and outbound exchanges use the same
@@ -193,11 +198,11 @@ SI-02 Central System Simulator
             v
 EngineerApiConnector
             ^
-            | UpstreamApiMessage <-> UpstreamMessage
+            | UpstreamApiMessage / NodeId + encoded message
             v
       UpstreamGateway
             ^
-            | UpstreamMessage / node-scoped UpstreamStream
+            | fixed node-scoped UpstreamStream application port
             v
         NodeUpstream
 ```
@@ -213,9 +218,16 @@ independent and do not receive UPSTREAM_DATA.
 `UpstreamApiMessage` under `io.messaging.engineering`. Presentation/IF-03 owns the
 WebSocket mechanics. The Engineering boundary parses only enough IF-06 JSON to extract
 NodeId into `UpstreamApiMessage`; it does not construct semantic `UpstreamData`.
-The complete encoded IF-06 payload is passed unchanged into generic
-`UpstreamMessage`, routed by UpstreamGateway, and decoded only by the addressed
-NodeUpstream. Outbound traffic follows the same path in reverse.
+
+Inbound Engineering data calls the gateway ConnectorPort with NodeId and the complete
+encoded IF-06 payload. UpstreamGateway resolves that NodeId to one already composed
+UpstreamStream application port. From that point forward the application side no longer
+routes by NodeId. Outbound traffic uses the stream's fixed connector binding and passes
+routing context separately to the transport adapter when required.
+
+Connector connection/disconnection are typed post-fact events. Heartbeat/PING cadence
+is scheduled by NodeUpstream because it is IF-06 protocol behavior rather than
+Engineering WebSocket session behavior.
 
 The SI-02 Central System Simulator owns peer behavior. It can allocate/send RACE_DATA
 source sequences, inspect ACK/REQ/SYNC and TIMING_DATA, answer PING, issue replay
