@@ -492,6 +492,12 @@ The ownership rule is responsibility-based:
 - `NodeUpstream` owns the `UpstreamDataCodec`, semantic protocol ordering,
   validation and heartbeat cadence/state. Only one decoded inbound semantic message
   operation is active per node.
+- `UpstreamData` is one node-scoped immutable semantic base with small concrete
+  message values: `TimingDataTransfer`, `RaceData`, `Sync`, `Ack`, `Req`
+  and `Ping`. The public semantic type is the stored value itself; there is no
+  subtype-interface plus hidden implementation-object hierarchy.
+- `DefaultUpstreamData` is only the reference-profile factory/convenience layer.
+  It does not own an alternative runtime representation.
 - `UpstreamStream.CONNECTED` and `DATA_AVAILABLE` are typed local events whose
   payload is the producing stream object. NodeId is not repeated because fixed
   composition already identifies the node.
