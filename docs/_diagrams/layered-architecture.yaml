@@ -66,7 +66,7 @@ groups:
   properties_width: 220
   kind: model
   notation: component
-  layout: {x: 300, y: 606, w: 810, h: 320}
+  layout: {x: 350, y: 606, w: 560, h: 320}
 - id: io-layer
   label: "I/O (per TimingSystem)"
   kind: layer-infrastructure
@@ -209,7 +209,7 @@ nodes:
   subtitle: "teams expected next"
   kind: service
   notation: component
-  layout: {x: 565, y: 657, w: 235, h: 50}
+  layout: {x: 620, y: 657, w: 255, h: 50}
 
 - id: node-processing
   object_id: TimingNodeProcessing
@@ -222,9 +222,9 @@ nodes:
     - label: RegistrationDuplicateFilter
   kind: service
   notation: packaging-component
-  layout: {x: 315, y: 722, w: 235, h: 95}
+  layout: {x: 365, y: 722, w: 225, h: 95}
 
-# Live race/reference data sits on the first row beside NextUpTeams.
+# Live race/reference data remains node-owned and sits below the derived timing views.
 - id: node-racedata
   object_id: TimingNodeRaceData
   group: timing-node-aggregate
@@ -236,13 +236,13 @@ nodes:
       object_id: StageStartTimes
   kind: service
   notation: packaging-component
-  layout: {x: 815, y: 657, w: 280, h: 80}
+  layout: {x: 620, y: 838, w: 255, h: 70}
 
-# Timing is placed immediately left of Upstream on the second row.
+# Derived timing/read-side information is kept distinct from committed TimingData.
 - id: node-timing
   object_id: TimingNodeTiming
   group: timing-node-aggregate
-  label: "Timing"
+  label: "Timing Views"
   items:
     - label: UniqueTeamRegistrations
       object_id: UniqueTeamRegistrations
@@ -252,7 +252,7 @@ nodes:
       object_id: StageRanking
   kind: service
   notation: packaging-component
-  layout: {x: 565, y: 722, w: 235, h: 120}
+  layout: {x: 620, y: 717, w: 255, h: 111}
 
 # Node-owned committed history is a functional Data subcomponent; persistence
 # is its domain boundary, not a separate execution lane.
@@ -266,7 +266,7 @@ nodes:
     - label: "Persistence"
   kind: service
   notation: packaging-component
-  layout: {x: 315, y: 828, w: 235, h: 79}
+  layout: {x: 365, y: 827, w: 225, h: 79}
 
 # Upstream protocol ownership is TimingSystem-scoped. Each NodeUpstream remains
 # paired with exactly one TimingNode through its node-scoped UpstreamStream.
@@ -278,12 +278,12 @@ nodes:
     - label: "NodeUpstream (1 per TimingNode)"
       object_id: NodeUpstream
       items:
-        - label: "RACE_DATA order / ACK / REQ"
-        - label: "TIMING_DATA sync / replay"
-        - label: "PING / heartbeat"
+        - label: "RaceData synchronization"
+        - label: "TimingData replay / synchronization"
+        - label: "Heartbeat"
   kind: service
   notation: packaging-component
-  layout: {x: 75, y: 737, w: 200, h: 150}
+  layout: {x: 75, y: 737, w: 220, h: 150}
 
 - id: event-data-domain
   object_id: EventData
@@ -595,4 +595,10 @@ edges:
   to: timing-node-aggregate
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.50}
+
+- from: upstream-message-port
+  to: timing-node-aggregate
+  from_anchor: {side: right, position: 0.50}
+  to_anchor: {side: left, position: 0.50}
+
 
