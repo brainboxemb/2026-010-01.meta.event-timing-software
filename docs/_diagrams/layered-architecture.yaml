@@ -195,7 +195,7 @@ nodes:
   subtitle: "system coordinator"
   kind: service
   notation: component
-  layout: {x: 75, y: 667, w: 200, h: 50}
+  layout: {x: 75, y: 667, w: 220, h: 50}
 
 # SI01-01 is the logical (4+1) component/responsibility view, not a
 # threading/execution model. TimingNode Data/Task lanes, TagProcessor scheduling
@@ -394,7 +394,7 @@ nodes:
               object_id: EngineeringApiConnector
   kind: integration
   notation: packaging-component
-  layout: {x: 535, y: 1090, w: 260, h: 150}
+  layout: {x: 535, y: 1090, w: 300, h: 150}
 
 - id: platform-execution
   object_id: PlatformExecution
@@ -596,7 +596,8 @@ edges:
 
 - from: upstream-message-port
   to: timing-node-aggregate
+  # Both anchors resolve to y=767, keeping this relation exactly horizontal.
   from_anchor: {side: right, position: 0.20}
-  to_anchor: {side: left, position: 0.50}
+  to_anchor: {side: left, position: 0.503125}
 
 
