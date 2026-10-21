@@ -268,8 +268,17 @@ runtime/
 
 domain/
   system/
-    TimingSystem.java                   TimingSystem component; contains TimingNodes and uses system I/O
+    TimingSystem.java                   TimingSystem component; contains TimingNodes, Upstream and uses system I/O
     TimingSystemConductor.java          TimingSystem coordination and TimingNode lifecycle
+    upstream/
+      Upstream.java                     system-scoped upstream lifecycle / NodeUpstream ownership
+      node/
+        NodeUpstream.java               one node's semantic upstream protocol coordinator
+        RaceDataSync.java               RACE_DATA sequence / ACK / REQ / SYNC state
+        RaceDataTask.java               apply one RACE_DATA message through NodeService
+        TimingDataSync.java             TIMING_DATA source-head / replay state
+        TimingDataReplayTask.java       one ordered LogBook replay request
+        Heartbeat.java                  node-scoped PING protocol state
   node/
     TimingNode.java                     top-level facade / composition / lifecycle
     logbook/
@@ -286,11 +295,6 @@ domain/
       NodeService.java                  Task Lane coordination + LogBook-status MainTask
       DataTask.java                     bounded TimingData catch-up from LogBook
       NodeServiceQuery.java             ordered result-bearing service reads
-    upstream/
-      UpstreamHandler.java              node-scoped semantic upstream dispatch / bounded lane turns
-      UpstreamHeartbeat.java            PING/heartbeat protocol state
-      UpstreamDataSync.java             RACE_DATA sequence/ACK/REQ/SYNC ownership
-      LogBookSync.java                  TIMING_DATA head/SYNC/REQ/batch synchronization
     racedata/
       RaceDataState.java                Task Lane-owned transactional RACE_DATA state
       TeamAssignments.java              package-private RegistrationId -> TeamId state
@@ -343,12 +347,13 @@ io/
       NetworkDeviceService.java    bidirectional network-device boundary
 
   messaging/
-    UpstreamGateway.java            when upstream messaging is implemented
-    Connector.java                 only if multiple transports justify a shared contract
+    UpstreamGateway.java                 semantic NodeId routing + connector selection
+    UpstreamStream.java                  bidirectional node-scoped semantic mailbox
+    Connector.java                       shared transport/session contract for 1..N implementations
     engineering/
-      EngineeringApiConnector.java       IF-03 engineering transport when implemented
+      EngineeringApiConnector.java       bidirectional IF-03 WebSocket engineering transport
     rabbitmq/
-      RabbitMqConnector.java             production-shaped upstream transport
+      RabbitMqConnector.java             production-shaped RabbitMQ transport
   storage/
     AppendOnlyRecordStore.java             generic opaque-record storage contract
     FileAppendOnlyRecordStore.java         LF framing • file append/recovery
@@ -383,10 +388,12 @@ types early. Lower layers expose generic contracts that do not import higher
 layers. TimingData-specific persistence semantics stay in Domain and use the
 generic `io.storage.AppendOnlyRecordStore`; the file implementation remains
 completely unaware of TimingData, TimingNode and Domain types.
-The architecture distinguishes two logical serial responsibilities **per TimingNode**:
-a **Data Lane** for ordered lifecycle/registration commits, LogBook persistence and
-ORDERED LogBook reads, and a **Task Lane** for live RaceData, derived timing state,
-heartbeat and upstream protocol state.
+The architecture distinguishes the TimingNode's ordered data/state execution from
+system-owned upstream protocol execution. Per TimingNode, the **Data Lane** owns ordered
+lifecycle/registration commits, LogBook persistence and ORDERED LogBook reads, while
+the node service task runner owns live RaceData and derived timing work. Separately,
+each NodeUpstream owns its own logical SerialTaskRunner for upstream protocol tasks.
+All of these logical queues may use the same Runtime-owned physical scheduler.
 
 The Data Lane is a typed `SerialLane<TimingNodeDataItem>`. The Task Lane is a
 `SerialTaskRunner`, which owns exactly one internal `SerialLane<TaskRun>`.
@@ -440,72 +447,53 @@ slow durable persistence can temporarily delay Task Lane work that shares the no
 executor. Physical parallelism remains measurement-driven rather than derived from
 node or CPU count.
 
-### TimingNode upstream decomposition
+### TimingSystem upstream decomposition
 
-Upstream processing is a TimingNode-owned domain concern, but it is not one
-undifferentiated component. The semantic handler delegates protocol families to
-small state owners while transport remains in the I/O layer:
+Upstream protocol ownership is a TimingSystem concern. The system owns one `Upstream`
+component and one `NodeUpstream` for each participating TimingNode. NodeUpstream uses
+the matching bidirectional `UpstreamStream` from I/O Messaging but does not own a
+transport connection.
 
 ```text
-I/O messaging
-  UpstreamStream
-      |
-      | node-scoped semantic messages / non-blocking send
-      v
-TimingNode Task Lane
-  UpstreamHandler
-    ├── UpstreamHeartbeat
-    ├── UpstreamDataSync
-    │     └── NodeService.applyRaceData(...)
-    └── LogBookSync
-              |
-              | LogBookAccessor queries during Data Lane turns
-              v
-TimingNode Data Lane
-  LogBook / LogBookData / TimingData persistence
-
-NodeService
-  ├── MainTask -> LogBook status only
-  ├── DataTask -> bounded TimingData catch-up
-  ├── RaceDataState
-  ├── ActiveRegistrations -> ordered ADD list and validity
-  ├── RegisteredTeams -> unique teams per WP and + / - events
-  ├── StageTiming -> stateless elapsed-time calculation
-  └── RegistrationRanking -> on-demand ranking of each valid passage
+TimingSystem
+  Upstream
+    NodeUpstream A  <---->  UpstreamStream A
+      SerialTaskRunner             |
+      ├── RaceDataTask             |
+      │     ├── RaceDataSync       |
+      │     └── NodeService A      |
+      ├── TimingDataReplayTask     |
+      │     ├── TimingDataSync     |
+      │     └── LogBookAccessor A  |
+      └── Heartbeat                |
+                                   v
+                           I/O UpstreamGateway
+                              -> Connector (1..N)
 ```
 
 The ownership rule is responsibility-based:
 
-- `NodeService` coordinates Task Lane data. Its MainTask handles only LogBook
-  status and its separate DataTask owns bounded TimingData catch-up.
-- `RaceDataState` resolves assignments and stage starts; `ActiveRegistrations` owns
-  ordered registrations and validity; `RegisteredTeams` owns unique team membership;
-  `StageTiming` calculates times without retaining state; and `RegistrationRanking`
-  derives per-registration positions on demand. There is no aggregate NodeServiceState.
-- `UpstreamHandler` and its protocol helpers dispatch node-scoped upstream work
-  on the Task Lane; they do not own transport workers or node state.
-- `UpstreamHeartbeat` is Task Lane-owned protocol state and does not require a
-  Data Lane round-trip for ordinary PING request/answer handling.
-- `UpstreamDataSync` owns RACE_DATA sequence/gap/ACK protocol state on the Task
-  Lane. Successful RACE_DATA is applied synchronously through
-  `NodeService.applyRaceData(...)`; TeamAssignments and StageStartTimes never
-  move to the Data Lane. ACK follows successful Task Lane state application.
-- `LogBookSync` owns TIMING_DATA replay cursor/batch coordination during
-  Data Lane upstream turns. It uses the same `LogBookAccessor` contract as
-  other LogBook consumers: CURRENT head reads use `LogBookQuery`, while
-  bounded TimingData batches use an ORDERED `timingDataRange(...)` query. It
-  never receives direct access to mutable `LogBookData`.
-- `UpstreamStream` remains an I/O/messaging boundary. `send` only hands a
-  semantic message to the local transport mailbox; Domain code does not perform
-  blocking network I/O.
+- `Upstream` owns NodeUpstream lifecycle for one TimingSystem. It does not route
+  transport frames or keep node state.
+- `NodeUpstream` owns one node's semantic protocol ordering and its own logical
+  `SerialTaskRunner`. Later inbound messages remain queued in UpstreamStream while
+  the current message task awaits NodeService or LogBook completion.
+- `RaceDataTask` handles one RACE_DATA message. `RaceDataSync` decides whether a
+  sequence is next, duplicate or a gap; accepted data is applied through
+  `NodeService.applyRaceData(...)` and ACK is sent only after its existing
+  asynchronous completion succeeds.
+- `TimingDataReplayTask` handles one TIMING_DATA REQ. `TimingDataSync` owns the
+  captured source head/replay cursor and obtains bounded committed batches through
+  `LogBookAccessor` without exposing mutable LogBook state.
+- `Heartbeat` owns node-scoped PING protocol state. Connector lifecycle owns only
+  the periodic cadence that wakes heartbeat work while that connector is operational.
+- `UpstreamStream` is one bidirectional non-blocking semantic mailbox per NodeId.
+  It deliberately hides whether a connector uses RabbitMQ queues/exchanges, one
+  WebSocket, or another future transport.
 
-No Task Lane component may synchronously wait for a Data Lane Future when both
-lanes share the same physical worker. Cross-lane completion is continuation-
-based: request work, return the Task Lane, then continue when the immutable
-result is delivered back.
-
-These project types exist to realize the SSD execution model; they are not justification
-for reimplementing JDK executor internals.
+The Runtime supplies the physical ScheduledExecutorService. NodeUpstream owns only its
+logical SerialTaskRunner; no connector or protocol helper creates a second scheduler
+merely to preserve ordering.
 
 ### Cooperative task execution
 
@@ -1008,7 +996,7 @@ mirror the hardware name.
 
 :::{design} Domain data and upstream composition
 :id: DD-DomainIntegration
-:elaborates: TimingNodeUpstreamHandler, UpstreamStream, UpstreamGateway, TimingSystem, UpstreamData
+:elaborates: Upstream, NodeUpstream, UpstreamStream, UpstreamGateway, TimingSystem, UpstreamData
 
 Detailed Domain composition for LogBook/TimingData ownership, shared UpstreamData
 semantics and routing boundaries.
@@ -1027,10 +1015,11 @@ without redefining field semantics.
 
 `UpstreamData` carries semantic RACE_DATA, TIMING_DATA, SYNC, ACK, REQ
 and PING messages. I/O connectors and UpstreamGateway own transport/session
-mechanics and NodeId routing. Messaging supplies a node-scoped non-blocking
-`UpstreamStream`; `UpstreamHandler` processes semantic messages on
-the **Task Lane**. `UpstreamHeartbeat`, `UpstreamDataSync` and `LogBookSync`
-own their corresponding protocol cursors/state there, but no extra worker.
+mechanics and NodeId routing. Messaging supplies one bidirectional node-scoped
+`UpstreamStream`. The TimingSystem-owned `NodeUpstream` processes semantic
+messages on its own logical SerialTaskRunner; `RaceDataSync`, `TimingDataSync`
+and `Heartbeat` own their corresponding protocol state without owning another
+physical worker.
 
 RACE_DATA applies TeamAssignments and StageStartTimes changes atomically on
 the **Data Lane**, then the Task Lane advances the protocol sequence and
