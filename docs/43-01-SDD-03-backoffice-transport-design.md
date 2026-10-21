@@ -45,56 +45,52 @@ Package/artifact placement follows `43-01-SDD-02-java-component-design.md`: a tr
 
 ## Architectural goal
 
-Backoffice target routing and transport are separate responsibilities:
+Node-scoped semantic protocol handling and external transport are separate responsibilities:
 
 ```text
-TimingNode.UpstreamHandler
-               ^
-               |
-      UpstreamMessageRouter
-      NodeId target resolution only
-               |
-               v
-         Messaging (I/O)
-          UpstreamGateway
-               |
-       +-------+-------+
-       |               |
-       v               v
-Engineering API   RabbitMQ
-UpstreamConnector UpstreamConnector
-       |               |
-       v               v
-     IF-03         RabbitMQ broker
+TimingSystem
+  Upstream
+    NodeUpstream A <----> UpstreamStream A
+    NodeUpstream B <----> UpstreamStream B
+                              |
+                              v
+                        UpstreamGateway
+                              |
+                    +---------+---------+
+                    |                   |
+             Engineering API         RabbitMQ
+                Connector            Connector
 ```
 
-`UpstreamMessageRouter` is application behaviour scoped only to messages
-exchanged with the external upstream system. **Upstream** identifies that
-relationship and remains bidirectional; it is not a per-message direction.
-`UpstreamGateway` and its connectors are I/O. Both transport
-implementations preserve the same semantic addressing and feed the same
-application router; neither connector owns TimingNode target resolution.
-Current v1 messages that operate on node state are addressed by `NodeId`.
-`UpstreamMessageRouter` resolves only that target and delegates the complete
-semantic message to `TimingNode.UpstreamHandler`. The node port is
-bidirectional and owns message semantics. No current IF-06 message requires a
-TimingSystem-scoped target, so no system-level upstream message port is defined.
+`NodeUpstream` owns node-scoped UpstreamData semantics and protocol ordering.
+`UpstreamStream` is the bidirectional semantic mailbox owned by one `NodeUpstream` and scoped by that node's NodeId.
+`UpstreamGateway` owns semantic routing between those node streams and configured
+connectors. A connector owns transport/session resources and the mapping required by
+its transport, but it does not reinterpret UpstreamData semantics.
+
+The generic architecture deliberately does not model RabbitMQ's physical queue shape.
+A full-duplex WebSocket can carry both directions on one connection; RabbitMQ may use
+1..N inbound consumers/queues plus controlled outbound publishing. Both realise the
+same connector boundary and the same node-scoped streams.
 
 ## Semantic upstream boundary
 
 The reusable application-core/domain side should work with semantic source-aware messages, not transport destinations.
 
-Illustrative contracts:
+Conceptually, Domain sees one bidirectional stream per `NodeUpstream`:
 
 ```java
-interface UpstreamPublisherPort {
-    void publish(UpstreamData message);
-}
-
-interface UpstreamInboundListener {
-    void onMessage(UpstreamData message);
+interface UpstreamStream {
+    boolean isAvailable();
+    boolean hasMessage();
+    UpstreamData read();
+    void send(UpstreamData message);
 }
 ```
+
+The concrete Java contract may use equivalent names, but the architectural rule is
+stable: NodeUpstream reads and sends semantic UpstreamData through its own node-scoped
+stream and does not know which connector or transport carries it.
 
 `UpstreamData` is the reusable/public semantic message contract defined by IF-06.
 In the default implementation, both inbound and outbound exchanges use the same
@@ -106,7 +102,7 @@ own payloads. Deployment-specific adapters may translate asymmetric external
 wire protocols at the connector boundary without exposing them to application
 or domain code.
 
-These semantic contracts form the boundary between application `UpstreamMessageRouter` and I/O `Messaging`. Transport/session/wire types stay with `io.messaging`; domain objects do not depend on them.
+These semantic contracts form the boundary between application `UpstreamGateway` and I/O `Messaging`. Transport/session/wire types stay with `io.messaging`; domain objects do not depend on them.
 
 The system-level IF-06 ISD defines the semantic obligations that both sides must fulfil.
 The public/default JSON representation is defined by the IF-06 IDD; a deployment may
@@ -153,22 +149,13 @@ This selection does not imply a separate Maven artifact for every transport. Ini
 ### Purpose
 
 The Engineering API connector provides a deterministic local upstream transport without
-adding another SI-01 listener port or another SI-02 connection lifecycle.
+adding another SI-01 listener port or a second Central System Simulator connection.
 
-It is composed as a normal SI-01 upstream connector, but uses the already-established
-engineering interface:
-
-- **IF-03 HTTP/JSON** `POST /api/v1/dev/upstream/message` for SI-02 to submit
-  structured inbound UpstreamData;
-- the **existing IF-03 WebSocket event connection** at
-  `/api/v1/events?role=upstream` for SI-01 outbound UpstreamData plus normal
-  status/events.
-
-There is no additional listener port and SI-02 does not open a second WebSocket
-connection for the Central System Simulator. The upstream role designates the existing
-event connection as the one active engineering Central System peer. After its normal
-STATUS_SNAPSHOT baseline is sent, that connection drives the Engineering API
-connector's operational CONNECTED state; close/overload makes it DISCONNECTED.
+It is composed as a normal SI-01 upstream connector and uses the existing IF-03
+WebSocket endpoint at `/api/v1/events?role=upstream`. That WebSocket is full-duplex:
+both SI-02-to-SI-01 and SI-01-to-SI-02 UpstreamData travel over the same connection.
+The normal STATUS_SNAPSHOT remains the first event; after that baseline the connection
+becomes the active engineering upstream session.
 
 This transport is for engineering and verification. It does not redefine IF-06 and does
 not make IF-03 the production backoffice interface.
@@ -176,86 +163,52 @@ not make IF-03 the production backoffice interface.
 ### Engineering topology
 
 ```text
-SI-02 Central System Simulator / pane
-      |                    ^
-      | IF-03 HTTP         | IF-03 WebSocket
-      v                    |
-EngineeringApiUpstreamConnector
-             |
-             v
-semantic UpstreamData boundary
-             |
-             v
-UpstreamMessageRouter / normal SI-01 path
+SI-02 Central System Simulator
+            ^
+            | bidirectional IF-03 WebSocket
+            v
+EngineeringApiConnector
+            ^
+            | semantic UpstreamData
+            v
+      UpstreamGateway
+            ^
+            | node-scoped UpstreamStream
+            v
+        NodeUpstream
 ```
 
-The HTTP request body is one structured public/default `UpstreamData` object.
-Outbound messages are wrapped only by the established IF-03 event envelope as
-`eventType = UPSTREAM_DATA`; its `payload` is the same UpstreamData object.
-Do not tunnel a pre-serialized RabbitMQ frame or proprietary production message as an
-opaque string through IF-03.
-
-The same SI-02 Central System Simulator can therefore emit ordered RACE_DATA changes,
-inspect ACK/REQ/SYNC and outbound TimingData, deliberately create sequence gaps and
-exercise replay behaviour without direct access to SI-01 Java objects.
+UpstreamData is carried as structured semantic data; do not tunnel a serialized
+RabbitMQ frame or proprietary production message as an opaque string through IF-03.
+Only one upstream-role peer is active at a time. Generic IF-03 event clients remain
+independent and do not receive UPSTREAM_DATA.
 
 ### Engineering connector lifecycle and wiring
 
-`EngineeringApiUpstreamConnector` is one normal UpstreamConnector implementation.
-Presentation/IF-03 code owns HTTP/WebSocket mechanics; the connector owns the engineering
-peer lifecycle and forwards decoded UpstreamData through the same
-`UpstreamMessageRouter` used by RabbitMQ.
+`EngineeringApiConnector` is one normal Connector implementation. Presentation/IF-03
+owns the WebSocket mechanics; the connector owns the engineering upstream session and
+hands decoded UpstreamData to UpstreamGateway. Outbound UpstreamData follows the same
+connection in the reverse direction.
 
-Conceptually:
-
-```text
-HttpEndpoint POST /dev/upstream/message
-                  |
-                  v
-EngineeringApiUpstreamConnector
-                  |
-                  v
-          UpstreamMessageRouter
-
-UpstreamMessageRouter / publisher
-                  |
-                  v
-EngineeringApiUpstreamConnector
-                  |
-                  v
-WebSocketEndpoint role=upstream
-       eventType=UPSTREAM_DATA
-```
-
-Only one upstream-role peer is active at a time. Generic IF-03 event clients remain
-independent and do not receive UPSTREAM_DATA. Existing bounded WebSocket backpressure
-policy applies; if the backoffice peer is closed for overload, semantic TimingData
-remains recoverable from LogBook + SYNC progress.
-
-The SI-02 Central System Simulator owns the peer behavior, not SI-01 test shortcuts. It shall
-be able to inspect raw structured UpstreamData, allocate/send RACE_DATA source sequences,
-track SI-01 ACK, satisfy RACE_DATA REQ, issue TIMING_DATA REQ, exchange source-head SYNC,
-auto-answer PING REQ with PING ANS preserving optional mode/pingId, send manual PING,
-and deliberately disconnect/reconnect for recovery tests.
+The SI-02 Central System Simulator owns peer behavior. It can allocate/send RACE_DATA
+source sequences, inspect ACK/REQ/SYNC and TIMING_DATA, answer PING, issue replay
+requests and deliberately disconnect/reconnect for recovery tests.
 
 ### ST-2 scenarios
 
 ST-2 scenarios include:
 
-- connect SI-02's normal event stream with `role=upstream` and observe the normal
-  status baseline followed by immediate PING/SYNC UpstreamData;
-- submit RaceData and StageStartTimes through the HTTP backoffice operation and inspect
-  their semantic APPLIED/DUPLICATE/STALE/conflict outcomes;
-- observe outbound TIMING_DATA and SYNC UpstreamData in the Central System Simulator;
-- let SI-02 answer PING REQ automatically and allow explicit manual PING in either
-  direction;
-- make SI-02 advertise backend `timingSeq` through SYNC to drive pending/replay tests;
-- disconnect/reconnect the existing IF-03 event connection and verify fresh SYNC state
-  plus replay from the backend's current contiguous sequence;
+- connect the upstream-role WebSocket and observe STATUS_SNAPSHOT followed by immediate
+  PING/SYNC UpstreamData;
+- send RACE_DATA and StageStartTimes over that same WebSocket and inspect ordered
+  apply/duplicate/gap behavior;
+- observe outbound TIMING_DATA, ACK, REQ, SYNC and PING over the same connection;
+- disconnect/reconnect and verify fresh SYNC state plus replay from the current
+  contiguous sequence;
 - repeat against configured bindings for one or multiple TimingNodes.
 
-This profile verifies upstream semantics and application routing. It deliberately does
-not prove RabbitMQ connection/channel/consumer behaviour.
+This profile verifies semantic routing and recovery without proving RabbitMQ
+connection/channel/consumer behavior.
 
 ## RabbitMQ transport
 
@@ -334,16 +287,16 @@ RabbitMQ callbacks are external I/O callbacks and must not directly mutate timin
 RabbitMQ consumer callback
       |
       v
-RabbitMqConnector / UpstreamGateway
+RabbitMqConnector
       |
       v
-transport-neutral upstream message
+UpstreamGateway resolves NodeId
       |
       v
-UpstreamMessageRouter resolves NodeId
+node-scoped UpstreamStream
       |
       v
-TimingNode.UpstreamHandler
+NodeUpstream
 ```
 
 Each consumer must have controlled channel ownership. Arbitrary domain threads must not publish directly on shared RabbitMQ channels.
@@ -384,8 +337,8 @@ For two configured sources, two inbound consumers exist even if they share one p
 
 ## PING scheduling and connector lifecycle
 
-PING scheduling belongs to the lifecycle of each configured upstream connector, not to a
-TimingNode and not to TimingData persistence.
+PING scheduling belongs to the lifecycle of each configured upstream connector/session,
+while node-scoped PING protocol state belongs to NodeUpstream and not to TimingData persistence.
 
 When a connector reports that it has reached its operational connected state, the owning
 connector/gateway lifecycle starts one periodic PING task with:
@@ -528,8 +481,11 @@ shared/upstream-data
 application/domain
     semantic routing, RaceData ordered application, ACK/REQ/SYNC state
 
-existing IF-03 presentation/application adapter
-    EngineeringApiUpstreamConnector
+io.messaging
+    UpstreamGateway
+    UpstreamStream
+    Connector
+    engineering/EngineeringApiConnector
 
 io.messaging.rabbitmq
     RabbitMqUpstreamConnector
@@ -597,9 +553,9 @@ IF-03 transport before broker-specific behaviour is introduced.
 
 ```text
 SI-02 Central System Simulator
-      | IF-03 HTTP / WebSocket
+      | bidirectional IF-03 WebSocket
       v
-EngineeringApiUpstreamConnector
+EngineeringApiConnector
       |
       v
 real SI-01 semantic upstream path

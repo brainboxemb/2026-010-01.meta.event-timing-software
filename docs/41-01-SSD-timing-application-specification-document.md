@@ -770,10 +770,10 @@ application/domain paths.
 
 Upstream transport shall be selectable through external
 configuration/composition. An Engineering API upstream connector shall use the supported
-IF-03 HTTP/WebSocket boundary for loop/integration testing of UpstreamData without
-requiring RabbitMQ. It shall reuse the existing IF-03 HTTP listener and the existing
-SI-02 live-event WebSocket connection; no second SI-01 listener port or second SI-02
-WebSocket lifecycle is required. The connector shall enter the same semantic
+IF-03 WebSocket boundary for loop/integration testing of UpstreamData without
+requiring RabbitMQ. The upstream-role WebSocket is bidirectional and carries both
+Central-System-to-SI-01 and SI-01-to-Central-System UpstreamData on one connection;
+no second SI-01 listener port or second SI-02 connection lifecycle is required. The connector shall enter the same semantic
 UpstreamData routing boundary as other upstream connectors.
 :::
 
@@ -1095,24 +1095,28 @@ Domain
         +-- TimingSystemConductor  system-local coordination / inventory
         +-- uses AntennaManager
         +-- contains 1..N TimingNode
-              +-- NodeId        functional upstream/timing-data identity
-              +-- LocationId
-              +-- lifecycle / status
-              +-- Upstream                 node-scoped protocol handling
-              +-- NextUpTeams            teams expected next
+        |     +-- NodeId        functional upstream/timing-data identity
+        |     +-- LocationId
+        |     +-- lifecycle / status
+        |     +-- NextUpTeams            teams expected next
               +-- processing
               |     +-- TagProcessor
               +-- racedata
               |     +-- TeamAssignments
               |     +-- StageStartTimes
               +-- timing
-              |     +-- UniqueTeamRegistrations
-              |     +-- StagePassageList
-              |     +-- StageRanking
-              +-- Data
-                    +-- LogBook
-                    |     +-- 0..N TimingData
-                    +-- Persistence
+              |     +-- ActiveRegistrations
+              |     +-- RegisteredTeams
+              |     +-- RegisteredTeams
+        |     +-- Data
+        |           +-- LogBook
+        |           |     +-- 0..N TimingData
+        |           +-- Persistence
+        +-- Upstream
+              +-- NodeUpstream (1 per TimingNode)
+                    +-- RaceData synchronization
+                    +-- TimingData replay / synchronization
+                    +-- Heartbeat
 
 Shared Domain contracts:
   +-- EventData
@@ -1127,8 +1131,8 @@ Shared Domain contracts:
 The source for this view is `docs/_diagrams/layered-architecture.yaml`.
 
 Figure SI01-01 is the **logical view** of the 4+1 architecture:
-its contained blocks name functional responsibilities (Processing, RaceData,
-Timing, Data with LogBook, Upstream and NextUpTeams), not execution lanes.
+its contained blocks name functional responsibilities (Processing, Registration,
+RaceData, Data with LogBook, Upstream and NextUpTeams), not execution lanes.
 The Data Lane, Task Lane, scheduled ingress and physical workers belong to the
 **process view**, with implementation detail in SDD-02.
 
@@ -1338,20 +1342,24 @@ TimingSystem (1..N per Application)
     NodeId                    functional protocol/data identity
     LocationId
     State
-    UpstreamHandler       node-scoped upstream semantics
-    NextUpTeams                teams expected next
+    NextUpTeams               teams expected next
     processing
       TagProcessor
-    data
+    registration
+      ActiveRegistrations
+      RegisteredTeams
+    racedata
       TeamAssignments
       StageStartTimes
-    timing
-      UniqueTeamRegistrations
-      StagePassageList
-      StageRanking
-    LogBook
-      0..N TimingData
-    uses / produces TimingData
+    data
+      LogBook
+        0..N TimingData
+      Persistence
+  Upstream
+    NodeUpstream (1 per TimingNode)
+      RaceData synchronization
+      TimingData replay / synchronization
+      Heartbeat
 
 Shared Domain contracts
   EventData
@@ -1364,7 +1372,7 @@ Shared Domain contracts
     configured representation / codec / compatibility
 ```
 
-`TimingSystem` is a Domain component. One Timing Point Application hosts 1..N TimingSystems; each TimingSystem contains an internal `SystemId`, one `TimingSystemConductor` and 1..N TimingNodes, and uses associated I/O components such as `AntennaManager`. `SystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. Current upstream communication remains TimingNode-oriented: Messaging exposes a node-scoped `UpstreamStream` to each TimingNode.
+`TimingSystem` is a Domain component. One Timing Point Application hosts 1..N TimingSystems; each TimingSystem contains an internal `SystemId`, one `TimingSystemConductor`, 1..N TimingNodes and one `Upstream` responsibility with one `NodeUpstream` per TimingNode. `SystemId` exists to separate local runtime/simulation instances and is not assumed to be visible to the upstream peer. Upstream communication remains node-oriented: Messaging exposes one bidirectional node-scoped `UpstreamStream` to each `NodeUpstream`.
 
 :::{arch} TimingSystem Conductor
 :id: TimingSystemConductor
@@ -1394,9 +1402,10 @@ backed by the **same Runtime-owned physical ExecutorService**:
   LogBook contents. TimingData commands and ORDERED LogBook/history reads execute
   here. Current TimingNode OPEN/CLOSED + LocationId state remains TimingNode-owned.
 - **Task Lane:** the single writer of live RaceData and task-derived timing state:
-  TeamAssignments, StageStartTimes and UniqueTeamRegistrations. It also owns
-  upstream semantic/protocol coordination, heartbeats and task-owned timing
-  views such as StageTiming.
+  TeamAssignments, StageStartTimes and ActiveRegistrations. It owns
+  task-derived timing views such as StageTiming. System-owned `NodeUpstream`
+  coordinates upstream protocol work and calls the node service boundary when
+  node state must be changed.
 
 The two lanes have independent FIFO queues, admission, metrics and lifecycle.
 Serialization is guaranteed **within** a lane, not between the two lanes.
@@ -1411,26 +1420,40 @@ and LogBook visibility remain one ordered Data Lane transaction, with
 recovery/failure semantics that prevent a later commit from overtaking a failed
 one. After recovery and after each successful commit, the Data Lane publishes an
 immutable TimingData fact/snapshot for Task Lane-derived state. The Task Lane
-updates UniqueTeamRegistrations and its timing views from those facts; it never
+updates ActiveRegistrations and its timing views from those facts; it never
 receives the mutable LogBook.
 
-:::{arch} TimingNode UpstreamHandler  
-:id: TimingNodeUpstreamHandler  
+:::{arch} TimingSystem Upstream
+:id: TimingSystemUpstream
 
-The TimingNode-level `UpstreamHandler` owns node-scoped upstream semantics,
-consuming the non-blocking node-scoped `UpstreamStream` provided by Messaging.
-Incoming semantic messages and heartbeat/synchronization coordination are
-admitted to the node's **Task Lane**. The port does not create a physical worker
-or own transport I/O.
+One `Upstream` responsibility belongs to each TimingSystem. It contains one
+`NodeUpstream` per TimingNode and owns the semantic protocol state that must remain
+node-scoped: RACE_DATA ordering/ACK/REQ, TIMING_DATA synchronization/replay and
+PING/heartbeat state.
 
-RaceData changes, TeamAssignments, StageStartTimes and their RACE_DATA
-sequence/ACK state are Task Lane-owned and are applied there before ACK. Only
-operations that actually require Data Lane-owned history, such as a committed
-LogBook range for TIMING_DATA replay, cross to the Data Lane through bounded
-asynchronous handoff and return immutable data. Neither lane waits
-synchronously for the other. Protocol ordering, bounded replay batches,
-shutdown quiescence and failure handling remain explicit responsibilities of
-the upstream coordinator.
+Each `NodeUpstream` consumes one bidirectional non-blocking `UpstreamStream`
+provided by Messaging. The stream hides transport topology: a WebSocket connector may
+use one full-duplex session, while a RabbitMQ connector may use several inbound queues
+and a separate publisher. Those transport mechanics do not change NodeUpstream.
+
+When a protocol operation changes TimingNode state, NodeUpstream calls the normal node
+service boundary. Protocol ordering prevents a later inbound message from overtaking an
+earlier message that is still awaiting node or LogBook work.
+:::
+
+:::{arch} NodeUpstream
+:id: NodeUpstream
+
+One `NodeUpstream` belongs to one TimingNode within the TimingSystem-owned
+`Upstream` component. It owns that node's semantic upstream protocol ordering:
+RaceData synchronization and ACK/REQ state, TimingData source-head/replay
+coordination, and heartbeat request/answer state.
+
+NodeUpstream exchanges semantic UpstreamData only through its bidirectional
+node-scoped `UpstreamStream`. It does not know whether the active connector uses
+WebSocket, RabbitMQ or another transport. When an inbound protocol operation must
+change node-owned state, NodeUpstream calls the normal NodeService boundary; retained
+TimingData replay uses the node LogBook access boundary.
 :::
 
 :::{arch} NextUpTeams
@@ -1442,8 +1465,8 @@ controlled add/remove changes from keypad or operator input through the TimingNo
 state-change path, and keeps the required ready-team change history traceable
 separately from participant TimingData. SI01-REQ-061 consumes this current state for
 passive-display refresh/recovery. It remains separate from `TimingNodeData`
-because it is not received RACE_DATA, and separate from `TimingNodeTiming`
-because it is not elapsed-time/ranking calculation.
+because it is not received RACE_DATA, and separate from `TimingNodeRegistration`
+because it is not part of the active-WP registration projections.
 :::
 
 :::{arch} TimingNode Processing
@@ -1472,15 +1495,10 @@ separate Data Lane or worker. `TimingDataPersistence` and
 `DefaultTimingDataPersistence` are detailed in SDD-02.
 :::
 
-:::{arch} TimingNode Timing
-:id: TimingNodeTiming
+:::{arch} TimingNode Registration
+:id: TimingNodeRegistration
 
-`TimingNodeTiming` groups derived timing information. `UniqueTeamRegistrations`
-tracks the active registration identities used by timing views. `StagePassageList`
-maintains the current digital passage/standing state per team from active registration
-history and current race data. `StageRanking` derives the ordered ranking from that
-standing. These capabilities are derived from committed TimingData plus current node
-data and do not become independent writers or workers.
+`TimingNodeRegistration` groups the active-WP registration projections shown as **Registration** in Figure SI01-01. `ActiveRegistrations` retains the chronological ADD/REV projection reconstructed from committed TimingData for the currently open WP. `RegisteredTeams` derives the current unique-team set from valid registrations plus current RaceData assignments. The LogBook remains the historical authority; these projections are rebuilt on OPEN and cleared on CLOSE.
 :::
 
 :::{arch} TagProcessor  
@@ -1503,7 +1521,7 @@ current `TeamId -> TimingTimestamp` values produced by ordered RACE_DATA SET/DEL
 changes. A stage-start timestamp may contain time-of-day only, local date/time, or
 an already absolute time. The state object owns data only; it never invents a
 missing date or time zone. The TimingNode execution boundary owns mutation/order
-and StagePassageList owns passage/elapsed-time interpretation.
+and RegisteredTeams owns passage/elapsed-time interpretation.
 :::
 
 :::{arch} TeamAssignments
@@ -1516,15 +1534,17 @@ mutations occur on the owning TimingNode execution boundary and never rewrite
 EventData or committed TimingData.
 :::
 
-:::{arch} UniqueTeamRegistrations
-:id: UniqueTeamRegistrations
+:::{arch} ActiveRegistrations
+:id: ActiveRegistrations
 
-`UniqueTeamRegistrations` is compact derived TimingNode-local timing state used to
-calculate the current number of unique teams with active registrations. It is updated
-from committed registration ADD/REV lifecycle and stores registration identity rather
-than received race data or resolved TeamId values. TeamId resolution happens at read
-time through EventData and TeamAssignments so later assignment changes are reflected
-without rewriting committed TimingData.
+`ActiveRegistrations` is the active-WP chronological registration projection for one
+TimingNode. OPEN activates one LocationId, clears the previous projection and rebuilds
+it from committed LogBook TimingData. Matching registration ADD records are retained in
+original sequence order; matching REV records invalidate the corresponding retained
+row without rewriting history. CLOSE deactivates and clears the projection.
+
+The LogBook remains the complete historical authority. ActiveRegistrations owns no
+persistence, RaceData assignment state or transport concerns.
 :::
 
 :::{arch} EventData
@@ -1537,32 +1557,21 @@ event-specific typed provider/profile library supplies the concrete profile.
 That provider may be discovered and loaded at Runtime through the same typed
 extension architecture used for TimingData providers, without coupling the
 EventData and TimingData provider families to each other. Live race state remains
-separate TimingNode-local state populated by ordered RACE_DATA messages.
+separate TimingNode-local state populated by ordered RaceData messages.
 :::
 
-:::{arch} StagePassageList
-:id: StagePassageList
+:::{arch} RegisteredTeams
+:id: RegisteredTeams
 
-`StagePassageList` is the TimingNode read-side state for the current digital passage
-standing per team. It interprets active committed registration history together with
-current TeamId resolution and StageStartTimes. The standing retains the information
-needed to determine the currently relevant passage values when a team has multiple
-registrations and when a previously active registration is later revoked. It is not
-another writer and never rewrites TimingData or received race state.
+`RegisteredTeams` is the active-WP unique-team projection for one TimingNode.
+It consumes actual ADD/REV validity transitions from `ActiveRegistrations` and
+resolves them through the current RaceData RegistrationId-to-TeamId assignments.
+Repeated passages change occurrence counts without duplicating team membership.
 
-For a time-only start definition, StagePassageList uses the configured event/race time
-zone and the established rollover rule: resolve the most recent valid occurrence not
-after the registration. When an explicit start date is present, that date is
-authoritative.
-:::
-
-:::{arch} StageRanking
-:id: StageRanking
-
-`StageRanking` derives the ordered stage ranking from `StagePassageList`. It owns
-ranking/order interpretation, not registration lifecycle reconstruction. A change to
-the standing may invalidate and rebuild the ranking view without changing committed
-TimingData or received race state.
+During LogBook reconstruction the projection is rebuilt silently. After catch-up,
+only real zero-to-nonzero and nonzero-to-zero team membership transitions are
+published. A later RaceData team-assignment change reaccounts existing active
+occurrences without rewriting committed TimingData.
 :::
 
 `LogBook` is passive state contained by one TimingNode and keeps that node's
@@ -1763,7 +1772,7 @@ rendering/domain behaviour.
 
 `Messaging` owns the external upstream transport/session package. When upstream
 messaging is configured it contains one `UpstreamGateway`; the gateway uses
-1..N connectors and exposes one node-scoped `UpstreamStream` per TimingNode.
+1..N connectors and exposes one node-scoped `UpstreamStream` per `NodeUpstream`.
 Concrete connectors own transport resources, delivery/session mechanics,
 transport-specific addressing and any demultiplexing required when one physical
 connection carries messages for multiple NodeIds.
@@ -1771,7 +1780,7 @@ connection carries messages for multiple NodeIds.
 The semantic `UpstreamData` model remains in Domain. Messaging transports and
 decodes the configured UpstreamData representation without interpreting
 `TimingData` fields or reimplementing synchronization/reference-data rules.
-Each TimingNode consumes only its own node-scoped stream; no separate application-level router is required.
+Each `NodeUpstream` consumes only its own node-scoped stream; no separate application-level router is required.
 :::
 
 ### Nested I/O component identities
@@ -1901,8 +1910,8 @@ to node-scoped `UpstreamStream` instances, but not UpstreamData semantics.
 :::{arch} UpstreamStream
 :id: UpstreamStream
 
-`UpstreamStream` is the non-blocking semantic mailbox presented by Messaging to
-one TimingNode. It reports whether communication is available, exposes queued
+`UpstreamStream` is the non-blocking bidirectional semantic mailbox presented by Messaging to
+one `NodeUpstream`. It reports whether communication is available, exposes queued
 inbound UpstreamData, and accepts outbound UpstreamData for transport. Real
 RabbitMQ/API/socket I/O never blocks the TimingNode Data Lane.
 :::
@@ -1927,8 +1936,8 @@ production-shaped upstream messaging.
 :id: EngineeringApiConnector  
 
 `EngineeringApiConnector` is the development/engineering implementation of the
-Connector role. It carries the public/reference UpstreamData representation through
-the existing IF-03 engineering API/Event transport so SI-02 can exercise the normal
+Connector role. It carries the public/reference UpstreamData representation over the
+existing full-duplex IF-03 upstream-role WebSocket so SI-02 can exercise the normal
 upstream semantic path without direct access to SI-01 Domain objects.
 :::
 
@@ -2192,9 +2201,9 @@ Application
               |     +-- TeamAssignments
               |     +-- StageStartTimes
               +-- timing
-              |     +-- UniqueTeamRegistrations
-              |     +-- StagePassageList
-              |     +-- StageRanking
+              |     +-- ActiveRegistrations
+              |     +-- RegisteredTeams
+              |     +-- RegisteredTeams
               +-- Data
                     +-- LogBook
                     |     +-- 0..N TimingData
@@ -2270,7 +2279,7 @@ Device Networks
 
 Messaging
     +-- UpstreamGateway
-          +-- UpstreamStream (1 per TimingNode)
+          +-- UpstreamStream (1 per NodeUpstream)
           +-- Connector (1..N)
                 +-- RabbitMqConnector
                 +-- EngineeringApiConnector
@@ -2289,9 +2298,9 @@ I/O/device-network responsibilities. A keypad, beeper or display may interact wi
 to a human, but it is still an external device from SI-01's architecture
 perspective.
 
-`UpstreamGateway` is the I/O upstream-messaging boundary. It exchanges encoded
-UpstreamData with its configured connectors and exposes a separate node-scoped
-`UpstreamStream` to each TimingNode. Transport connectors do not need a
+`UpstreamGateway` is the I/O upstream-messaging boundary. It routes semantic
+UpstreamData between configured connectors and one bidirectional node-scoped
+`UpstreamStream` per `NodeUpstream`. Transport connectors do not need a
 TimingSystem abstraction to address a node, and no external `SystemId` field is
 required.
 
@@ -2299,10 +2308,10 @@ Connectors do not own domain semantics. A connector-specific external name or
 routing key may participate in NodeId demultiplexing, but it does not replace the
 stable functional `NodeId`. Internal `SystemId` is local composition context
 rather than a new upstream routing identity. One gateway may use multiple
-connectors; each TimingNode consumes its own semantic stream through
-`TimingNode.UpstreamHandler`. `RabbitMqConnector` represents the production-shaped transport;
-`EngineeringApiConnector` provides the engineering transport used by SI-02 while
-preserving the same UpstreamData/gateway boundary.
+connectors. `RabbitMqConnector` represents the production-shaped transport and
+may use asymmetric broker resources internally; `EngineeringApiConnector`
+provides the engineering transport over one full-duplex WebSocket. Both preserve
+the same UpstreamData/gateway/stream boundary.
 
 `ApplicationId` remains a runtime/application identity and is not assumed to be an upstream address. System-level upstream exchanges are scoped by the configured TimingSystem/gateway context; TimingNode-specific exchanges remain addressed by `NodeId`.
 
@@ -2388,7 +2397,7 @@ Architecture rules:
   Lane; no mutable LogBook object crosses that boundary;
 - state-dependent validation is performed on the lane that owns that state,
   not from a stale pre-queue read;
-- LogBook, TeamAssignments, StageStartTimes, UniqueTeamRegistrations and
+- LogBook, TeamAssignments, StageStartTimes, ActiveRegistrations and
   EventData remain passive objects and do not each receive their own execution
   thread;
 - short read operations may capture immutable snapshots for longer calculations outside the Data Lane;
@@ -2789,14 +2798,10 @@ Upstream messaging is a semantic system boundary, not a RabbitMQ API.
 through IF-06. It may carry canonical `TimingData` and also reference-data,
 synchronization and status messages. TimingData identity/order remains owned by IF-05.
 
-`UpstreamGateway` and its 1..N connectors remain I/O responsibilities. They carry an
-encoded UpstreamData representation and own transport/session resources; they do not
-become owners of TimingData fields or UpstreamData semantics. The gateway presents
-one node-scoped `UpstreamStream` per TimingNode. The node's
-`UpstreamHandler` reads/writes that stream and coordinates semantic messages
-on the node Task Lane. RACE_DATA changes remain on that Task Lane. Only
-TIMING_DATA/LogBook operations cross to the Data Lane through bounded
-asynchronous operations and immutable replies.
+`UpstreamGateway` and its 1..N connectors remain I/O responsibilities. They carry
+UpstreamData and own transport/session resources; they do not become owners of
+TimingData fields or UpstreamData semantics. The gateway presents one bidirectional
+node-scoped `UpstreamStream` per `NodeUpstream`.
 
 ```text
 external upstream / SI-02 backend peer
@@ -2804,25 +2809,20 @@ external upstream / SI-02 backend peer
         +--> RabbitMqConnector --------+
         +--> EngineeringApiConnector --+--> UpstreamGateway
                                              |
-                                      NodeId demultiplexing
+                                      NodeId routing
                                              |
-                                      UpstreamStream
-                                   (one per TimingNode)
+                               UpstreamStream (per node)
                                              |
                                              v
-                                       TimingNode
-                                  UpstreamHandler
+                                      NodeUpstream
                                              |
-                                  UpstreamHandlerTask
-                                             |
-                                       Task Lane
-                                  RaceData / protocol
-                                       │
-                            bounded async LogBook request
-                                       │
-                                       Data Lane
-                              LogBook / persistence
+                                      NodeService
+                               /                     \
+                       RaceData state           LogBook replay
 ```
+
+NodeUpstream owns protocol ordering and does not know whether the connector uses
+a full-duplex WebSocket, multiple RabbitMQ consumer queues, or a separate publisher.
 
 Exact RabbitMQ connection/channel topology, routing keys and retry mechanics are
 connector-level decisions. Product/deployment-specific upstream-system names and

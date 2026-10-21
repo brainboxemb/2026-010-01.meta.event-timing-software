@@ -42,7 +42,21 @@ fi
 # A wedged headless browser must fail this check, not consume the entire
 # documentation job timeout. Healthy invocations normally finish in seconds.
 run_chrome() {
-  timeout --signal=TERM --kill-after=5s 30s "$chrome" "$@"
+  local user_data_dir
+  local status
+  user_data_dir="$(mktemp -d)"
+
+  # Isolate repeated headless invocations. Reusing Chrome's implicit default
+  # profile can leave a profile/process lock behind after an interaction test
+  # and make the next otherwise healthy --dump-dom invocation hang.
+  if timeout --signal=TERM --kill-after=5s 30s       "$chrome" --user-data-dir="$user_data_dir" "$@"; then
+    status=0
+  else
+    status=$?
+  fi
+
+  rm -rf "$user_data_dir"
+  return "$status"
 }
 
 run_chrome \
