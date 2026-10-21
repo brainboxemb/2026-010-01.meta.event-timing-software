@@ -1114,9 +1114,9 @@ Domain
         |           +-- Persistence
         +-- Upstream
               +-- NodeUpstream (1 per TimingNode)
-                    +-- RACE_DATA ordering / ACK / REQ
-                    +-- TIMING_DATA sync / replay
-                    +-- PING / heartbeat
+                    +-- RaceData synchronization
+                    +-- TimingData replay / synchronization
+                    +-- Heartbeat
 
 Shared Domain contracts:
   +-- EventData
@@ -1131,8 +1131,8 @@ Shared Domain contracts:
 The source for this view is `docs/_diagrams/layered-architecture.yaml`.
 
 Figure SI01-01 is the **logical view** of the 4+1 architecture:
-its contained blocks name functional responsibilities (Processing, RaceData,
-Timing, Data with LogBook, Upstream and NextUpTeams), not execution lanes.
+its contained blocks name functional responsibilities (Processing, Timing Views,
+RaceData, Data with LogBook, Upstream and NextUpTeams), not execution lanes.
 The Data Lane, Task Lane, scheduled ingress and physical workers belong to the
 **process view**, with implementation detail in SDD-02.
 
@@ -1349,7 +1349,7 @@ TimingSystem (1..N per Application)
     data
       TeamAssignments
       StageStartTimes
-    timing
+    timing views
       UniqueTeamRegistrations
       StagePassageList
       StageRanking
@@ -1476,10 +1476,10 @@ separate Data Lane or worker. `TimingDataPersistence` and
 `DefaultTimingDataPersistence` are detailed in SDD-02.
 :::
 
-:::{arch} TimingNode Timing
+:::{arch} TimingNode Timing Views
 :id: TimingNodeTiming
 
-`TimingNodeTiming` groups derived timing information. `UniqueTeamRegistrations`
+`TimingNodeTiming` groups derived timing/read-side information and is shown as **Timing Views** in Figure SI01-01. `UniqueTeamRegistrations`
 tracks the active registration identities used by timing views. `StagePassageList`
 maintains the current digital passage/standing state per team from active registration
 history and current race data. `StageRanking` derives the ordered ranking from that
