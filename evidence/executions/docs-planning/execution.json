@@ -1,0 +1,18 @@
+{
+  "schema": "brainboxemb.execution-evidence",
+  "schema_version": 1,
+  "capability": "docs.planning",
+  "owner": "brainboxemb/2026-010-01.meta.event-timing-software",
+  "action": "planning",
+  "source_revision": "1cf1575d77864623d8bf9e720de0094385278e45",
+  "owner_revision": "1cf1575d77864623d8bf9e720de0094385278e45",
+  "status": "success",
+  "exit_code": 0,
+  "log": "execution.log",
+  "domain_evidence": [],
+  "tool_eng_docs_sha": "417feac3b9f8b277a544337968087d97b8204a3d",
+  "details": {
+    "file_count": 23,
+    "roadmap_page_count": 4
+  }
+}

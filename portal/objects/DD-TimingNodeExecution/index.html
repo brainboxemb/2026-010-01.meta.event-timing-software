@@ -1,0 +1,969 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Derived engineering navigation and traceability portal">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>DD-TimingNodeExecution — TimingNode execution, LogBook and local events - Event Timing Engineering Portal</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/explorer.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#dd-timingnodeexecution-timingnode-execution-logbook-and-local-events" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Event Timing Engineering Portal" class="md-header__button md-logo" aria-label="Event Timing Engineering Portal" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Event Timing Engineering Portal
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              DD-TimingNodeExecution — TimingNode execution, LogBook and local events
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/brainboxemb/2026-010-01.meta.event-timing-software" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    brainboxemb/2026-010-01.meta.event-timing-software
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Event Timing Engineering Portal" class="md-nav__button md-logo" aria-label="Event Timing Engineering Portal" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Event Timing Engineering Portal
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/brainboxemb/2026-010-01.meta.event-timing-software" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    brainboxemb/2026-010-01.meta.event-timing-software
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Portal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../book/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Book
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explorer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering explorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../workspace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Traceability comparison
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../engineering-client-ui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering Client UI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Objects
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Objects
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering object index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Definition
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Definition">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-composition-instead-of-an-activeobject-base-class" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why composition instead of an ActiveObject base class
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#operation-results-and-execution-failures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operation results and execution failures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#seriallane-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SerialLane design
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#serialtaskrunner-and-direct-jdk-scheduling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SerialTaskRunner and direct JDK scheduling
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#this-detailed-design-elaborates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        This detailed design elaborates:
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="dd-timingnodeexecution-timingnode-execution-logbook-and-local-events">DD-TimingNodeExecution — TimingNode execution, LogBook and local events</h1>
+<p><strong>Type:</strong> Detailed Design<br />
+<strong>Comparison workspace:</strong> <a href="../../workspace/?object=DD-TimingNodeExecution">open object comparison workspace</a><br />
+<strong>Source definition:</strong> <a href="https://github.com/brainboxemb/2026-010-01.meta.event-timing-software/blob/d124a884b2244b786ab2e8e534716e32cd77fdd0/docs/43-01-SDD-02-java-component-design.md?plain=1#L2881">open authored source</a><br />
+<strong>Engineering Explorer:</strong> <a href="../../explorer/?object=DD-TimingNodeExecution">open with architecture context</a></p>
+<p>This is a <strong>derived portal page</strong>. Engineering meaning is maintained in the authored Need, not in this generated presentation.</p>
+<h2 id="definition">Definition</h2>
+<p>Detailed design for TimingNode ordered execution, durable TimingData commit,
+passive LogBookData reads and the local Event/EventSource publication boundary.</p>
+<p>The Java design uses composition rather than an <code>ActiveObject</code> inheritance
+hierarchy. One TimingNode owns two logically independent bounded serial lanes:</p>
+<pre><code class="language-text">TimingNode
+  ├── PropertyContainer
+  │     ├── functionalState -&gt; transient CLOSED / OPEN
+  │     ├── operationalState -&gt; node execution INIT / OK / ERROR
+  │     └── locationId -&gt; current LocationId or none
+  ├── Data Lane -&gt; TimingNodeDataLane -&gt; SerialLane&lt;TimingNodeDataItem&gt;
+  │                └── LogBook
+  │                     ├── LogBookDataLane -&gt; result/wait/rejection mapping
+  │                     ├── LogBookOperations -&gt; commands, persistence, recovery + commit
+  │                     └── LogBookState -&gt; recovery state + LogBookData records
+  └── Task Lane -&gt; SerialTaskRunner -&gt; SerialLane&lt;TaskRun&gt;
+                   ├── TimingNode.MainTask -&gt; startup LogBook recovery
+                   └── NodeService
+                        ├── MainTask -&gt; LogBook INIT / LOADED / ERROR
+                        ├── DataTask -&gt; current head + bounded TimingData range reads
+                        ├── NodeServiceQuery -&gt; ordered result-bearing reads
+                        ├── RaceDataState -&gt; TeamAssignments + StageStartTimes
+                        ├── ActiveRegistrations -&gt; ordered registration list
+                        ├── RegisteredTeams -&gt; unique team set / + - changes
+                        ├── StageTiming -&gt; stateless time calculation
+                        └── RegistrationRanking -&gt; per-registration ranking
+</code></pre>
+<p>The <strong>Data Lane</strong> is the sole writer for normal ordered LogBook commands and queries.
+<code>TimingNodeDataLane</code> adapts the generic <code>SerialLane&lt;TimingNodeDataItem&gt;</code> to typed
+LogBook-operation and upstream-turn items without creating another queue or thread model.
+<code>LogBookDataLane</code> owns result-bearing command/query completion and bounded wait mapping.
+<code>LogBookOperations</code> owns state-changing domain operations, TimingData creation, time
+capture, durable append, recovery reconstruction and commit metrics/logging.
+<code>LogBookState</code> contains passive mutable state and committed in-memory TimingData.</p>
+<p>Persisted TimingData loading is <strong>not</strong> a Data Lane item. After child activation starts
+normal Data Lane admission, <code>TimingNode.MainTask</code> calls
+<code>LogBook.loadPersistedData()</code> synchronously on the same physical node worker. Commands
+may queue during that load but cannot execute until the MainTask step releases the worker.
+A successful load publishes <code>LogBookStatus.LOADED</code>; load failure publishes
+<code>LogBookStatus.ERROR</code>. Status is directly readable and is not another Data Lane query.
+Each later successful commit publishes the committed TimingData record.</p>
+<p>The <strong>Task Lane</strong> is the TimingNode's <code>SerialTaskRunner</code>. <code>NodeService.MainTask</code> handles
+only LogBook availability: LOADED starts a full DataTask load and ERROR makes DataTask
+unavailable. <code>DataTask</code> owns the source cursor, bounded asynchronous LogBook reads and
+catch-up completion. It reads the current LogBook head and continues from its own
+<code>nextSequence</code>, fetching missing records with bounded ordered <code>timingDataRange(...)</code>
+queries through <code>LogBookAccessor</code> and yielding while each Data Lane read completes.
+The current implementation reads at most 64 TimingData records per batch.</p>
+<p>Later committed TimingData does not pass through NodeService as state. The post-commit
+event only wakes DataTask; DataTask then catches up from the authoritative LogBook source.
+<code>RaceDataState</code>, <code>ActiveRegistrations</code>, <code>RegisteredTeams</code>, <code>StageTiming</code> and
+<code>RegistrationRanking</code> retain distinct responsibilities. No aggregate <code>NodeServiceState</code>
+exists, and NodeService does not retain a second complete committed-TimingData collection.</p>
+<p><code>ActiveRegistrations</code> stores one ordered compact scalar entry per committed registration
+ADD. TimingData is consumed at the input boundary and is not retained: the row keeps only
+sequence, effective epoch milliseconds, packed RegistrationId, numeric LocationId and
+validity. Its original sequence and WP are stable. A matching REV marks the newest matching
+valid ADD invalid rather than removing it from the display list; nonregistration records
+are ignored. Semantic TimingData value objects are reconstructed only for read/output
+boundaries.
+The display may visit all registrations for one WP in original source order, including
+invalid entries, and is responsible for tracking which rows it has shown. A bounded
+<code>visitAfter(locationId, afterSequence, limit, visitor)</code> pages through later ADD rows using
+the original registration sequence, avoiding repeated delivery of earlier rows. This
+cursor does <strong>not</strong> detect later revocations of earlier ADDs: the display also needs
+to revisit its already displayed rows to observe changed validity. Domain owns neither
+the display cursor nor a second per-display update index.</p>
+<p><code>RegisteredTeams</code> maintains the unique-team set of the <strong>currently open WP</strong>. The
+LocationId is scope of the whole projection rather than a key repeated in each retained row/map.
+Occurrence counts are still kept per RegistrationId so a live assignment change can move all
+existing occurrences to the newly resolved TeamId. The complete visitor supports the compact
+full synchronization burst; team order has no domain meaning and the CAN bitmap is independent
+of visitation order. Only post-rebuild zero-to-nonzero and nonzero-to-zero membership
+transitions produce incremental + / - notifications. Historical reconstruction itself is silent:
+the display first takes a full burst after the OPEN projection has caught up. CAN encoding,
+delivery and per-display synchronization state remain outside Domain.</p>
+<p>Stage-start time interpretation belongs to the ordered RACE_DATA ingress boundary.
+<code>NodeService.applyRaceData(...)</code> samples the node's shared <code>TimeSource</code> once for the
+message and <code>RaceDataState</code> normalizes every stage-start SET to an absolute UTC
+epoch-millisecond value before it enters live state. An absolute IF-06 timestamp keeps its
+Instant; a date+time value is interpreted as UTC; a time-only value uses the current UTC
+calendar date from that shared TimeSource. Partial civil time is therefore not retained in
+<code>StageStartTimes</code>, and downstream timing code never receives a <code>ZoneId</code> to reinterpret it.</p>
+<p>The <code>domain.node.registration</code> package contains only <strong>active-WP registration-derived
+state</strong>. It is not a second history store. The LogBook remains authoritative for all
+LocationIds and all earlier OPEN/CLOSE periods.</p>
+<p>While the TimingNode is CLOSED there is no usable registration projection. On
+<code>OPEN(locationId)</code>, NodeService/DataTask clears the previous projection and scans the complete
+LogBook from sequence one in bounded batches. <code>ActiveRegistrations</code> admits only registration
+ADD/REV records whose LocationId equals the newly open WP. Therefore older registrations from
+earlier OPEN periods of the same WP return, while historical rows of every other WP are excluded.
+On CLOSE the derived projection is deactivated and cleared; reopening the same WP rebuilds it
+again from LogBook rather than relying on stale retained history.</p>
+<p>Because LocationId scopes the whole active projection, an <code>ActiveRegistrations.Registration</code>
+row stores only sequence, effective time, packed RegistrationId and validity. Rows remain in
+original ADD sequence order. A matching REV searches newest-to-oldest and marks the newest
+still-valid row with the same RegistrationId and effective timestamp invalid; the row is not
+removed because a display may already have shown it.</p>
+<p><code>RegisteredTeams</code> is the second active-WP projection. It counts valid occurrences by
+RegistrationId and resolves those counts through current RaceData to one unique TeamId set.
+Repeated passages change only occurrence counts. A live assignment change can move all active
+occurrences for one RegistrationId. Historical replay after OPEN suppresses +/- events until
+DataTask has caught up; the full team visitor supplies the synchronization snapshot. Only later
+live zero-to-nonzero and nonzero-to-zero transitions publish incremental events.</p>
+<p>Open/close requests may supersede a pending bounded LogBook read. DataTask therefore treats the
+requested LocationId as a generation: an obsolete partial batch is discarded, both projections
+are reset, and the newest requested WP restarts from sequence one. NodeService reads wait for
+that reconstruction/catch-up before observing the projection. Its registration/team read methods
+take no LocationId because there is exactly one current OPEN scope.</p>
+<p>These objects remain Task Lane-owned. CAN encoding, display cursor/synchronization state,
+persistence, elapsed-time result models and ranking calculations are outside this package.</p>
+<p>Do not add a production query/result type merely because a unit or integration test would
+be easier to write with it. A new calculated view belongs in production only when an
+actual application, presentation or I/O consumer requires that behavior. Tests verify the
+retained state through the existing production boundary or package-local implementation
+tests rather than defining extra public API.</p>
+<p>A failed persisted-data load leaves LogBook in <code>LogBookStatus.ERROR</code> with the concrete
+failure retained in LogBook diagnostics. The TimingNode MainTask still completes its own
+startup path to operational <code>OK</code>; <code>TimingNode.ERROR</code> is reserved for failure of the
+node's own startup/execution path.
+Neither condition replaces functional OPEN/CLOSED state or current LocationId.</p>
+<p>RACE_DATA therefore does <strong>not</strong> cross to the Data Lane: sequence validation,
+UTC stage-start normalization, transactional live-state mutation and ACK happen on Task
+Lane task turns. TIMING_DATA
+REQ/replay is different because its source is Data Lane-owned LogBookData; that path uses
+bounded asynchronous handoff and bounded TimingData batches. A cooperative task that needs
+a Data Lane query uses <code>LogBookAccessor.submit(...)</code> and <code>TaskStep.await(...)</code>; it never
+blocks the shared worker waiting on that completion.</p>
+<h3 id="why-composition-instead-of-an-activeobject-base-class">Why composition instead of an ActiveObject base class</h3>
+<p>A reusable base class such as <code>TimingNode extends ActiveObject&lt;Work&gt;</code> is
+possible, but it would couple the domain type to one threading mechanism.
+Composition keeps that choice replaceable and lets the public TimingNode API stay
+synchronous and domain-oriented.</p>
+<p>For state-dependent operations the caller uses the result-bearing LogBook path; device
+or callback ingress may use the fire-and-forget path:</p>
+<pre><code class="language-java">final class TimingNode {
+    private final LogBookAccessor logBook;
+
+    LogBookAccessor logBook() {
+        return logBook;
+    }
+}
+
+TimingNodeTypes.OpenResult opened =
+        node.logBook().process(LogBookCommands.open(locationId));
+
+node.logBook().execute(
+        LogBookCommands.addAutomaticRegistration(registrationId, time));
+
+// LogBook is the Data Lane component boundary.
+// LogBookDataLane owns LogBook-specific lane execution mechanics.
+// LogBookOperations owns state-changing command/commit work.
+// LogBookState owns passive state and committed TimingData; LogBookStatus owns published status.
+// SerialTaskRunner owns cooperative TaskRun execution for the TimingNode Task Lane.
+// NodeService.MainTask handles LogBook status; DataTask rebuilds/catches up the OPEN-WP projection.
+// ActiveRegistrations owns ordered ADD rows and validity for the currently open WP.
+// RegisteredTeams owns the current open-WP unique-team set and live + / - changes.
+// Calculated presentation/query models are added only for an actual production consumer.
+// RaceDataTask invokes NodeService.applyRaceData(...) and awaits its CompletableFuture before ACK.
+</code></pre>
+<p>The visible <code>TimingNode</code> delegates execution mechanics to its child components.
+<code>execute(command)</code> returns after queueing and has no synchronous domain result.
+<code>process(command)</code> and <code>process(query)</code> are the result-bearing boundary. An ORDERED
+query waits for its Data Lane turn; a CURRENT query may read an already safely published
+snapshot directly. The word <code>process</code> therefore denotes "handle this request and return
+its result", not "always enqueue this request". Callers use the intentional child boundary
+rather than reaching into mutable state.</p>
+<p>The important split is:</p>
+<pre><code class="language-text">open(locationId) / close / consistency-sensitive query
+    -&gt; queued internally
+    -&gt; execute against current ordered TimingNode state
+    -&gt; caller receives processed domain result
+
+device/callback ingress that is explicitly offer-only
+    -&gt; bounded queue result
+    -&gt; callback may continue immediately
+    -&gt; later processing has no synchronous caller waiting for its domain result
+</code></pre>
+<p>A queue result is never used as a substitute for the domain result of
+a state-dependent command.</p>
+<p>The Future used to connect the queued work with a waiting caller is an internal
+Active Object mechanism. It does not appear in the normal TimingNode
+application/domain interface. The current synchronous caller contract needs only an internal plain
+<code>Future&lt;R&gt;</code>; <code>CompletionStage</code> is not required.</p>
+<p>Code already running on the Data Lane uses direct private/domain methods
+such as <code>doOpen()</code> rather than calling the blocking public <code>open()</code> method
+again. Re-entering a public blocking operation from the same serial lane would
+wait on work that cannot run until the current work item finishes.</p>
+<h3 id="operation-results-and-execution-failures">Operation results and execution failures</h3>
+<p>Keep normal semantic results small and owned by the boundary that defines them.</p>
+<p>For example:</p>
+<pre><code class="language-text">TimingNodeTypes
+  FunctionalState
+  OpenResult
+  CloseResult
+
+Application
+  CommandResult
+    COMMITTED
+    NODE_NOT_OPEN
+
+LogBook command result
+  TimingData
+</code></pre>
+<p><code>CommandResult</code> belongs to Application because it describes a
+presentation-triggered command, not TimingNode state and not a LogBook commit
+primitive. A LogBook registration/revocation command returns the committed
+<code>TimingData</code> directly. The proxy adds the normal application result around that
+value and decides <code>NODE_NOT_OPEN</code> before the LogBook is called.</p>
+<p>Technical queue rejection, unavailable execution, interruption, timeout and
+execution failure are not another TimingNode result/state enum. The Data Lane
+retains the bounded wait guards and logs the concrete technical reason where it
+is known. The Java call aborts normal flow with an ordinary runtime failure.
+Forwarding Application/Presentation layers do not translate the internal failure
+taxonomy into a second public reason model.</p>
+<p>A command wait timeout still has an important diagnostic distinction: already
+accepted work may complete later. The owning Data Lane log therefore records
+that the final command outcome may be unknown. An ordered-query timeout records
+only that no query result was obtained. That distinction belongs in retained
+diagnostics; it does not require a generic public operation-state exception.</p>
+<p>Exceptions are not grouped into <code>TimingNodeTypes</code>. That source-only grouping is
+for actual TimingNode value/result types. Introduce an owner-specific exception
+only when callers genuinely need distinct programmatic recovery behaviour;
+otherwise ordinary Java runtime failure plus owning-boundary diagnostics is
+preferred.</p>
+<p>The Java baseline uses separate wait guards for the two result-bearing LogBook
+operation families:</p>
+<pre><code class="language-text">TimingData commit command
+  OPEN / CLOSE / AUTO_REG / MAN_REG / REV
+  default caller wait guard: 5000 ms
+
+ORDERED LogBook query
+  count/range reads that enter the Data Lane
+  default caller wait guard: 2000 ms
+
+CURRENT LogBook query
+  published immutable/current snapshot
+  no Data Lane wait timeout
+</code></pre>
+<p>The 5000 ms commit value is a guard on how long the synchronous caller waits for
+the complete ordered commit result. It includes time already queued ahead of the
+command plus command execution, durable append, in-memory commit and result
+delivery. It is <strong>not</strong> a statement that one file append is allowed to consume
+five seconds. Normal local persistence is expected to complete far faster; a
+timeout is an operational failure signal.</p>
+<p>An accepted command is not cancelled when this caller wait expires. The Data
+Lane may still complete it later, so the caller-visible state-change outcome
+remains unknown until current state or a later committed fact establishes the
+result. An ORDERED-query timeout has different meaning: no query result was
+received within its wait guard, but no state-change outcome is implied.</p>
+<p>These two defaults are explicit composition constants, not one generic
+<code>operationTimeoutMillis</code>. Runtime configuration is not added solely for tuning
+before target measurements justify it. Timeout log records include the effective
+duration so the value is observable when a guard fires.</p>
+<h3 id="seriallane-design">SerialLane design</h3>
+<p><code>SerialLane&lt;T&gt;</code> is the generic bounded typed FIFO/one-worker primitive. It stores
+caller-owned values and receives an item processor at construction. The backing
+<code>Executor</code> sees only the lane's fixed queue-worker runnable.</p>
+<p>The logical node topology is:</p>
+<pre><code class="language-text">RuntimeExecutors.timingNodeExecutor
+  ├─ TimingNode A Data Lane -&gt; SerialLane&lt;TimingNodeDataItem&gt;
+  ├─ TimingNode A Task Lane -&gt; SerialTaskRunner -&gt; SerialLane&lt;TaskRun&gt;
+  ├─ TimingNode B Data Lane -&gt; SerialLane&lt;TimingNodeDataItem&gt;
+  └─ TimingNode B Task Lane -&gt; SerialTaskRunner -&gt; SerialLane&lt;TaskRun&gt;
+</code></pre>
+<p><code>offer(T)</code> never waits for capacity and returns one of <code>ACCEPTED</code>, <code>FULL</code> or
+<code>NOT_RUNNING</code>. A successful first offer while idle schedules the one fixed worker.
+Further offers only extend the lane queue while that worker is scheduled/running.</p>
+<p>One worker run processes at most <code>maxItemsPerRun</code> items that were available at the start
+of that run. If items remain afterwards, the same worker is scheduled once more. This
+creates a fairness point for sibling lanes sharing the same physical executor.</p>
+<p><code>SerialLane</code> does not define application exception policy, result futures or a FAILED
+lifecycle state. The item owner contains expected domain/runtime failures where required.
+A backing-executor <code>RejectedExecutionException</code> stops further admission and clears queued
+items because the lane can no longer guarantee execution. <code>close()</code> stops admission and
+waits for already accepted work to drain; it never shuts down the Runtime-owned executor.</p>
+<p>Result-bearing domain adapters carry their own completion with the queued item. For
+example, LogBook query/command items complete their own <code>CompletableFuture</code>; the generic
+lane remains unaware of command/query semantics.</p>
+<p>The required behaviour is:</p>
+<ul>
+<li>queue capacity is visible and bounded per logical lane;</li>
+<li>FIFO order is preserved per lane;</li>
+<li>at most one worker for one lane is scheduled/running at a time;</li>
+<li>one worker run processes no more than <code>maxItemsPerRun</code> items;</li>
+<li>sibling lanes may share one physical worker and make progress at batch boundaries;</li>
+<li><code>isExecutingOnCurrentThread()</code> identifies ownership without exposing a lifecycle enum;</li>
+<li>closing drains accepted work but does not own physical-executor shutdown;</li>
+<li>Runtime stops physical role executors only after component lanes/runners have stopped.</li>
+</ul>
+<p><code>SerialLaneMetrics</code> owns queue result, depth/high-water, queue wait and execution
+duration. <code>metrics().snapshot()</code> creates the immutable engineering view.</p>
+<h3 id="serialtaskrunner-and-direct-jdk-scheduling">SerialTaskRunner and direct JDK scheduling</h3>
+<p><code>SerialTaskRunner</code> specializes cooperative task execution without subclassing
+<code>SerialLane</code>. It owns exactly one <code>SerialLane&lt;TaskRun&gt;</code> and the Runtime-supplied
+<code>ScheduledExecutorService</code>.</p>
+<p><code>runTask(YieldingTask)</code> admits one TaskRun. Every TaskRun queue turn invokes one
+<code>runStep()</code>. <code>AGAIN</code> re-admits at the queue back, <code>AFTER</code> uses
+<code>ScheduledExecutorService.schedule(...)</code> as a timer, <code>AWAIT</code> attaches an asynchronous
+completion callback, and <code>DONE</code> completes the run. Delayed/awaiting tasks occupy neither
+the lane queue nor the physical worker until they become eligible for re-admission.</p>
+<p>TagProcessor deliberately does <strong>not</strong> use <code>SerialTaskRunner</code>: observations are plain
+typed items, so one <code>SerialLane&lt;TagObservation&gt;</code> is sufficient. Its timed filter and
+housekeeping work runs directly on the same single-thread JDK scheduled executor that
+backs the observation lane.</p>
+<p>Current composition is:</p>
+<pre><code class="language-text">TimingNode
+  -&gt; Data Lane: SerialLane&lt;TimingNodeDataItem&gt;
+  -&gt; Task Lane: SerialTaskRunner -&gt; SerialLane&lt;TaskRun&gt;
+  -&gt; TagProcessor: SerialLane&lt;TagObservation&gt;
+                   + direct ScheduledExecutorService callbacks
+
+TimingSystemConductor
+  -&gt; SerialTaskRunner
+  -&gt; shared timingSystemConductorExecutor
+
+AntennaManager
+  -&gt; SerialTaskRunner
+  -&gt; sharedIoScheduledExecutor
+</code></pre>
+<p><code>SimulatedTagScenarioRunner</code> uses the Runtime-owned <code>sharedIoScheduledExecutor</code>
+directly. It keeps at most 32 active scenarios and schedules only the next step of each
+scenario, so simulation work is bounded without another logical lane or scheduling wrapper.
+A lifecycle-generation guard prevents delayed work from a previous activation from emitting
+after deactivate/reactivate.</p>
+<p>All execution is JDK-backed. Physical parallelism remains a Runtime decision; adding
+logical lanes or task runners does not imply adding threads.</p>
+<h2 id="this-detailed-design-elaborates">This detailed design elaborates:</h2>
+<p><a class="eng-relation" href="../Event/"><span class="eng-relation__object">Event — Event</span></a>
+<a class="eng-relation" href="../EventSource/"><span class="eng-relation__object">EventSource — EventSource</span></a>
+<a class="eng-relation" href="../LogBook/"><span class="eng-relation__object">LogBook — LogBook</span></a>
+<a class="eng-relation" href="../PlatformEvents/"><span class="eng-relation__object">PlatformEvents — PlatformEvents</span></a>
+<a class="eng-relation" href="../TimingNode/"><span class="eng-relation__object">TimingNode — TimingNode</span></a></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.path", "navigation.sections", "navigation.top", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../assets/javascripts/explorer.js"></script>
+      
+    
+  </body>
+</html>
