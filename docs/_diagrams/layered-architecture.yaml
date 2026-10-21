@@ -66,7 +66,7 @@ groups:
   properties_width: 220
   kind: model
   notation: component
-  layout: {x: 350, y: 606, w: 560, h: 320}
+  layout: {x: 365, y: 606, w: 520, h: 320}
 - id: io-layer
   label: "I/O (per TimingSystem)"
   kind: layer-infrastructure
@@ -209,7 +209,7 @@ nodes:
   subtitle: "teams expected next"
   kind: service
   notation: component
-  layout: {x: 620, y: 657, w: 255, h: 50}
+  layout: {x: 630, y: 657, w: 240, h: 50}
 
 - id: node-processing
   object_id: TimingNodeProcessing
@@ -222,7 +222,7 @@ nodes:
     - label: RegistrationDuplicateFilter
   kind: service
   notation: packaging-component
-  layout: {x: 365, y: 722, w: 225, h: 95}
+  layout: {x: 380, y: 722, w: 220, h: 95}
 
 # Live race/reference data remains node-owned and sits below the Registration block.
 - id: node-racedata
@@ -236,7 +236,7 @@ nodes:
       object_id: StageStartTimes
   kind: service
   notation: packaging-component
-  layout: {x: 620, y: 838, w: 255, h: 70}
+  layout: {x: 630, y: 827, w: 240, h: 79}
 
 # Active-WP registration projections derived from committed TimingData.
 - id: node-registration
@@ -250,7 +250,7 @@ nodes:
       object_id: RegisteredTeams
   kind: service
   notation: packaging-component
-  layout: {x: 620, y: 717, w: 255, h: 95}
+  layout: {x: 630, y: 722, w: 240, h: 95}
 
 # Node-owned committed history is a functional Data subcomponent; persistence
 # is its domain boundary, not a separate execution lane.
@@ -264,7 +264,7 @@ nodes:
     - label: "Persistence"
   kind: service
   notation: packaging-component
-  layout: {x: 365, y: 827, w: 225, h: 79}
+  layout: {x: 380, y: 827, w: 220, h: 79}
 
 # Upstream protocol ownership is TimingSystem-scoped. Each NodeUpstream remains
 # paired with exactly one TimingNode through its node-scoped UpstreamStream.
@@ -276,8 +276,8 @@ nodes:
     - label: "NodeUpstream (1 per TimingNode)"
       object_id: NodeUpstream
       items:
-        - label: "RaceData synchronization"
-        - label: "TimingData replay / synchronization"
+        - label: "RaceData sync"
+        - label: "TimingData replay / sync"
         - label: "Heartbeat"
   kind: service
   notation: packaging-component
@@ -383,7 +383,7 @@ nodes:
     - label: "UpstreamGateway"
       object_id: UpstreamGateway
       items:
-        - label: "UpstreamStream (1 per TimingNode, bidirectional)"
+        - label: "UpstreamStream (1 per NodeUpstream)"
           object_id: UpstreamStream
         - label: "Connector (1..N)"
           object_id: Connector
@@ -596,7 +596,7 @@ edges:
 
 - from: upstream-message-port
   to: timing-node-aggregate
-  from_anchor: {side: right, position: 0.50}
+  from_anchor: {side: right, position: 0.20}
   to_anchor: {side: left, position: 0.50}
 
 
