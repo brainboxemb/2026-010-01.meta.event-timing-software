@@ -385,7 +385,7 @@ nodes:
     - label: "UpstreamGateway"
       object_id: UpstreamGateway
       items:
-        - label: "Bidirectional UpstreamStream (1 per TimingNode)"
+        - label: "UpstreamStream (1..N)"
           object_id: UpstreamStream
         - label: "Connector (1..N)"
           object_id: Connector
