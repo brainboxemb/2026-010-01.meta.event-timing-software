@@ -1,6 +1,15 @@
 step: 7
 
 planning_changes:
+  - date: '2026-10-21'
+    change: >-
+      Refine D04/A05 after the upstream architecture update. ST-2 now uses one
+      full-duplex IF-03 WebSocket at /api/v1/events?role=upstream; the temporary
+      HTTP upstream-message injection and the old UpstreamMessageRouter/DebugConnector
+      model are superseded. SI-01 uses UpstreamGateway plus node-scoped UpstreamStream
+      and UpstreamConnector. SI-02 keeps one Central System Simulator semantic model;
+      its ApiEventClient session carries ST-2 UpstreamData in both directions, while
+      a later RabbitMQ Central-System transport reuses the same simulator for ST-3.
   - date: '2026-10-13'
     change: >-
       Complete A03 on Java main revision 006a92e65e07412cb7caf603f853c90c58b86f5e.
@@ -99,12 +108,12 @@ activities:
     state: done
     depends_on: [D01, D03]
     note: >-
-      EngineeringApiUpstreamConnector is the deterministic ST-2 connector. It accepts
-      structured UpstreamData through the IF-03 development HTTP operation and emits
-      outbound UpstreamData on the existing SI-02 event WebSocket designated with
-      role=upstream. That same role connection drives connector connect/disconnect,
-      PING and SYNC lifecycle. RabbitMQ uses the same semantic boundary; concrete broker
-      topology/session mechanics remain below it.
+      EngineeringApiConnector is the deterministic ST-2 connector beneath
+      UpstreamGateway. One IF-03 WebSocket at /api/v1/events?role=upstream is
+      full-duplex and carries structured UpstreamData in both directions while still
+      providing the normal status/event baseline. Connector/session mechanics stay
+      below UpstreamGateway and node-scoped UpstreamStream. RabbitMQ uses the same
+      semantic boundary with its own broker resources.
 
   - id: A01
     lane: application
@@ -150,26 +159,25 @@ activities:
   - id: A04
     lane: application
     kind: implementation
-    state: next
+    state: done
     depends_on: [D01, D03, V01]
     note: >-
-      Implement transport-independent SYNC/REQ replay in both directions: advertise
-      TimingData head from LogBook, serve TIMING_DATA REQ from LogBook, compare the
-      Central RACE_DATA head with the applied RaceData seq, and request missing RaceData.
-      Local registration shall continue while upstream transport is unavailable.
+      Transport-independent SYNC/REQ replay is implemented: NodeUpstream advertises
+      the TimingData LogBook head, serves TIMING_DATA REQ from retained LogBook data,
+      compares Central RACE_DATA source head with applied RaceData and requests missing
+      messages. Local registration remains independent from upstream availability.
 
   - id: A05
     lane: application
     kind: integration
-    state: planned
+    state: next
     depends_on: [D04, A02, A04]
     note: >-
-      Add EngineeringApiUpstreamConnector plus the SI-02 Central System Simulator pane.
-      SI-02 shall send ordered RACE_DATA, inspect ACK/REQ/SYNC and request LogBook
-      TIMING_DATA over the existing IF-03 HTTP/WebSocket pair. The connector enters/leaves
-      at the normal semantic upstream boundary; direct domain-object calls are not allowed.
-      Do not tunnel pre-serialized RabbitMQ/private production payloads through the
-      engineering API.
+      Complete the SI-02 Central System Simulator pane over the already implemented
+      SI-01 EngineeringApiConnector. SI-02 shall use its ApiEventClient connection in
+      role=upstream mode, send ordered RACE_DATA and PING answers, inspect ACK/REQ/SYNC,
+      and request retained TIMING_DATA over the same full-duplex WebSocket. Direct
+      domain-object calls and RabbitMQ/private wire-frame tunnelling are not allowed.
 
   - id: V02
     lane: verification
@@ -177,7 +185,7 @@ activities:
     state: planned
     depends_on: [A03, A05]
     note: >-
-      Use the SI-02 Backend pane over the normal IF-03 API/Event connections to verify
+      Use the SI-02 Backend pane over the full-duplex IF-03 upstream-role WebSocket to verify
       node-scoped reference-data application, TeamID/StageTiming results, outbound
       semantic events, acknowledgement/synchronization behaviour and recovery after
       IF-03 reconnect. This verifies upstream semantics but not RabbitMQ session/channel behaviour,

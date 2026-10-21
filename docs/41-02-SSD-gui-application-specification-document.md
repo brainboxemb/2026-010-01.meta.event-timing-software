@@ -175,6 +175,23 @@ execute when SI-01 advertises their enabled IF-03 capability. Stopping a script
 shall prevent future submissions but cannot reverse accepted server requests.
 :::
 
+:::{req} Simulate the Central System upstream peer through supported transports
+:id: SI02-REQ-011
+:status: D
+:specifies: UC-009
+
+SI-02 shall provide an engineering-only Central System Simulator for IF-06
+UpstreamData semantics. The simulator shall own Central-side RaceData source
+sequence state per NodeId, inspect and react to ACK/REQ/SYNC, request retained
+TimingData and answer PING requests. It shall communicate through supported
+external transports and shall not call SI-01 domain objects directly.
+
+For deterministic ST-2 operation the simulator shall use the existing IF-03
+event WebSocket in `role=upstream` mode as one full-duplex connection. A later
+RabbitMQ transport may be selected for ST-3 without changing the simulator's
+semantic UpstreamData state model.
+:::
+
 ## Software-item architecture
 
 The principal boundary is:
@@ -185,11 +202,27 @@ JavaFX / BentoFX views ----+
 Lua scripting -------------+--> SI-02 client/application services --> IF-03 --> SI-01
                            |
 tests / fakes -------------+
+
+Backend pane / tests
+        |
+        v
+CentralSystemSimulator
+        |
+        +--> IF-03 Central transport --> ApiEventClient role=upstream --> SI-01
+        |
+        +--> RabbitMQ Central transport (ST-3, later) --> broker --> SI-01
 ```
 
 Connection/session lifecycle, baseline synchronisation, live-event buffering
 and reconciliation, command execution, raw-message context and target/system
 state belong below JavaFX controls and docking objects.
+
+The `CentralSystemSimulator` is a client/application service, not UI-owned
+protocol state. It owns the semantic Central-side UpstreamData model and delegates
+wire/session mechanics to a selected transport. For ST-2 the normal
+`ApiEventClient` connection is opened at `/api/v1/events?role=upstream`; that
+single WebSocket still receives the normal STATUS_SNAPSHOT/event flow and also
+carries UpstreamData in both directions.
 
 A connected timing system is represented as an **instance-scoped client
 context**, not global UI state. The first workbench may still present one

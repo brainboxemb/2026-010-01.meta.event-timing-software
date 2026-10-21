@@ -60,7 +60,7 @@ nodes:
     layout: {x: 75, y: 485, w: 150, h: 78}
 
   - id: upstream-view
-    label: "Upstream (later)\ncapability + test control"
+    label: "Backend\nCentral System Simulator"
     kind: presentation
     group: ui
     layout: {x: 245, y: 485, w: 150, h: 78}
@@ -84,28 +84,34 @@ nodes:
     layout: {x: 520, y: 205, w: 270, h: 70}
 
   - id: event-client
-    label: "ApiEventClient\nWebSocket"
+    label: "ApiEventClient\nWebSocket / upstream role"
     kind: service
     group: services
     layout: {x: 520, y: 305, w: 270, h: 70}
+
+  - id: central-simulator
+    label: "CentralSystemSimulator\nUpstreamData state / sequencing"
+    kind: service
+    group: services
+    layout: {x: 520, y: 390, w: 270, h: 70}
 
   - id: shell-client
     label: "RemoteShellClient\nline-oriented TCP"
     kind: service
     group: services
-    layout: {x: 520, y: 405, w: 270, h: 70}
+    layout: {x: 520, y: 480, w: 270, h: 70}
 
   - id: log-client
     label: "LiveLogClient\ndiagnostics TCP"
     kind: service
     group: services
-    layout: {x: 520, y: 505, w: 270, h: 70}
+    layout: {x: 520, y: 565, w: 270, h: 70}
 
   - id: client-log
     label: "ClientLog\nlocal Development Client records"
     kind: service
     group: services
-    layout: {x: 520, y: 600, w: 270, h: 58}
+    layout: {x: 520, y: 655, w: 270, h: 58}
 
   - id: if03
     label: "IF-03 API\nHTTP / JSON + WebSocket"
@@ -117,22 +123,22 @@ nodes:
     label: "Remote Shell\nengineering terminal boundary"
     kind: interface
     group: si01
-    layout: {x: 945, y: 320, w: 320, h: 72}
+    layout: {x: 945, y: 405, w: 320, h: 72}
 
   - id: logging-server
     label: "LoggingServer\nlive diagnostics boundary"
     kind: crosscutting
     group: si01
-    layout: {x: 945, y: 435, w: 320, h: 72}
+    layout: {x: 945, y: 515, w: 320, h: 72}
 
-  - id: debug-connector
-    label: "DebugConnector (Step 4)\nunder UpstreamGateway"
+  - id: engineering-connector
+    label: "EngineeringApiConnector\nfull-duplex role=upstream"
     kind: integration
     group: si01
-    layout: {x: 945, y: 565, w: 320, h: 75}
+    layout: {x: 945, y: 305, w: 320, h: 75}
 
   - id: real-connector
-    label: "RabbitMqConnector\nmay coexist when configured"
+    label: "RabbitMqConnector\nST-3 transport (planned)"
     kind: integration
     group: si01
     layout: {x: 945, y: 655, w: 320, h: 58}
@@ -142,7 +148,8 @@ edges:
   - {from: status-view, to: api-client, label: "status / control / history"}
   - {from: timing-view, to: api-client, label: "raw API / TimingData"}
   - {from: timing-view, to: event-client, label: "live TimingData"}
-  - {from: upstream-view, to: api-client, dashed: true, label: "later capabilities / test control"}
+  - {from: upstream-view, to: central-simulator}
+  - {from: central-simulator, to: event-client, label: "ST-2 UpstreamData"}
   - {from: events-view, to: event-client}
   - {from: terminal-view, to: shell-client}
   - {from: logs-view, to: client-log, label: "local"}
@@ -150,15 +157,10 @@ edges:
   - {from: doc-fixtures, to: client-shell, dashed: true, label: "visual fixtures only"}
 
   - {from: api-client, to: if03}
-  - {from: event-client, to: if03}
+  - {from: event-client, to: if03, label: "events / ST-2 upstream role"}
   - {from: shell-client, to: remote-shell}
   - {from: log-client, to: logging-server}
 
   - from: if03
-    to: debug-connector
-    dashed: true
-    label: "API-controlled debug injection"
-  - from: debug-connector
-    to: if03
-    dashed: true
-    label: "observable result / status"
+    to: engineering-connector
+    label: "full-duplex role=upstream"

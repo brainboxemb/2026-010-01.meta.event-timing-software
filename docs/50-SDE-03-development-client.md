@@ -244,9 +244,10 @@ The current principal services are:
 | --- | --- | --- |
 | `ClientConfig` | local file | target host, per-boundary ports and Development Client presentation/logging settings |
 | `ApiClient` | IF-03 HTTP/JSON | version/status queries and supported commands/test control |
-| `ApiEventClient` | IF-03 WebSocket | status/event snapshots and live event inspection |
+| `ApiEventClient` | IF-03 WebSocket | status/event snapshots and live event inspection; in `role=upstream` mode the same connection is full-duplex for ST-2 UpstreamData |
 | `RemoteShellClient` | Remote Shell | line-oriented engineering terminal |
 | `LiveLogClient` | `LoggingServer` | SI-01 live diagnostic records and temporary runtime log-level control |
+| `CentralSystemSimulator` | IF-06 semantic model | Central-owned RaceData sequence/replay state and ACK/REQ/SYNC/PING behavior, independent of concrete transport |
 | `ClientLog` | local runtime | Development Client startup/configuration/connection/request/error logging and local log presentation |
 
 The IF-03 HTTP and WebSocket client services share one process-wide JDK
@@ -285,9 +286,17 @@ decode or encode TimingData through the shared TimingData API/provider boundary.
 That capability does not make the client an owner of live SI-01 domain state.
 
 Backend/upstream simulation is a separate Engineering Client capability built around
-shared `UpstreamData`. The Step-7 Backend pane may use IF-03 as its deterministic local
-transport or RabbitMQ as the external integration transport; it is not part of the
-registration-control workbench.
+shared `UpstreamData`. One `CentralSystemSimulator` owns Central-side semantic state;
+transport is below that model.
+
+For ST-2, the existing `ApiEventClient` is opened at
+`/api/v1/events?role=upstream`. That one WebSocket is full-duplex: it receives the
+ordinary STATUS_SNAPSHOT/live-event stream and sends/receives semantic UpstreamData.
+No HTTP injection route and no second SI-02 WebSocket service is used.
+
+For ST-3, the same simulator model later receives a RabbitMQ Central-System transport.
+RabbitMQ queue/channel/broker mechanics do not leak into the simulator's RaceData,
+ACK/REQ/SYNC or PING state.
 
 ## Current UI baseline
 
@@ -308,6 +317,7 @@ The layout is composed through BentoFX docking leaves:
 | Registrations | Interpreted current/open location data (or operator-selected All) |
 | LogBook | Committed source history, sequence and raw-record inspection |
 | Raw Data / Events | Unmodified API JSON and received WebSocket event JSON |
+| Backend | Central System Simulator controls/state: per-node RaceData head, send changes, ACK/REQ/SYNC/PING, TimingData replay and raw UpstreamData |
 | Device Log / Terminal / Client Log | Independent device diagnostics, shell and local client diagnostics |
 
 Permanent tabs are not closable. The standard BentoFX `≡` menu owns tab
@@ -400,8 +410,10 @@ passage, including whether one or multiple EventData-mapped tags are observed. R
 selection is seedable so a run can be repeated. **Stop** prevents later scenario starts;
 it does not undo a scenario already accepted by SI-01.
 
-Backend/UpstreamData simulation remains a separate capability for inbound reference-data
-and outbound timing/synchronization behaviour.
+Backend/UpstreamData simulation remains a separate capability for inbound RaceData and
+outbound timing/synchronization behaviour. Its state belongs to CentralSystemSimulator,
+not JavaFX controls. ST-2 uses the full-duplex upstream-role ApiEventClient session;
+ST-3 later swaps only the transport below the same simulator model.
 
 ## Existing web-application compatibility
 
