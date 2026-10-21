@@ -2317,19 +2317,20 @@ to a human, but it is still an external device from SI-01's architecture
 perspective.
 
 `UpstreamGateway` is the I/O upstream-messaging boundary. It exchanges encoded
-UpstreamData with its configured connectors and exposes a separate node-scoped
-`UpstreamStream` to each TimingNode. Transport connectors do not need a
-TimingSystem abstraction to address a node, and no external `SystemId` field is
+UpstreamData with its configured connectors and exposes a separate bidirectional,
+node-scoped `UpstreamStream` for each participating TimingNode. The corresponding
+TimingSystem-owned `NodeUpstream` consumes that stream. Transport connectors do not
+need a TimingSystem identifier to address a node, and no external `SystemId` field is
 required.
 
 Connectors do not own domain semantics. A connector-specific external name or
 routing key may participate in NodeId demultiplexing, but it does not replace the
-stable functional `NodeId`. Internal `SystemId` is local composition context
-rather than a new upstream routing identity. One gateway may use multiple
-connectors; each TimingNode consumes its own semantic stream through
-`TimingNode.UpstreamHandler`. `RabbitMqConnector` represents the production-shaped transport;
-`EngineeringApiConnector` provides the engineering transport used by SI-02 while
-preserving the same UpstreamData/gateway boundary.
+stable functional `NodeId`. Internal `SystemId` is local composition context rather
+than a new upstream routing identity. One gateway may use multiple connectors and
+select the configured connector binding(s) for outbound traffic. `RabbitMqConnector`
+represents the production-shaped transport; `EngineeringApiConnector` provides the
+engineering transport used by SI-02 while preserving the same UpstreamData/gateway
+boundary.
 
 `ApplicationId` remains a runtime/application identity and is not assumed to be an upstream address. System-level upstream exchanges are scoped by the configured TimingSystem/gateway context; TimingNode-specific exchanges remain addressed by `NodeId`.
 
@@ -2816,49 +2817,51 @@ Upstream messaging is a semantic system boundary, not a RabbitMQ API.
 through IF-06. It may carry canonical `TimingData` and also reference-data,
 synchronization and status messages. TimingData identity/order remains owned by IF-05.
 
-`UpstreamGateway` and its 1..N connectors remain I/O responsibilities. They carry an
-encoded UpstreamData representation and own transport/session resources; they do not
-become owners of TimingData fields or UpstreamData semantics. The gateway presents
-one node-scoped `UpstreamStream` per TimingNode. The node's
-`UpstreamHandler` reads/writes that stream and coordinates semantic messages
-on the node Task Lane. RACE_DATA changes remain on that Task Lane. Only
-TIMING_DATA/LogBook operations cross to the Data Lane through bounded
-asynchronous operations and immutable replies.
+Each TimingSystem owns one `Upstream` component with one `NodeUpstream` per
+participating TimingNode. NodeUpstream owns node-scoped protocol semantics and uses one
+bidirectional `UpstreamStream`; it is not itself a transport adapter.
+
+`UpstreamGateway` and its 1..N connectors remain I/O responsibilities. The gateway
+routes inbound decoded UpstreamData by NodeId to the matching stream and selects
+configured connector binding(s) for outbound stream traffic. Concrete connectors own
+transport/session resources and wire/address mapping; they do not become owners of
+TimingData fields or UpstreamData protocol semantics.
 
 ```text
-external upstream / SI-02 backend peer
+external upstream / SI-02 peer
+        ^
         |
-        +--> RabbitMqConnector --------+
-        +--> EngineeringApiConnector --+--> UpstreamGateway
+        +--> EngineeringApiConnector --+
+        +--> RabbitMqConnector --------+--> UpstreamGateway
                                              |
-                                      NodeId demultiplexing
+                                      NodeId routing
                                              |
-                                      UpstreamStream
-                                   (one per TimingNode)
-                                             |
-                                             v
-                                       TimingNode
-                                  UpstreamHandler
-                                             |
-                                  UpstreamHandlerTask
-                                             |
-                                       Task Lane
-                                  RaceData / protocol
-                                       │
-                            bounded async LogBook request
-                                       │
-                                       Data Lane
-                              LogBook / persistence
+                              +--------------+--------------+
+                              |                             |
+                       UpstreamStream A              UpstreamStream B
+                        bidirectional                  bidirectional
+                              |                             |
+                              v                             v
+                       NodeUpstream A                NodeUpstream B
+                              |                             |
+                       TimingNode A                   TimingNode B
+                    services / LogBook             services / LogBook
 ```
 
-Exact RabbitMQ connection/channel topology, routing keys and retry mechanics are
-connector-level decisions. Product/deployment-specific upstream-system names and
-private transport details remain outside the public architecture documentation.
-Public UpstreamData semantics and TimingData compatibility remain owned by Domain.
+The generic architecture does not prescribe one shared output queue or one input queue
+per node. Those are possible connector-internal implementation choices. RabbitMQ may use
+several consumer queues plus controlled publishing to exchanges/routing keys; the
+Engineering API connector uses one full-duplex WebSocket. Both realize the same
+bidirectional stream/gateway contract.
 
-`SystemId` and `ApplicationId` are not required on the upstream wire. If one
-physical connection carries several NodeIds, demultiplexing belongs to the Messaging
-adapter that creates the node-scoped streams, not to a separate Application router.
+Exact RabbitMQ connection/channel topology, routing keys and retry mechanics are
+connector-level decisions. Product/deployment-specific upstream-system names and private
+transport details remain outside the public architecture documentation. Public
+UpstreamData semantics and TimingData compatibility remain owned by Domain.
+
+`SystemId` and `ApplicationId` are not required on the upstream wire. If one physical
+connection carries several NodeIds, demultiplexing belongs to UpstreamGateway and the
+configured connector binding rather than to a separate Application router.
 
 #### RFID
 
