@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Make `UpstreamConnector` the abstract shared transport base: it owns the one-time gateway input binding and public `CONNECTED`/`DISCONNECTED` EventSource ports, while concrete connectors keep only transport-specific availability/session/framing/send behavior.
+
 - Refine upstream messaging boundaries: resolve NodeId once from connector input to a fixed node-scoped UpstreamStream application port; remove the redundant generic UpstreamMessage envelope; use sender-object typed events for connector/stream post-fact notifications; keep result-bearing inbound admission on an explicit gateway ConnectorPort; and keep IF-06 codec plus heartbeat cadence/state in NodeUpstream.
 
 - Decouple Messaging routing from IF-06 protocol types without a generic message envelope: Engineering extracts only the NodeId needed at transport ingress, UpstreamGateway selects the fixed application port, and the unchanged encoded payload reaches NodeUpstream for semantic decoding.
