@@ -63,7 +63,7 @@ TimingSystem
 ```
 
 `NodeUpstream` owns node-scoped UpstreamData semantics and protocol ordering.
-`UpstreamStream` is the bidirectional semantic mailbox for one NodeId.
+`UpstreamStream` is the bidirectional semantic mailbox owned by one `NodeUpstream` and scoped by that node's NodeId.
 `UpstreamGateway` owns semantic routing between those node streams and configured
 connectors. A connector owns transport/session resources and the mapping required by
 its transport, but it does not reinterpret UpstreamData semantics.
@@ -77,7 +77,7 @@ same connector boundary and the same node-scoped streams.
 
 The reusable application-core/domain side should work with semantic source-aware messages, not transport destinations.
 
-Conceptually, Domain sees one bidirectional stream per node:
+Conceptually, Domain sees one bidirectional stream per `NodeUpstream`:
 
 ```java
 interface UpstreamStream {
