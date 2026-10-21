@@ -347,11 +347,13 @@ io/
       NetworkDeviceService.java    bidirectional network-device boundary
 
   messaging/
-    UpstreamMessage.java            minimal NodeId + semantic payload routing envelope
-    UpstreamGateway.java            routes UpstreamMessage only; no protocol subtype knowledge
-    Connector.java                 only if multiple transports justify a shared contract
+    UpstreamMessage.java            minimal NodeId + opaque encoded-payload routing envelope
+    UpstreamGateway.java            routes UpstreamMessage only; no protocol knowledge
+    UpstreamStream.java             concrete node-scoped view over the shared gateway
+    UpstreamConnector.java          shared connector boundary when multiple transports justify it
     engineering/
-      EngineeringApiConnector.java       IF-03 engineering transport when implemented
+      EngineerApiConnector.java          IF-03 engineering transport/session adapter
+      UpstreamApiMessage.java            Engineering API / IF-06 routing adaptation
     rabbitmq/
       RabbitMqConnector.java             production-shaped upstream transport
   storage/
@@ -472,9 +474,9 @@ NodeUpstream A
 
 The ownership rule is responsibility-based:
 
-- `UpstreamGateway` routes only the small `UpstreamMessage` envelope by NodeId.
-  The envelope contains NodeId plus an encoded IF-06 payload; gateway and connector
-  code never decode or branch on UpstreamData families/subtypes.
+- `UpstreamGateway` routes only the generic `UpstreamMessage` envelope by NodeId.
+  The envelope contains NodeId plus an opaque encoded payload; gateway code has no
+  IF-06 or UpstreamData subtype knowledge.
 - `Connector` is a real abstraction because Engineering API and RabbitMQ have
   different transport/session mechanics behind the same routing boundary.
 - `NodeUpstream` owns the `UpstreamDataCodec`, semantic protocol ordering and
@@ -1010,12 +1012,17 @@ one `Upstream` component with one `NodeUpstream` per TimingNode.
 messages. `NodeUpstream` owns the UpstreamData codec and is the first component that
 turns an encoded message into that semantic hierarchy.
 
-The I/O layer routes a minimal `UpstreamMessage` containing the routing NodeId plus
-the encoded IF-06 payload. `UpstreamGateway` routes that envelope between configured
-connectors and one bidirectional `UpstreamStream` per node. The node stream removes
-or adds only the routing envelope; it does not decode the semantic payload.
-`CONNECTED` and `DATA_AVAILABLE` are typed local events wired to NodeUpstream
-EventInputs during composition.
+The generic Messaging layer routes a minimal `UpstreamMessage` containing the routing
+NodeId plus an opaque encoded payload. `UpstreamGateway` routes that envelope between
+configured connectors and one concrete bidirectional `UpstreamStream` per node. The
+node stream removes or adds only the routing envelope; it does not decode the payload.
+`CONNECTED`, `DATA_AVAILABLE` and connector heartbeat cadence are typed local events
+wired to NodeUpstream EventInputs during composition.
+
+Engineering-specific IF-03/IF-06 adaptation lives below
+`io.messaging.engineering`: `UpstreamApiMessage` extracts the IF-06 NodeId required
+for generic routing while preserving the complete encoded message, and
+`EngineerApiConnector` adapts that type to/from generic `UpstreamMessage`.
 
 A connector may be a full-duplex Engineering WebSocket or a RabbitMQ transport with
 asymmetric consumer/publisher resources; that difference is hidden below
