@@ -63,8 +63,12 @@ TimingSystem
 ```
 
 `NodeUpstream` owns node-scoped UpstreamData semantics, protocol ordering,
-`UpstreamDataCodec` ownership and heartbeat cadence/state. One concrete
-`UpstreamStream` is composed for each NodeUpstream.
+`UpstreamDataCodec` ownership and heartbeat cadence/state. `UpstreamData` is
+represented internally by one immutable node-scoped base plus small concrete message
+values (`TimingDataTransfer`, `RaceData`, `Sync`, `Ack`, `Req`, `Ping`);
+there is no hidden implementation hierarchy behind subtype interfaces.
+`DefaultUpstreamData` remains only the reference-profile factory/convenience layer.
+One concrete `UpstreamStream` is composed for each NodeUpstream.
 
 Transport ingress supplies `NodeId + encodedMessage` to an explicit result-bearing
 gateway ConnectorPort. `UpstreamGateway` uses the NodeId exactly there to select the
