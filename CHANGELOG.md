@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Refine SI-01 upstream architecture: move semantic protocol ownership to TimingSystem-owned `Upstream` with one `NodeUpstream` per TimingNode; define one bidirectional `UpstreamStream` per NodeId behind `UpstreamGateway`; keep 1..N connector realizations including planned RabbitMQ; and change the Engineering API connector design to one full-duplex `role=upstream` WebSocket instead of separate HTTP ingress plus WebSocket egress.
+
 - Clarify Java contract-guard formatting in DR-10: keep short `failIfInvalidArgument(...)` and `failIfIllegalState(...)` calls on one source line; when a condition is genuinely complex, name the condition or extract a meaningful helper instead of vertically spreading a trivial guard.
 
 - Remove the final simulation-only execution wrappers from SDD-02: `SimulatedTagScenarioRunner` now uses the Runtime-owned JDK `ScheduledExecutorService` directly with bounded one-next-step scheduling and lifecycle-generation protection; `RunnableSerialLane` and `LaneScheduler` are no longer part of the current Java design.

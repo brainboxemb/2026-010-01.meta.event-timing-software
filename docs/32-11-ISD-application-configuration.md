@@ -459,16 +459,16 @@ io
 ```
 
 The `timingSystem` reference is local composition information; it is not added
-to UpstreamData merely for routing. `UpstreamGateway` owns the external
-transport/session boundary. Shared Domain `UpstreamData` defines the semantic
-message families; `UpstreamMessageRouter` resolves system- and TimingNode-targeted
-messages by
-`NodeId` to the corresponding bidirectional `UpstreamHandler`.
+to UpstreamData merely for routing. `UpstreamGateway` owns the external transport/session routing boundary. Shared Domain
+`UpstreamData` defines the semantic message families. The gateway maps configured
+connector bindings to one bidirectional `UpstreamStream` per NodeId; the matching
+TimingSystem-owned `NodeUpstream` consumes that stream. No separate application-level
+upstream router is required.
 
 A connector owns transport resources such as RabbitMQ connections/channels or the
-existing IF-03 engineering transport mapping. It does not own Domain/TimingNode selection or message
-semantics. The router is upstream-specific and is not used as a generic internal
-application message bus.
+existing IF-03 engineering WebSocket mapping. It does not own NodeUpstream protocol
+semantics. NodeId remains the semantic routing identity; connector-specific addresses
+remain configuration below the gateway.
 
 Storage settings remain under I/O because they configure external persistence.
 

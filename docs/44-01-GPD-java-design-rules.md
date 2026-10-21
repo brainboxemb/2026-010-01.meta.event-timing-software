@@ -1733,8 +1733,8 @@ Prefer test composition that retains the owned child directly:
 ```java
 NodeService nodeService = new NodeService(...);
 TimingNode node = new TimingNode(logBook, nodeService, tags);
-
-UpstreamHandler handler = nodeService.upstreamHandler();
+NodeUpstream nodeUpstream =
+        new NodeUpstream(nodeId, scheduler, stream, logBook, nodeService);
 ```
 
 When production callers intentionally need LogBook operations, expose one narrow boundary:
@@ -1747,12 +1747,12 @@ Status status = logBook.process(LogBookQueries.status(), ReadConsistency.CURRENT
 **Avoid**
 
 ```java
-public UpstreamHandler upstreamHandler() {
-    return nodeService.upstreamHandler();
+public NodeUpstream nodeUpstream() {
+    return timingSystem.upstream().nodeUpstream(nodeId);
 }
 ```
 
-when no production caller uses that method and it exists only so a test can reach the child.
+when no production caller uses that method and it exists only so a test can reach a separately composed component.
 
 Also avoid growing a parent facade with repeated one-line `execute`, `queue`, `process`
 and event pass-throughs that simply mirror the same child component. A justified semantic

@@ -1046,6 +1046,13 @@ The follow-up Java refactor #510 / #511 keeps that behaviour but separates owner
 head/REQ/batch synchronization and `UpstreamHeartbeat` owns heartbeat state. `UpstreamStream` is an
 I/O Messaging contract rather than Domain data.
 
+Architecture follow-up (PR #859): the intended connector model is now one
+TimingSystem-owned Upstream with one NodeUpstream per TimingNode, one bidirectional
+UpstreamStream per NodeId and UpstreamGateway routing to 1..N connectors. The current
+Java Engineering connector still uses the earlier HTTP-inbound/WebSocket-outbound
+realization and therefore requires a follow-up implementation migration to the
+bidirectional upstream-role WebSocket and explicit gateway/connector separation.
+
 ### Planning order
 
 D01-D03 are the first design gates. In particular, the existing
@@ -1058,14 +1065,15 @@ exercise one system with nodes A/B and two systems with one node each, including
 LogBooks and restart recovery. That evidence reduces multi-node implementation risk but
 does not prove backoffice/reference-data behaviour.
 
-ST-2 uses an **EngineeringApiBackofficeConnector** composed as a normal SI-01
-backoffice connector. Its transport happens to be the already-established engineering
-IF-03 boundary: SI-02 sends synthetic inbound semantic messages through HTTP/JSON and
-receives outbound semantic messages/status as typed IF-03 WebSocket events.
+ST-2 uses an **Engineering API upstream connector** composed as a normal SI-01
+upstream connector. Its transport is the existing IF-03 `role=upstream` WebSocket,
+used bidirectionally: SI-02 sends structured UpstreamData as client text frames and
+receives outbound semantic messages/status on the same connection.
 
-The WebSocket event must carry structured public/reference `UpstreamData` (plus only
-connector/source identity and status metadata needed by IF-03), not a pre-serialized RabbitMQ or private
-production payload. In that sense the WebSocket is only the engineering transport for the
+The server-side `UPSTREAM_DATA` event carries structured public/reference UpstreamData
+(plus only connector/source identity and status metadata needed by IF-03), not a
+pre-serialized RabbitMQ or private production payload. In that sense the WebSocket is
+only the engineering transport for the
 connector. Messaging/connector composition presents the decoded message through the
 target TimingNode's node-scoped `UpstreamStream`; `UpstreamMessagePort` then admits
 semantic processing to that TimingNode's existing serial lane.

@@ -22,12 +22,12 @@ TimingApplication
         +-- TimingSystemId        internal composition/simulation identity
         +-- Conductor             system-local operational coordination
         +-- SystemStatus          complete current system overview
-        +-- UpstreamHandler   system-level upstream messages
+        +-- Upstream
+        |     +-- NodeUpstream (1 per TimingNode)
         +-- 1..N TimingNode
               +-- TimingNodeId
               +-- LocationId
               +-- lifecycle / status
-              +-- UpstreamHandler
               +-- TagProcessor
               +-- StageStartTimes
               +-- LogBook
@@ -128,12 +128,12 @@ TimingApplication
         +-- TimingSystemId        internal composition/simulation identity
         +-- Conductor             system-local operational coordination
         +-- SystemStatus          complete current system overview
-        +-- UpstreamHandler   system-level upstream messages
+        +-- Upstream
+        |     +-- NodeUpstream (1 per TimingNode)
         +-- 1..N TimingNode
               +-- TimingNodeId
               +-- LocationId
               +-- lifecycle / status
-              +-- UpstreamHandler
               +-- TagProcessor
               +-- StageStartTimes
               +-- LogBook
@@ -149,8 +149,8 @@ Shared Domain contract:
 
 The exact component/class boundaries remain design work. `TimingSystem` is the parent domain aggregate hosted 1..N times by the `TimingApplication`. Its `Conductor` is the first system-level coordinator: it owns the lifecycle of that system's 1..N `TimingNode` aggregates and derives one shared inventory demand from their states. It calls the associated `AntennaManager` directly to enable or disable inventory. TagObservation routing remains a separate Runtime connection; individual antenna controls are not implied.
 
-Each `TimingSystem` contains its own dedicated Domain `SystemStatus` component and
-system-level `UpstreamHandler`. `SystemStatus` is the
+Each `TimingSystem` contains its own dedicated Domain `SystemStatus` component and one system-level `Upstream` component. `Upstream` owns one
+`NodeUpstream` protocol instance per participating TimingNode. `SystemStatus` is the
 complete current operational overview of that TimingSystem, not a single health
 flag. It may include its TimingNode states, antenna/device availability, whether
 a display is connected, keypad/beeper availability, device-network health,
@@ -188,9 +188,9 @@ belong to detailed design.
 `UpstreamData` is a shared Domain data/message capability alongside `EventData`
 and `TimingData`. It can carry canonical TimingData and the semantic reference-data,
 synchronization and status messages needed by IF-06. It does not create another
-TimingData identity or ordering model. System-level UpstreamData enters/leaves through
-`TimingSystem.UpstreamHandler`; node-level UpstreamData uses the addressed
-`TimingNode.UpstreamHandler`. Transport/session mechanics remain I/O concerns.
+TimingData identity or ordering model. Each TimingSystem owns one `Upstream` component;
+its `NodeUpstream` instances own node-scoped protocol semantics keyed by TimingNodeId.
+Transport/session mechanics and connector routing remain I/O concerns.
 
 ### I/O routing view
 

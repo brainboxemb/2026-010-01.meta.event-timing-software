@@ -1,6 +1,16 @@
 step: 7
 
 planning_changes:
+  - date: '2026-10-21'
+    change: >-
+      Refine the upstream architecture after implementation feedback. TimingSystem owns
+      one Upstream with one NodeUpstream per TimingNode. Messaging presents one
+      bidirectional UpstreamStream per NodeId and UpstreamGateway routes those streams
+      to 1..N connector implementations. RabbitMQ consumer-queue/publisher asymmetry
+      remains internal to RabbitMqConnector. EngineeringApiConnector uses the existing
+      role=upstream WebSocket bidirectionally; the earlier HTTP-ingress/WebSocket-egress
+      D04 realization is superseded and Java implementation requires migration.
+
   - date: '2026-10-13'
     change: >-
       Complete A03 on Java main revision 006a92e65e07412cb7caf603f853c90c58b86f5e.
@@ -99,12 +109,12 @@ activities:
     state: done
     depends_on: [D01, D03]
     note: >-
-      EngineeringApiUpstreamConnector is the deterministic ST-2 connector. It accepts
-      structured UpstreamData through the IF-03 development HTTP operation and emits
-      outbound UpstreamData on the existing SI-02 event WebSocket designated with
-      role=upstream. That same role connection drives connector connect/disconnect,
-      PING and SYNC lifecycle. RabbitMQ uses the same semantic boundary; concrete broker
-      topology/session mechanics remain below it.
+      EngineeringApiConnector is the deterministic ST-2 connector. The existing IF-03
+      WebSocket designated with role=upstream is full-duplex: SI-02 sends structured
+      UpstreamData as client text frames and SI-01 emits outbound UpstreamData as
+      UPSTREAM_DATA events on the same connection. That role connection drives connector
+      connect/disconnect, PING and SYNC lifecycle. RabbitMQ uses the same gateway/stream
+      boundary; concrete broker topology/session mechanics remain below it.
 
   - id: A01
     lane: application
@@ -164,12 +174,12 @@ activities:
     state: planned
     depends_on: [D04, A02, A04]
     note: >-
-      Add EngineeringApiUpstreamConnector plus the SI-02 Central System Simulator pane.
-      SI-02 shall send ordered RACE_DATA, inspect ACK/REQ/SYNC and request LogBook
-      TIMING_DATA over the existing IF-03 HTTP/WebSocket pair. The connector enters/leaves
-      at the normal semantic upstream boundary; direct domain-object calls are not allowed.
-      Do not tunnel pre-serialized RabbitMQ/private production payloads through the
-      engineering API.
+      Align EngineeringApiConnector and the SI-02 Central System Simulator with the
+      full-duplex role=upstream WebSocket design. SI-02 shall send ordered RACE_DATA,
+      inspect ACK/REQ/SYNC and request LogBook TIMING_DATA over that one connection.
+      Route messages through UpstreamGateway and node-scoped UpstreamStream; direct
+      domain-object calls are not allowed. Do not tunnel pre-serialized RabbitMQ/private
+      production payloads through the engineering API.
 
   - id: V02
     lane: verification

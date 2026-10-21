@@ -197,6 +197,23 @@ nodes:
   notation: component
   layout: {x: 75, y: 667, w: 200, h: 50}
 
+# Upstream protocol ownership is TimingSystem-scoped. One NodeUpstream belongs
+# to each TimingNode, while transport/session concerns stay in I/O Messaging.
+- id: system-upstream
+  object_id: Upstream
+  group: timing-system-aggregate
+  label: "Upstream"
+  items:
+    - label: "NodeUpstream (1 per TimingNode)"
+      object_id: NodeUpstream
+      items:
+        - label: "RACE_DATA sync"
+        - label: "TIMING_DATA sync"
+        - label: Heartbeat
+  kind: service
+  notation: packaging-component
+  layout: {x: 75, y: 737, w: 200, h: 170}
+
 # SI01-01 is the logical (4+1) component/responsibility view, not a
 # threading/execution model. TimingNode Data/Task lanes, TagProcessor scheduling
 # and cooperative task execution are explained in the process view / Java detailed design.
@@ -238,7 +255,7 @@ nodes:
   notation: packaging-component
   layout: {x: 815, y: 657, w: 280, h: 80}
 
-# Timing is placed immediately left of Upstream on the second row.
+# Timing remains a TimingNode-local derived-state responsibility.
 - id: node-timing
   object_id: TimingNodeTiming
   group: timing-node-aggregate
@@ -267,23 +284,6 @@ nodes:
   kind: service
   notation: packaging-component
   layout: {x: 315, y: 828, w: 235, h: 79}
-
-# Expose semantic upstream responsibilities here, not the execution lanes.
-# I/O transport (UpstreamStream) remains outside this Domain component.
-- id: upstream-message-port
-  object_id: TimingNodeUpstreamHandler
-  group: timing-node-aggregate
-  label: "Upstream"
-  items:
-    - label: UpstreamHandler
-      items:
-        - label: UpstreamHeartbeat
-        - label: UpstreamDataSync
-        - label: LogBookSync
-  kind: service
-  notation: packaging-component
-  # Begins beneath the first-row RaceData block and ends with LogBook.
-  layout: {x: 815, y: 752, w: 280, h: 155}
 
 - id: event-data-domain
   object_id: EventData
@@ -385,7 +385,7 @@ nodes:
     - label: "UpstreamGateway"
       object_id: UpstreamGateway
       items:
-        - label: "UpstreamStream (1 per TimingNode)"
+        - label: "UpstreamStream (1..N)"
           object_id: UpstreamStream
         - label: "Connector (1..N)"
           object_id: Connector
@@ -595,4 +595,10 @@ edges:
   to: timing-node-aggregate
   from_anchor: {side: bottom, position: 0.50}
   to_anchor: {side: top, position: 0.50}
+
+# One system-scoped NodeUpstream is paired with each TimingNode.
+- from: system-upstream
+  to: timing-node-aggregate
+  from_anchor: {side: right, position: 0.50}
+  to_anchor: {side: left, position: 0.45}
 
