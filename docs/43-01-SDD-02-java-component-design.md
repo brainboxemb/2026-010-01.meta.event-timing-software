@@ -349,7 +349,7 @@ io/
   messaging/
     UpstreamGateway.java            resolves transport NodeId to fixed application ports
     UpstreamStream.java             concrete node-scoped application port
-    UpstreamConnector.java          transport/session boundary with typed lifecycle events
+    UpstreamConnector.java          abstract transport base with input binding + lifecycle events
     engineering/
       EngineerApiConnector.java          IF-03 engineering transport/session adapter
       UpstreamApiMessage.java            Engineering API / IF-06 routing adaptation
@@ -482,8 +482,10 @@ The ownership rule is responsibility-based:
 - Generic Messaging has no `UpstreamMessage(NodeId, payload)` envelope. Routing
   identity is command context at the connector/gateway boundary, not data duplicated
   inside every application-side message.
-- `UpstreamConnector` owns transport/session mechanics only. CONNECTED/DISCONNECTED
-  are typed post-fact events whose payload is the producing connector object.
+- `UpstreamConnector` is an abstract shared transport base. It owns the one-time gateway
+  input binding plus public `CONNECTED`/`DISCONNECTED` EventSource ports whose payload
+  is the producing connector object. Concrete connectors implement only transport-
+  specific availability, session/framing and send behavior.
 - Inbound transport admission is intentionally not an event because it returns
   ACCEPTED/UNKNOWN_NODE/INPUT_FULL. A connector calls the explicit gateway ConnectorPort
   with `NodeId + encodedMessage`.
