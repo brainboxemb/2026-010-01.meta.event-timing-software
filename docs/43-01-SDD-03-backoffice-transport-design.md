@@ -94,6 +94,7 @@ Conceptually, Domain sees one concrete bidirectional stream per `NodeUpstream`:
 final class UpstreamStream {
     EventSource<NodeId> CONNECTED;
     EventSource<NodeId> DATA_AVAILABLE;
+    EventSource<NodeId> HEARTBEAT_TICK;
 
     boolean isAvailable();
     boolean hasMessage();
