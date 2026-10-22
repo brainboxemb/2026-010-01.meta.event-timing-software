@@ -482,13 +482,18 @@ The ownership rule is responsibility-based:
 - Generic Messaging has no `UpstreamMessage(NodeId, payload)` envelope. Routing
   identity is command context at the connector/gateway boundary, not data duplicated
   inside every application-side message.
-- `UpstreamConnector` is an abstract shared transport base. It owns the one-time gateway
-  input binding plus public `CONNECTED`/`DISCONNECTED` EventSource ports whose payload
-  is the producing connector object. Concrete connectors implement only transport-
+- `UpstreamConnector` is an abstract shared transport base. It owns one fixed internal
+  gateway-input reference plus public `CONNECTED`/`DISCONNECTED` EventSource ports whose
+  payload is the producing connector object. Concrete connectors implement only transport-
   specific availability, session/framing and send behavior.
+- Runtime composition constructs all node-scoped `UpstreamStream` values first from their
+  fixed NodeId + connector bindings, then constructs one complete `UpstreamGateway` from
+  that connector and the complete NodeId-to-stream routing map. Runtime operation does not
+  create, register or replace application ports.
 - Inbound transport admission is intentionally not an event because it returns
-  ACCEPTED/UNKNOWN_NODE/INPUT_FULL. A connector calls the explicit gateway ConnectorPort
-  with `NodeId + encodedMessage`.
+  ACCEPTED/UNKNOWN_NODE/INPUT_FULL. The connector forwards `NodeId + encodedMessage`
+  through its fixed Messaging-internal gateway input; that setup mechanism is not public
+  application API.
 - `NodeUpstream` owns the `UpstreamDataCodec`, semantic protocol ordering,
   validation and heartbeat cadence/state. Only one decoded inbound semantic message
   operation is active per node.
