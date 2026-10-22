@@ -2042,9 +2042,11 @@ final class Registration {
 }
 ```
 
-Convert boundary values once when state enters the component. Reconstruct semantic values
-such as `RegistrationId`, `LocationId` or `TimingTimestamp` only when a public/read
-boundary actually needs them.
+Convert boundary values once when state enters the component. Keep the scalar representation
+through internal read boundaries when the next owner can use it directly. Reconstruct semantic
+values such as `RegistrationId`, `LocationId` or `TimingTimestamp` only at the first boundary
+that actually needs that representation; do not materialize a wrapper merely because a getter is
+public to another internal component.
 
 ```text
 TimingData / protocol value
@@ -2053,9 +2055,13 @@ TimingData / protocol value
           v
 compact retained state
           |
-          | materialize on read/output
+          | scalar read when sufficient
           v
-semantic value / DTO / presentation result
+application / protocol / presentation boundary
+          |
+          | materialize only when needed
+          v
+semantic value / DTO / external representation
 ```
 
 Do **not** retain `TimingData`, a protocol DTO or another aggregate solely because it
@@ -2087,9 +2093,11 @@ The TagProcessor passage and duplicate-filter state use the same scalar-boundary
 
 `ActiveRegistrations` follows this rule as well: LocationId scopes the complete active-WP
 projection, so each retained row needs only sequence, effective time, packed RegistrationId and
-validity. Committed `TimingData` is input to `apply(...)`, not retained state. `StageStartTimes` likewise
-retains normalized UTC epoch milliseconds rather than a partial `TimingTimestamp`.
-Registration/display reads materialize semantic values only when needed.
+validity. Committed `TimingRecord` is input to `apply(...)`, not retained state. Its internal
+read exposes effective time as epoch milliseconds; `TimingNodeProxy` materializes
+`TimingTimestamp` only when building the presentation-facing registration entry.
+`StageStartTimes` likewise retains normalized UTC epoch milliseconds rather than a partial
+`TimingTimestamp`.
 
 When every row in a retained projection shares one scope value, retain that value once at the
 projection owner instead of repeating it in every row. The current OPEN LocationId is such a
