@@ -128,7 +128,7 @@ highest contiguously applied RaceData sequence for each TimingNode.
 The current v1 RaceData payload can contain one or more incremental change sections:
 
 - `teamAssignments` changes the live RegistrationId -> TeamId assignment;
-- `stageStartTimes` changes TeamId-scoped stage-start definitions.
+- `stageStartTimes` changes RegistrationId-scoped stage-start definitions.
 
 Each change uses an explicit operation such as `SET` or `DEL`. Absence of a
 section means no change to that part of RaceData. Receiving a RACE_DATA message
@@ -580,7 +580,9 @@ Physical TagIds remain resolved to their RegistrationId by EventData.
 :id: IF06-REQ-016  
 :status: D  
 
-RACE_DATA shall be able to carry incremental TeamId-scoped stage-start-time changes.
+RACE_DATA shall be able to carry incremental RegistrationId-scoped stage-start-time changes.
+The RegistrationId is the timing-domain identity whose start is being defined; consumers shall
+not need an intermediate TeamId lookup to match a registration to its stage start.
 A SET shall carry one `TimingTimestamp` value containing at least local race
 time-of-day. The timestamp may also contain a local date or already be absolute
 when the source knows that information. A source that knows only time-of-day
