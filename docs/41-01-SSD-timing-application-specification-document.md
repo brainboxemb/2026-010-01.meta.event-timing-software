@@ -1626,9 +1626,10 @@ LogBook commands and ordered history queries. The Task Lane runs cooperative nod
 for startup, upstream messages and derived timing state. A lane/task runner is **not** a
 thread.
 
-The Data Lane uses `SerialLane<T>`. The Task Lane uses `SerialTaskRunner`, which owns
-one internal `SerialLane<TaskRun>`. Both use the same Runtime-owned single-worker
-`timingNodeExecutor`.
+The Data Lane uses `SerialLane<T>`. The Task Lane uses `SerialTaskRunner`.
+Both use the same Runtime-owned single-worker `timingNodeExecutor`, but keep
+independent bounded admission state. The runner submits each eligible cooperative task
+step directly to that JDK scheduler; it does not introduce another `SerialLane`.
 
 `RuntimeExecutors` creates and shuts down the physical executors. The current Java
 implementation uses four executor roles:
@@ -1637,9 +1638,9 @@ implementation uses four executor roles:
 RuntimeExecutors
   timingNodeExecutor              (one scheduled worker)
     TimingNode A: Data Lane       (SerialLane<TimingNodeDataItem>)
-    TimingNode A: Task Lane       (SerialTaskRunner -> SerialLane<TaskRun>)
+    TimingNode A: Task Lane       (SerialTaskRunner)
     TimingNode B: Data Lane       (SerialLane<TimingNodeDataItem>)
-    TimingNode B: Task Lane       (SerialTaskRunner -> SerialLane<TaskRun>)
+    TimingNode B: Task Lane       (SerialTaskRunner)
 
   tagProcessorScheduledExecutor   (one scheduled worker)
     TagProcessor A                (SerialLane<TagObservation> + direct scheduled callbacks)
@@ -1663,10 +1664,12 @@ executor roles for this reason.
 The Java execution types have distinct jobs:
 
 - `SerialLane<T>` keeps bounded typed items in FIFO order and processes them in bounded batches.
-- `SerialTaskRunner` runs one `YieldingTask` step per TaskRun queue turn.
-- `TaskStep.AGAIN` re-admits at the queue back.
-- `TaskStep.AFTER` uses the JDK scheduler as a timer before re-admission.
-- `TaskStep.AWAIT` releases the worker until an asynchronous completion becomes ready.
+- `SerialTaskRunner` bounds pending cooperative steps and submits each eligible
+  `YieldingTask` step directly to its supplied single-thread JDK scheduler.
+- `TaskStep.AGAIN` submits the next step at the executor queue back.
+- `TaskStep.AFTER` uses the JDK scheduler as a timer before the next step becomes eligible.
+- `TaskStep.AWAIT` releases the worker and consumes no pending-step slot until an
+  asynchronous completion becomes ready.
 - `TaskStep.DONE` completes the task run.
 - `AbstractTask` manages reusable run/wake/cancellation lifecycle while the concrete task owns its decisions.
 - JDK `ScheduledExecutorService` callbacks may also run directly where no serial task queue is required; TagProcessor uses this for filter/housekeeping work on the same single thread as its observation lane.
@@ -1948,6 +1951,7 @@ It does not know about TimingNodes, devices or user interfaces.
 
 ```text
 execution/
+  ExecutionMetrics
   lanes/       SerialLane
   tasks/       SerialTaskRunner, YieldingTask, TaskStep, AbstractTask
 events/        Event<T>, EventSource<T>
@@ -1973,8 +1977,10 @@ or domain result policy.
 :::{arch} SerialTaskRunner
 :id: SerialTaskRunner
 
-`SerialTaskRunner` owns one `SerialLane<TaskRun>` and runs one `YieldingTask`
-step per TaskRun turn. JDK scheduling is used only to make delayed work eligible again.
+`SerialTaskRunner` independently bounds pending cooperative task steps and submits each
+eligible `YieldingTask` step directly to its Runtime-supplied single-thread JDK scheduler.
+`AGAIN` submits a continuation at the executor queue back; `AFTER` and `AWAIT` consume no
+pending-step slot while waiting.
 :::
 
 :::{arch} YieldingTask

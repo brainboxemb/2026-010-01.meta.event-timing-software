@@ -362,11 +362,11 @@ io/
 
 platform/
   execution/
+    ExecutionMetrics.java                    common bounded-admission/execution metrics
     lanes/
       SerialLane.java                        bounded typed serial FIFO
-      SerialLaneMetrics.java                 typed-lane queue/timing metrics
     tasks/
-      SerialTaskRunner.java                  cooperative task runs over SerialLane<TaskRun>
+      SerialTaskRunner.java                  direct cooperative task-step scheduling
       YieldingTask.java                      one cooperative step contract
       AbstractTask.java                      reusable run/wake/cancel lifecycle
       TaskStep.java                          AGAIN / AFTER / AWAIT / DONE continuation
@@ -395,15 +395,16 @@ ORDERED LogBook reads, and a **Task Lane** for live RaceData, derived timing sta
 heartbeat and upstream protocol state.
 
 The Data Lane is a typed `SerialLane<TimingNodeDataItem>`. The Task Lane is a
-`SerialTaskRunner`, which owns exactly one internal `SerialLane<TaskRun>`.
-Both are bounded and use the **same Runtime-owned single-worker
-`timingNodeExecutor`**. The two logical queues therefore preserve independent FIFO
-ordering and bounded admission without implying two Java threads.
+`SerialTaskRunner`. Both use the **same Runtime-owned single-worker
+`timingNodeExecutor`**, but they keep independent bounded admission state.
 
-`SerialLane<T>` owns one bounded `ArrayBlockingQueue`, one fixed queue worker,
-`maxItemsPerRun` batching and lane-local metrics. The backing executor sees only
-that worker, never one executor task per domain item. `SerialTaskRunner` adds
-cooperative continuation semantics without adding another queue or worker.
+`SerialLane<T>` owns one bounded `ArrayBlockingQueue`, one fixed queue worker and
+`maxItemsPerRun` batching. The backing executor sees only that worker, never one
+executor task per domain item. `SerialTaskRunner` does not wrap task runs in another
+`SerialLane`: it submits each eligible cooperative task step directly to the supplied
+single-thread `ScheduledExecutorService` and bounds how many of its own steps may be
+pending there. `AGAIN` submits a new step at the executor queue back; `AFTER` and
+`AWAIT` keep no pending-step slot while waiting.
 
 Each TagProcessor owns exactly one `SerialLane<TagObservation>` for bounded antenna
 ingress. The same Runtime-owned single-thread `tagProcessorScheduledExecutor` backs
@@ -422,9 +423,9 @@ RuntimeExecutors
 
 timingNodeExecutor — ScheduledThreadPoolExecutor, 1 physical worker
   ├── TimingNode A: Data Lane -> SerialLane<TimingNodeDataItem>
-  ├── TimingNode A: Task Lane -> SerialTaskRunner -> SerialLane<TaskRun>
+  ├── TimingNode A: Task Lane -> SerialTaskRunner
   ├── TimingNode B: Data Lane -> SerialLane<TimingNodeDataItem>
-  └── TimingNode B: Task Lane -> SerialTaskRunner -> SerialLane<TaskRun>
+  └── TimingNode B: Task Lane -> SerialTaskRunner
 
 tagProcessorScheduledExecutor — ScheduledThreadPoolExecutor, 1 physical worker
   ├── TimingNode A: SerialLane<TagObservation>
@@ -551,19 +552,19 @@ AGAIN AFTER(t) AWAIT(c) DONE
   |      |       |       +--> complete this run
   |      |       +----------> completion callback; later re-admit
   |      +------------------> JDK timer; later re-admit
-  +-------------------------> re-admit at back of task queue
+  +-------------------------> submit next step at executor queue back
 ```
 
-`SerialTaskRunner` owns one `SerialLane<TaskRun>` plus a reference to the
-Runtime-owned `ScheduledExecutorService`. One queued `TaskRun` executes exactly one
-`runStep()`. `AGAIN` re-admits the same run at the queue back. `AFTER(delay)` uses
-the JDK scheduler only as a timer and re-admits after the delay. `AWAIT(completion)`
-registers an asynchronous completion callback and re-admits only when that dependency
-finishes. `DONE` completes the run.
+`SerialTaskRunner` owns runner-local bounded pending-step admission plus a reference to
+the Runtime-owned single-thread `ScheduledExecutorService`. One submitted `TaskRun` step
+executes exactly one `runStep()`. `AGAIN` submits the same run's next step at the executor
+queue back. `AFTER(delay)` uses the JDK scheduler as a timer and submits the next step only
+after the delay. `AWAIT(completion)` registers an asynchronous completion callback and
+submits the next step only when that dependency finishes. `DONE` completes the run.
 
-There is no scheduled serial-lane layer between a task and the JDK scheduler. Delays
-and asynchronous waits control **when** a `TaskRun` becomes eligible again; the internal
-`SerialLane<TaskRun>` remains the only task FIFO/admission boundary.
+There is no task-specific serial-lane layer between a cooperative task and the JDK
+scheduler. Delays and asynchronous waits control **when** a `TaskRun` becomes eligible
+again and consume no runner pending-step slot while waiting.
 
 `AbstractTask` is the reusable lifecycle owner for recurring state machines. A concrete
 task still owns its operation state; the base class only owns run/wake mechanics:
@@ -602,8 +603,8 @@ AbstractTask
   reusable run lifecycle, wake coalescing, cancellation and completion hook
 
 SerialTaskRunner
-  bounded cooperative TaskRun execution over one SerialLane<TaskRun>
-  JDK-timer and asynchronous-completion re-admission
+  bounded cooperative pending-step admission directly on one JDK scheduler
+  JDK-timer and asynchronous-completion continuation
   optional caller-side bounded wait support
 
 SerialLane<T>
@@ -2142,9 +2143,9 @@ policy.
 
 AntennaManager owns one `SerialTaskRunner` backed by Runtime's
 `sharedIoScheduledExecutor`. The runner executes the manager's reusable main task and
-child tasks. Delayed task steps use the JDK scheduler as a timer and then re-admit the same
-task run to the runner's internal `SerialLane<TaskRun>`. This adds no per-manager physical
-thread or second scheduled queue.
+child tasks. Delayed task steps use the JDK scheduler as a timer and submit the same task run's next
+eligible step directly to that scheduler. Waiting consumes no runner pending-step slot.
+This adds no per-manager physical thread or second logical queue.
 
 ```text
 Runtime-owned sharedIoScheduledExecutor
@@ -2166,8 +2167,8 @@ Runtime-owned sharedIoScheduledExecutor
 ```
 
 Each cooperative task executes one logical step per turn and returns `AGAIN`,
-`AFTER(delay)`, `AWAIT(completion)` or `DONE`. `AGAIN` yields to the back of the
-TaskRun queue. `AFTER(delay)` uses a timer registration and does not occupy the physical
+`AFTER(delay)`, `AWAIT(completion)` or `DONE`. `AGAIN` yields by submitting the next step at the back of the
+executor queue. `AFTER(delay)` uses a timer registration and does not occupy the physical
 worker while waiting. `AWAIT` releases the worker until an asynchronous dependency
 completes.
 
@@ -2701,13 +2702,14 @@ tag-processing counts are not TimingNode queue counts.
 
 The component that performs the work owns the hot-path counter update:
 
-- `SerialLaneMetrics` owns typed-lane queue result, queue depth/high-water, queue wait
-  and execution duration; callers read those values through an immutable
-  `SerialLaneMetrics.Snapshot`. `SerialTaskRunner.metrics()` delegates to its internal
-  `SerialLane<TaskRun>`, and TagProcessor reads the metrics of its
-  `SerialLane<TagObservation>`. Direct scheduled callbacks are not a second lane metric.
-  Because a physical worker is Runtime-owned and may back multiple logical lanes/tasks, a
-  lane snapshot does not claim exclusive worker CPU time;
+- `ExecutionMetrics` owns the common bounded-admission, queue-depth/high-water,
+  queue-wait and execution-duration counters. Each execution primitive owns its own
+  instance: `SerialLane` measures queued typed items, while `SerialTaskRunner` measures
+  eligible cooperative task steps submitted to the JDK scheduler. `AFTER`/`AWAIT`
+  waiting time is not queue wait because no task-runner step is pending then. TagProcessor
+  reads the metrics of its `SerialLane<TagObservation>`; direct scheduled callbacks are
+  not a second execution metric. Because a physical worker is Runtime-owned and may back
+  multiple logical lanes/tasks, an execution snapshot does not claim exclusive worker CPU time;
 - the TimingNode commit path owns TimingData append/commit and post-commit event-delivery
   counters;
 - `TagProcessingMetrics` owns observation, burst, mapping, duplicate and
@@ -2873,7 +2875,7 @@ shared TagProcessor role worker
 
 shared TimingNode scheduled executor
   -> Data Lane per TimingNode: SerialLane<TimingNodeDataItem>
-  -> Task Lane per TimingNode: SerialTaskRunner -> SerialLane<TaskRun>
+  -> Task Lane per TimingNode: SerialTaskRunner
   -> TimingNode MainTask recovery runs as Task Lane work
 
 shared TimingSystemConductor scheduled executor
@@ -2932,7 +2934,7 @@ TimingNode
   │                     ├── LogBookDataLane -> result/wait/rejection mapping
   │                     ├── LogBookOperations -> commands, persistence, recovery + commit
   │                     └── LogBookState -> recovery state + LogBookData records
-  └── Task Lane -> SerialTaskRunner -> SerialLane<TaskRun>
+  └── Task Lane -> SerialTaskRunner
                    ├── TimingNode.MainTask -> startup LogBook recovery
                    └── NodeService
                         ├── MainTask -> LogBook INIT / LOADED / ERROR
@@ -3226,9 +3228,9 @@ The logical node topology is:
 ```text
 RuntimeExecutors.timingNodeExecutor
   ├─ TimingNode A Data Lane -> SerialLane<TimingNodeDataItem>
-  ├─ TimingNode A Task Lane -> SerialTaskRunner -> SerialLane<TaskRun>
+  ├─ TimingNode A Task Lane -> SerialTaskRunner
   ├─ TimingNode B Data Lane -> SerialLane<TimingNodeDataItem>
-  └─ TimingNode B Task Lane -> SerialTaskRunner -> SerialLane<TaskRun>
+  └─ TimingNode B Task Lane -> SerialTaskRunner
 ```
 
 `offer(T)` never waits for capacity and returns one of `ACCEPTED`, `FULL` or
@@ -3260,20 +3262,22 @@ The required behaviour is:
 - closing drains accepted work but does not own physical-executor shutdown;
 - Runtime stops physical role executors only after component lanes/runners have stopped.
 
-`SerialLaneMetrics` owns queue result, depth/high-water, queue wait and execution
-duration. `metrics().snapshot()` creates the immutable engineering view.
+`ExecutionMetrics` provides the shared queue/admission, depth/high-water, queue-wait
+and execution-duration model. Each `SerialLane` and `SerialTaskRunner` owns its own
+instance; `metrics().snapshot()` creates the immutable engineering view.
 
 ### SerialTaskRunner and direct JDK scheduling
 
-`SerialTaskRunner` specializes cooperative task execution without subclassing
-`SerialLane`. It owns exactly one `SerialLane<TaskRun>` and the Runtime-supplied
-`ScheduledExecutorService`.
+`SerialTaskRunner` is an independent cooperative execution primitive. It does not
+subclass, contain or delegate to `SerialLane`; it owns runner-local bounded pending-step
+admission and uses the Runtime-supplied single-thread `ScheduledExecutorService` directly.
 
-`runTask(YieldingTask)` admits one TaskRun. Every TaskRun queue turn invokes one
-`runStep()`. `AGAIN` re-admits at the queue back, `AFTER` uses
-`ScheduledExecutorService.schedule(...)` as a timer, `AWAIT` attaches an asynchronous
-completion callback, and `DONE` completes the run. Delayed/awaiting tasks occupy neither
-the lane queue nor the physical worker until they become eligible for re-admission.
+`runTask(YieldingTask)` creates one TaskRun and submits its first eligible step. Each
+executor turn invokes one `runStep()`. `AGAIN` submits the continuation at the executor
+queue back, `AFTER` uses `ScheduledExecutorService.schedule(...)` only as a timer,
+`AWAIT` attaches an asynchronous completion callback, and `DONE` completes the run.
+Delayed/awaiting tasks occupy neither a runner pending-step slot nor the physical worker
+until their continuation becomes eligible.
 
 TagProcessor deliberately does **not** use `SerialTaskRunner`: observations are plain
 typed items, so one `SerialLane<TagObservation>` is sufficient. Its timed filter and
@@ -3285,7 +3289,7 @@ Current composition is:
 ```text
 TimingNode
   -> Data Lane: SerialLane<TimingNodeDataItem>
-  -> Task Lane: SerialTaskRunner -> SerialLane<TaskRun>
+  -> Task Lane: SerialTaskRunner
   -> TagProcessor: SerialLane<TagObservation>
                    + direct ScheduledExecutorService callbacks
 
