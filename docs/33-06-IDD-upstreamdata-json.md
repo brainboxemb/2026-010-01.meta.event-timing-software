@@ -129,7 +129,7 @@ Example:
     "stageStartTimes": [
       {
         "op": "SET",
-        "teamId": "0042",
+        "regId": "RT-R-0001",
         "start": "23:59:50.00"
       }
     ]
@@ -147,7 +147,7 @@ v1 sections are optional:
 | Section | Key | Operations |
 | --- | --- | --- |
 | `teamAssignments` | `regId` | `SET` with `teamId`; `DEL` removes the assignment |
-| `stageStartTimes` | `teamId` | `SET` with one `start` TimingTimestamp value; `DEL` removes the definition |
+| `stageStartTimes` | `regId` | `SET` with one `start` TimingTimestamp value; `DEL` removes the definition |
 
 At least one non-empty supported change section is required. An omitted section means
 “no change”; it never means “clear that entire state”.
@@ -171,10 +171,15 @@ Reserve-tag mapping example for removal:
 }
 ```
 
-The assignment uses `regId`: EventData resolves physical TagIds to their
-RegistrationId, while RACE_DATA supplies only the live RegistrationId-to-TeamId
-assignment. The UpstreamData contract does not classify that assignment as a
-special reserve-tag concept.
+Both RACE_DATA sections use `regId` as their timing-domain key. EventData resolves physical
+TagIds to RegistrationId, while `teamAssignments` optionally supplies a live
+RegistrationId-to-TeamId relationship. A stage start belongs directly to the RegistrationId;
+its lookup does not depend on whether a TeamId is fixed in EventData or assigned live.
+The UpstreamData contract does not classify a live assignment as a special reserve-tag concept.
+
+Because the public/reference v1 contract is still draft, this correction changes draft v1
+directly. A `stageStartTimes` item that carries only `teamId` does not conform and is rejected;
+there is no compatibility alias that silently restores the old key.
 
 `start` is one textual `TimingTimestamp` value. The default v1 profile accepts:
 - time-only: `HH:mm:ss[.fraction]`;
@@ -492,7 +497,7 @@ format.
 | IF06-REQ-004/005 | RACE_DATA carries node-scoped ordered incremental changes and explicit application outcome |
 | IF06-REQ-014 | top-level RACE_DATA `seq` + cumulative ACK realize ordered application |
 | IF06-REQ-015 | `teamAssignments` carries live `regId` -> `teamId` SET/DEL changes |
-| IF06-REQ-016 | `stageStartTimes` carries TeamId-scoped SET/DEL changes |
+| IF06-REQ-016 | `stageStartTimes` carries RegistrationId-scoped SET/DEL changes |
 | IF06-REQ-006 | SYNC/REQ preserve the authoritative source identity/order of each stream |
 | IF06-REQ-017 | SYNC uses `stream` + current source-head `seq` |
 | IF06-REQ-018 | transport acknowledgement does not replace RACE_DATA semantic ACK/source sync |
