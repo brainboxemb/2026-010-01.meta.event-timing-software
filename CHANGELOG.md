@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Clarify the internal timing representation from antenna passage selection through LogBook: absolute event time remains primitive UTC epoch milliseconds, semantic timestamp wrappers are boundary values, default IF-05 effective `time` is canonicalized to 10 ms at commit, and `recTime` retains full 1 ms precision.
+
 - Complete upstream Messaging composition before runtime use: construct fixed `UpstreamStream` ports first and then one complete `UpstreamGateway` from the connector plus routing map; remove runtime application-port creation and treat connector-to-gateway input binding as Messaging-internal plumbing rather than public API.
 
 - Centralize durable Java coding guidance in `44-01-GPD-java-design-rules.md`: comments must add rationale/invariants instead of narrating names, creation factories use `create...`, fixed object graphs are completed during composition rather than mutated through setup-only runtime APIs, and primary class flow appears before private nested implementation types.
