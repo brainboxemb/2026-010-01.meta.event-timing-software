@@ -316,7 +316,7 @@ io/
     antenna/
       AntennaId.java                    configured software identity of one antenna
       AntennaInfo.java                  self-test identity/version result
-      TagObservation.java               EventData TagId + RSSI + TimingTimestamp fact
+      TagObservation.java               TagId + RSSI + absolute/monotonic primitive times
       model/
         Antenna.java                    device/provider lifecycle + observation contract
         SimulatedAntenna.java           built-in reference/simulation implementation
@@ -707,7 +707,7 @@ EventData without changing TagProcessor's TagId-to-RegistrationId responsibility
 
 The provider/antenna implementation may decode or decrypt proprietary source
 bytes, but after that boundary generic code uses the shared `eventdata.TagId`.
-`TagObservation` therefore carries TagId, RSSI and TimingTimestamp.
+`TagObservation` therefore carries TagId, RSSI, absolute UTC epoch milliseconds and process-local monotonic nanoseconds. The absolute value may later become TimingData; the monotonic value is used only for elapsed passage rules. Generic tag processing does not reconstruct a `TimingTimestamp` wrapper.
 
 TagProcessor resolves each observation through EventData and keeps its
 `TagObservationFilter` keyed by RegistrationId. The existing registration-keyed
@@ -2290,7 +2290,8 @@ hardware.
 final class TagObservation {
     TagId tagId();
     int rssi();
-    TimingTimestamp observedAt();
+    long observedAtEpochMillis();
+    long observedAtMonotonicNanos();
 }
 ```
 
@@ -2299,10 +2300,12 @@ decryption. Once that work is complete, the generic observation carries the
 semantic `domain.eventdata.TagId`. RSSI is the decoded/normalized signal
 strength used by TagProcessor policy.
 
-The timestamp is attached at the earliest accepted decoded-observation point. It
-becomes the automatic registration effective time when that observation is selected
-as the strongest observation of the resolved RegistrationId passage and the
-TimingNode command is admitted.
+Both time bases are captured at the earliest accepted decoded-observation point.
+The absolute epoch-millisecond value becomes the registration's source event time
+when that observation is selected. The monotonic value is never persisted; it only
+decides passage gaps/duration and equal-RSSI ordering. A presentation or protocol
+boundary may materialize a semantic timestamp object when that representation is
+actually needed.
 
 Each antenna owns:
 
@@ -2425,7 +2428,7 @@ PassageState R-123
   selected
     TagId
     strongestRssi
-    observedAt
+    observedAtEpochMillis
 ```
 
 The implementation need not retain every TagObservation. Per-tag counters/extrema
@@ -2444,15 +2447,18 @@ RegistrationId passage, regardless of which associated TagId produced it. Equal
 RSSI keeps the earlier selected observation unless later requirements define
 another rule.
 
-The selected observation's original TimingTimestamp becomes the automatic
-registration effective time.
+The selected observation's original absolute epoch-millisecond value is emitted
+through `TagProcessor.NewRegistration` and remains a primitive through
+TimingNode and LogBookCommands. The default IF-05 profile canonicalizes that value
+to its required centisecond effective-time precision only when creating the
+TimingRecord.
 
 #### Duplicate suppression and queueing
 
 The filtering order is:
 
 ```text
-TagObservation(TagId, RSSI, observedAt)
+TagObservation(TagId, RSSI, observedAtEpochMillis, observedAtMonotonicNanos)
   |
   +--> EventData.registrationIdFor(TagId)
           |
