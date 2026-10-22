@@ -707,7 +707,10 @@ EventData without changing TagProcessor's TagId-to-RegistrationId responsibility
 
 The provider/antenna implementation may decode or decrypt proprietary source
 bytes, but after that boundary generic code uses the shared `eventdata.TagId`.
-`TagObservation` therefore carries TagId, RSSI, absolute UTC epoch milliseconds and process-local monotonic nanoseconds. The absolute value may later become TimingData; the monotonic value is used only for elapsed passage rules. Generic tag processing does not reconstruct a `TimingTimestamp` wrapper.
+`TagObservation` therefore carries TagId, RSSI, absolute UTC epoch milliseconds and
+process-local monotonic nanoseconds. The absolute value may later become TimingData;
+the monotonic value is used only for elapsed passage rules. Generic tag processing does
+not reconstruct a `TimingTimestamp` wrapper.
 
 TagProcessor resolves each observation through EventData and keeps its
 `TagObservationFilter` keyed by RegistrationId. The existing registration-keyed
@@ -2955,8 +2958,13 @@ The **Data Lane** is the sole writer for normal ordered LogBook commands and que
 `TimingNodeDataLane` adapts the generic `SerialLane<TimingNodeDataItem>` to typed
 LogBook-operation and upstream-turn items without creating another queue or thread model.
 `LogBookDataLane` owns result-bearing command/query completion and bounded wait mapping.
-`LogBookOperations` owns state-changing domain operations, TimingData creation, time
-capture, durable append, recovery reconstruction and commit metrics/logging.
+`LogBookOperations` owns state-changing domain operations, TimingData creation,
+record-creation time capture, durable append, recovery reconstruction and commit
+metrics/logging. Internal registration commands carry absolute times as UTC
+epoch-millisecond `long` values; they do not retain `TimingTimestamp` wrappers.
+For the default IF-05 profile, effective `time` is canonicalized to the required
+10 ms boundary before the TimingRecord is committed, while `recordedAtMillis`
+preserves the full 1 ms record-creation time required by `recTime`.
 `LogBookState` contains passive mutable state and committed in-memory TimingData.
 
 Persisted TimingData loading is **not** a Data Lane item. After child activation starts
