@@ -773,8 +773,13 @@ Every constructor and method should have a short Javadoc or immediately adjacent
 comment that states its purpose. Private helpers are included. The comment may be one line
 when the purpose is simple, but an undocumented method should be treated as a review issue.
 
-Comments must still add meaning rather than translate syntax. For component boundaries,
-threading/lifecycle helpers or non-obvious code, explain:
+Comments must still add meaning rather than translate syntax. A comment that starts with
+`Returns...`, `Creates...`, `Verifies...` or `Publishes...` should trigger review when
+it only turns the method name into an English sentence. Keep such wording only when it adds a
+caller-visible contract, invariant or ownership rule that is not already obvious from the
+name and signature.
+
+For component boundaries, threading/lifecycle helpers or non-obvious code, explain:
 
 1. what the component or method is responsible for;
 2. what it is deliberately not responsible for when that matters;
@@ -2135,6 +2140,124 @@ the ingress contract owns external time interpretation.
 
 ---
 
+### DR-28 — Name object creation explicitly
+
+**Rule**
+
+A factory method that creates and returns a new object or immutable value uses a
+`create...` name.
+
+Prefer:
+
+```java
+TimingRecord.createNodeClosed(...);
+UpstreamApiMessage.createOutboundMessage(...);
+```
+
+over adjective/noun-only factory names such as:
+
+```java
+TimingRecord.closed(...);
+UpstreamApiMessage.outbound(...);
+```
+
+Use a different verb only when the operation is genuinely different from creation:
+
+- `parse...` converts an external representation and may validate syntax;
+- `read...` / `load...` retrieves existing data;
+- `find...` searches existing state;
+- `copyOf...` makes a copy where copy semantics are the relevant distinction.
+
+**Why**
+
+At a call site, object creation should be visible without opening the implementation.
+This is especially important for static factories whose names otherwise look like
+properties or state predicates.
+
+**Avoid**
+
+Using a noun/adjective solely because the return type already reveals the created type.
+
+---
+
+### DR-29 — Complete fixed composition before runtime use
+
+**Rule**
+
+A runtime component should be fully composed before it becomes operational.
+
+When a relationship is fixed by configuration/composition, construct the participating
+objects and pass the complete fixed structure into the runtime owner. Do not create an
+empty runtime object and then use public `create...`, `register...` or `add...` methods
+to mutate its permanent object graph unless dynamic registration is itself a real runtime
+requirement.
+
+Prefer:
+
+```java
+Map<NodeId, UpstreamStream> streams = createStreams(...);
+UpstreamGateway gateway = new UpstreamGateway(connector, streams);
+```
+
+over:
+
+```java
+UpstreamGateway gateway = new UpstreamGateway();
+gateway.createApplicationPort(...);
+gateway.createApplicationPort(...);
+```
+
+A constructor may validate and retain the completed graph; it must still obey DR-02 and
+must not start runtime behaviour.
+
+**Why**
+
+Fixed composition and runtime behaviour are different responsibilities. A complete
+constructor contract makes valid object state explicit and prevents component APIs from
+being polluted with setup-only mutation operations.
+
+**Avoid**
+
+Keeping a setup/factory method on a runtime component only because composition code needs
+a convenient place to create one of the component's children.
+
+---
+
+### DR-30 — Keep the primary class flow visible
+
+**Rule**
+
+Lay out a class so a reader sees its public meaning and normal call flow before private
+implementation machinery.
+
+A useful default order is:
+
+1. constants and public semantic nested types that are part of the API;
+2. fields;
+3. constructors;
+4. public methods;
+5. protected/package-private methods where relevant;
+6. private helpers;
+7. private nested implementation classes.
+
+A private nested helper such as `NodeBinding` should normally be placed after the
+constructor/method flow, not between the class declaration and the primary constructor.
+Move it earlier only when the nested type itself is essential to understanding the public
+contract.
+
+**Why**
+
+Private implementation structure should not obscure the class's main API. Reviewers should
+be able to scan construction and normal runtime behaviour without first reading helper
+types that only support the implementation.
+
+**Avoid**
+
+Placing a private nested implementation class above the public constructor merely because
+it is declared before the fields that reference it.
+
+---
+
 ## Pull-request review check
 
 For Java component changes, a reviewer can use this short check:
@@ -2166,6 +2289,9 @@ For Java component changes, a reviewer can use this short check:
 24. **Bounded reads** — Can any query or derived view grow with runtime data, and if so is its batch/page/visitor limit explicit and enforced internally?
 25. **Maintained selection** — If a view repeatedly chooses one representative from many source records, is that selection updated on mutation instead of rediscovered by full scans?
 26. **Projection scope** — Is a current-WP/current-session projection activated and rebuilt by its owning lifecycle instead of silently retaining unrelated historical scopes?
+27. **Creation naming** — Do factories that create new objects/values use an explicit `create...` name?
+28. **Fixed composition** — Is the permanent object graph completed during composition instead of mutated later through setup-only runtime API?
+29. **Class layout** — Is the primary constructor/API visible before private nested implementation machinery?
 
 A review can cite a rule such as `DR-05`, but the rule text and example should remain
 clear enough that the identifier is not required to understand the review comment.

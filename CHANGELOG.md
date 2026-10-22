@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Centralize durable Java coding guidance in `44-01-GPD-java-design-rules.md`: comments must add rationale/invariants instead of narrating names, creation factories use `create...`, fixed object graphs are completed during composition rather than mutated through setup-only runtime APIs, and primary class flow appears before private nested implementation types.
+
 - Simplify the semantic IF-06 data model: document `UpstreamData` as one node-scoped immutable base with small concrete message values, with `DefaultUpstreamData` retained only as the reference-profile factory rather than a hidden implementation hierarchy.
 
 - Clarify system-level wiring ownership: Runtime constructs components and resolves mappings, while each `TimingSystem` installs its fixed AntennaManager-to-TimingNode and UpstreamStream-to-NodeUpstream event links before activation; NodeUpstream and TimingNode no longer need composition-only EventInput ports for those links.
