@@ -245,11 +245,13 @@ manual registration it also supplies the original AUTO/MAN time-source
 classification. TimingNode assigns only the new record sequence/recorded-at
 context and commits the resulting REV record.
 
-TimingNode-generated timestamp precision is narrower than the generic TimingTimestamp
-range where higher precision adds no meaning: new NODE_INFO effective times use
-centisecond resolution and newly assigned record-creation time uses millisecond
-resolution. Registration effective time remains supplied timing information and is not
-globally truncated by the TimingData model.
+TimingNode and LogBook carry absolute timing values internally as UTC epoch-millisecond
+scalars. The default IF-05 profile applies its field-specific canonical precision at the
+TimingRecord commit boundary: effective `time` is canonicalized to centiseconds
+(10 ms), while newly sampled record-creation time retains full millisecond precision for
+`recTime`. Registration effective time remains caller/observation-supplied timing
+information; the 10 ms canonicalization is a default IF-05 representation rule rather
+than a generic TimingData/Timestamp storage model.
 
 LogBook and this commit boundary are bookkeeping, not the owner of interpreted
 registration business state. They do not search prior history to decide whether
