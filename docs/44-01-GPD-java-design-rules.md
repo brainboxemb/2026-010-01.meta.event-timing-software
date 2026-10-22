@@ -42,8 +42,9 @@ A few words occur repeatedly in the Java design:
   task reads current state instead of replaying old event values;
 - **serial lane** — a `SerialLane<T>` that owns one bounded typed FIFO and processes
   accepted items serially on an externally owned executor. A lane is not its own Java thread;
-- **serial task runner** — a `SerialTaskRunner` that owns one
-  `SerialLane<TaskRun>` and executes one cooperative `YieldingTask` step per TaskRun turn.
+- **serial task runner** — a `SerialTaskRunner` that independently bounds eligible
+  cooperative task steps and submits them directly to a Runtime-supplied single-thread
+  `ScheduledExecutorService`; it does not introduce another `SerialLane`.
 
 Example:
 
