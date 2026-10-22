@@ -70,10 +70,16 @@ there is no hidden implementation hierarchy behind subtype interfaces.
 `DefaultUpstreamData` remains only the reference-profile factory/convenience layer.
 One concrete `UpstreamStream` is composed for each NodeUpstream.
 
-Transport ingress supplies `NodeId + encodedMessage` to an explicit result-bearing
-gateway ConnectorPort. `UpstreamGateway` uses the NodeId exactly there to select the
-already composed node-scoped UpstreamStream application port. Generic Messaging has no
-separate `UpstreamMessage(NodeId, payload)` value.
+Runtime composition first constructs the fixed node-scoped UpstreamStreams from
+NodeId + connector bindings, then constructs one complete UpstreamGateway from that
+connector and the complete NodeId-to-stream routing map. Runtime operation does not add,
+replace or create application ports.
+
+Transport ingress supplies `NodeId + encodedMessage` through the connector's fixed
+Messaging-internal gateway input. `UpstreamGateway` uses the NodeId exactly there to
+select the already composed node-scoped UpstreamStream application port. The internal
+input is not a public ConnectorPort contract, and Generic Messaging has no separate
+`UpstreamMessage(NodeId, payload)` value.
 
 Once selected, UpstreamStream is the fixed application port: `read()`, `send(...)`
 and availability checks operate through its captured connector/queue binding without
@@ -82,9 +88,10 @@ carry the producing UpstreamStream object itself. The owning TimingSystem instal
 fixed stream subscriptions before activation and targets ordinary NodeUpstream input
 methods; NodeUpstream does not expose composition-only EventInput ports. Connector
 CONNECTED/DISCONNECTED events likewise carry the producing connector object. `UpstreamConnector` is the
-abstract base that owns those public event ports and the one-time gateway input binding;
-concrete transports only implement their transport-specific state and delivery. Queue
-admission is not modeled as an event because it returns ACCEPTED/UNKNOWN_NODE/INPUT_FULL.
+abstract base that owns those public event ports and the one-time internal gateway input
+binding; concrete transports only implement their transport-specific state and delivery.
+Queue admission is not modeled as an event because it returns
+ACCEPTED/UNKNOWN_NODE/INPUT_FULL.
 
 Engineering-specific protocol adaptation is below `io.messaging.engineering`.
 `UpstreamApiMessage` extracts the IF-06 NodeId needed for inbound routing and retains
