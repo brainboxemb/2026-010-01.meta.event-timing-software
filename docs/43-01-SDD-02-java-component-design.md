@@ -283,9 +283,12 @@ domain/
         TimingDataPersistence.java      TimingData load/append domain port
         DefaultTimingDataPersistence.java codec/node/sequence mapping to I/O storage
     service/
-      NodeService.java                  Task Lane coordination + LogBook-status MainTask
-      DataTask.java                     bounded TimingData catch-up from LogBook
-      NodeServiceQuery.java             ordered result-bearing service reads
+      NodeService.java                  Task Lane processing + lifecycle/status coordination
+      state/
+        NodeState.java                  retained live/derived node data + accessor implementation
+        NodeStateAccessor.java          read-only ordered/catch-up-aware state boundary
+        DataTask.java                   bounded active-WP TimingData catch-up from LogBook
+        StateQuery.java                 ordered result-bearing state read task
 domain/
   system/
     upstream/
@@ -743,12 +746,14 @@ and post-commit publication. Normal Data Lane items use
 a Data Lane item: `TimingNode.MainTask` calls `LogBook.loadPersistedData()` as its
 startup step on the shared node worker.
 
-`NodeService` owns Task Lane semantic orchestration. Its MainTask handles only
-LogBook status while the separate DataTask owns bounded asynchronous TimingData catch-up.
-`RaceDataState`, `ActiveRegistrations`, `RegisteredTeams`, `StageTiming` and
-`RegistrationRanking` remain separate domain state/calculation/view objects.
-Other node-owned cooperative tasks use the same runner and therefore
-the same bounded TaskRun FIFO.
+NodeService owns Task Lane input processing, lifecycle and LogBook-status coordination.
+Its MainTask handles only LogBook availability. `NodeState` owns the retained live and
+derived node data and directly implements the read-only `NodeStateAccessor` boundary.
+`DataTask` owns bounded active-WP TimingData catch-up and `StateQuery` owns
+result-bearing ordered state reads. `RaceDataState`, `ActiveRegistrations` and
+`RegisteredTeams` keep their specialized data responsibilities behind NodeState rather
+than becoming fields on TimingNode. Other node-owned cooperative tasks use the same runner
+and therefore the same bounded TaskRun FIFO.
 
 TagProcessor owns one `SerialLane<TagObservation>`. Runtime supplies the same
 single-thread `ScheduledExecutorService` both as that lane's backing executor and as the
@@ -798,8 +803,7 @@ ORDERED
 
 The one-argument LogBook query remains ORDERED. A caller chooses CURRENT only
 when that LogBookQuery explicitly supports it. Status and the published LogBook
-head support CURRENT; count and record/range reads remain ORDERED. Task-owned
-queries such as StageTiming are separate and execute on NodeService.
+head support CURRENT; count and record/range reads remain ORDERED. Task-owned state reads use `NodeStateAccessor` and execute on the NodeService Task Lane.
 
 State-changing TimingData commands still execute on the Data Lane. After durable append and
 in-memory commit, LogBook publishes one immutable committed-TimingData fact through
@@ -1170,8 +1174,8 @@ mutable collaborators:
 RACE_DATA ACK follows that successful Task Lane application; no Data Lane hop
 is required for RaceData. LogBook publishes `LogBookStatus.LOADED` after persisted TimingData has loaded and
 `LogBookStatus.ERROR` after load failure. NodeService.MainTask handles only that status.
-DataTask then chooses its own bounded `timingDataRange(...)` reads and yields between
-those reads while rebuilding Task Lane-owned `ActiveRegistrations` and timing views.
+NodeState owns DataTask, which then chooses its own bounded `timingDataRange(...)` reads
+and yields between those reads while rebuilding Task Lane-owned active-WP state.
 Each later successful commit publishes only that committed TimingData record as a wake
 signal for DataTask. This is a data dependency, not a Task Lane lifecycle dependency.
 
@@ -2947,13 +2951,12 @@ TimingNode
                    ├── TimingNode.MainTask -> startup LogBook recovery
                    └── NodeService
                         ├── MainTask -> LogBook INIT / LOADED / ERROR
-                        ├── DataTask -> current head + bounded TimingData range reads
-                        ├── NodeServiceQuery -> ordered result-bearing reads
-                        ├── RaceDataState -> TeamAssignments + StageStartTimes
-                        ├── ActiveRegistrations -> ordered registration list
-                        ├── RegisteredTeams -> unique team set / + - changes
-                        ├── StageTiming -> stateless time calculation
-                        └── RegistrationRanking -> per-registration ranking
+                        └── NodeState -> retained live/derived state
+                             ├── DataTask -> current head + bounded TimingData range reads
+                             ├── StateQuery -> ordered result-bearing reads
+                             ├── RaceDataState -> TeamAssignments + StageStartTimes
+                             ├── ActiveRegistrations -> ordered registration list
+                             └── RegisteredTeams -> unique team set / + - changes
 ```
 
 The **Data Lane** is the sole writer for normal ordered LogBook commands and queries.
@@ -2978,18 +2981,23 @@ A successful load publishes `LogBookStatus.LOADED`; load failure publishes
 Each later successful commit publishes the committed TimingData record.
 
 The **Task Lane** is the TimingNode's `SerialTaskRunner`. `NodeService.MainTask` handles
-only LogBook availability: LOADED starts a full DataTask load and ERROR makes DataTask
-unavailable. `DataTask` owns the source cursor, bounded asynchronous LogBook reads and
-catch-up completion. It reads the current LogBook head and continues from its own
-`nextSequence`, fetching missing records with bounded ordered `timingDataRange(...)`
-queries through `LogBookAccessor` and yielding while each Data Lane read completes.
-The current implementation reads at most 64 TimingData records per batch.
+only LogBook availability. NodeState groups the retained Task Lane-owned data while
+RaceDataState, ActiveRegistrations and RegisteredTeams keep their specialized internal
+responsibilities. NodeState directly implements NodeStateAccessor; callers therefore see
+one read-only state boundary without an additional accessor implementation object.
 
-Later committed TimingData does not pass through NodeService as state. The post-commit
-event only wakes DataTask; DataTask then catches up from the authoritative LogBook source.
-`RaceDataState`, `ActiveRegistrations`, `RegisteredTeams`, `StageTiming` and
-`RegistrationRanking` retain distinct responsibilities. No aggregate `NodeServiceState`
-exists, and NodeService does not retain a second complete committed-TimingData collection.
+NodeState owns DataTask and StateQuery as execution helpers. DataTask owns the source
+cursor, bounded asynchronous LogBook reads and catch-up completion. It reads the current
+LogBook head and continues from its own `nextSequence`, fetching missing records with
+bounded ordered `timingDataRange(...)` queries through LogBookAccessor and yielding
+while each Data Lane read completes. StateQuery preserves Task Lane ordering for
+result-bearing reads and may first yield on DataTask catch-up. The current implementation
+reads at most 64 TimingData records per batch.
+
+Later committed TimingData does not pass through NodeService or NodeState as a second
+history collection. The post-commit event only wakes DataTask; DataTask then catches up
+from the LogBook source. NodeState groups the current live and derived data but does not
+duplicate committed TimingData.
 
 `ActiveRegistrations` stores one ordered compact scalar entry per committed registration
 ADD. TimingData is consumed at the input boundary and is not retained: the row keeps only
@@ -3029,7 +3037,7 @@ state**. It is not a second history store. The LogBook remains authoritative for
 LocationIds and all earlier OPEN/CLOSE periods.
 
 While the TimingNode is CLOSED there is no usable registration projection. On
-`OPEN(locationId)`, NodeService/DataTask clears the previous projection and scans the complete
+`OPEN(locationId)`, NodeState/DataTask clears the previous projection and scans the complete
 LogBook from sequence one in bounded batches. `ActiveRegistrations` admits only registration
 ADD/REV records whose LocationId equals the newly open WP. Therefore older registrations from
 earlier OPEN periods of the same WP return, while historical rows of every other WP are excluded.
@@ -3051,8 +3059,8 @@ live zero-to-nonzero and nonzero-to-zero transitions publish incremental events.
 
 Open/close requests may supersede a pending bounded LogBook read. DataTask therefore treats the
 requested LocationId as a generation: an obsolete partial batch is discarded, both projections
-are reset, and the newest requested WP restarts from sequence one. NodeService reads wait for
-that reconstruction/catch-up before observing the projection. Its registration/team read methods
+are reset, and the newest requested WP restarts from sequence one. NodeStateAccessor reads wait
+for that reconstruction/catch-up before observing the projection. Its registration/team read methods
 take no LocationId because there is exactly one current OPEN scope.
 
 These objects remain Task Lane-owned. CAN encoding, display cursor/synchronization state,
@@ -3108,7 +3116,9 @@ node.logBook().execute(
 // LogBookOperations owns state-changing command/commit work.
 // LogBookState owns passive state and committed TimingData; LogBookStatus owns published status.
 // SerialTaskRunner owns cooperative TaskRun execution for the TimingNode Task Lane.
-// NodeService.MainTask handles LogBook status; DataTask rebuilds/catches up the OPEN-WP projection.
+// NodeService.MainTask handles LogBook status and input-processing coordination.
+// NodeState implements NodeStateAccessor and owns the retained Task Lane data boundary.
+// DataTask rebuilds/catches up the OPEN-WP projection; StateQuery preserves ordered reads.
 // ActiveRegistrations owns ordered ADD rows and validity for the currently open WP.
 // RegisteredTeams owns the current open-WP unique-team set and live + / - changes.
 // Calculated presentation/query models are added only for an actual production consumer.

@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Align the SI-01 Java component design with the implemented NodeState boundary: `NodeService` keeps Task Lane processing/lifecycle coordination, `service.state.NodeState` owns retained live/derived node data and implements `NodeStateAccessor`, and `DataTask`/`StateQuery` remain state-owned cooperative tasks.
+
 - Clarify the internal timing representation from antenna passage selection through LogBook: absolute event time remains primitive UTC epoch milliseconds, semantic timestamp wrappers are boundary values, default IF-05 effective `time` is canonicalized to 10 ms at commit, and `recTime` retains full 1 ms precision.
 
 - Complete upstream Messaging composition before runtime use: construct fixed `UpstreamStream` ports first and then one complete `UpstreamGateway` from the connector plus routing map; remove runtime application-port creation and treat connector-to-gateway input binding as Messaging-internal plumbing rather than public API.
