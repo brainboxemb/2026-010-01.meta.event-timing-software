@@ -302,7 +302,7 @@ domain/
     racedata/
       RaceDataState.java                Task Lane-owned transactional RACE_DATA state
       TeamAssignments.java              package-private RegistrationId -> TeamId state
-      StageStartTimes.java              package-private absolute UTC stage starts
+      StageStartTimes.java              package-private compact UTC stage starts
     processing/
       TagProcessor.java                 registration-passage processing
       TagObservationFilter.java         observation selection
@@ -312,6 +312,7 @@ domain/
       package-info.java                 retained registration-state boundary and exclusions
       ActiveRegistrations.java          compact chronological ADD rows for the open WP
       RegisteredTeams.java              open-WP unique teams, full visit and + / - changes
+      StageTiming.java                   compact UTC normalization + elapsed/rollover rules
 io/
   messaging/
     UpstreamStream.java                 node-scoped non-blocking semantic mailbox
@@ -382,8 +383,8 @@ platform/
     MonotonicClock.java                   elapsed-time source
     SystemMonotonicClock.java             JVM monotonic implementation
   time/
-    TimeSource.java                       shared absolute Instant source contract
-    ClockTimeSource.java                  wall-clock-backed baseline implementation
+    TimeSource.java                       shared Instant + configured civil-time zone contract
+    ClockTimeSource.java                  Clock-backed time/zone implementation
   metrics/
     RuntimeObservation.java               explicit on-demand JVM/GC/thread observation
 ```
@@ -998,10 +999,12 @@ Detailed composition of raw platform time and the shared semantic TimeSource
 used by Domain and I/O timestamp producers.
 The raw absolute wall clock and monotonic elapsed-time source come from
 `PlatformEnvironment`. Runtime composes a `platform.time.TimeSource` from the
-absolute Clock and passes that timing source to components that attach or record
-event time. TimeSource returns `Instant`, keeping Platform independent of the
-TimingData/domain value model. The current baseline implementation is `ClockTimeSource`;
-tests and simulation may inject controlled equivalents.
+absolute Clock and passes that timing source to components that attach or interpret
+event time. TimeSource exposes both the absolute `Instant` and the configured civil-time
+`ZoneId`. The current baseline implementation is `ClockTimeSource`, which exposes the
+zone carried by its injected Clock; Runtime may therefore re-zone or replace that Clock
+without changing Domain consumers. Lightweight/custom TimeSource implementations default
+their civil-time zone explicitly to UTC.
 
 TimeSource ownership is deliberately not encoded as TimingSystem or TimingNode
 API. Composition decides its sharing scope. The current single-node Runtime has
@@ -3035,13 +3038,23 @@ transitions produce incremental + / - notifications. Historical reconstruction i
 the display first takes a full burst after the OPEN projection has caught up. CAN encoding,
 delivery and per-display synchronization state remain outside Domain.
 
-Stage-start time interpretation belongs to the ordered RACE_DATA ingress boundary.
-`NodeService.applyRaceData(...)` samples the node's shared `TimeSource` once for the
-message and `RaceDataState` normalizes every stage-start SET to an absolute UTC
-epoch-millisecond value before it enters live state. An absolute IF-06 timestamp keeps its
-Instant; a date+time value is interpreted as UTC; a time-only value uses the current UTC
-calendar date from that shared TimeSource. Partial civil time is therefore not retained in
-`StageStartTimes`, and downstream timing code never receives a `ZoneId` to reinterpret it.
+Stage-start interpretation is split deliberately between ingress normalization and
+`StageTiming`. `NodeService.applyRaceData(...)` samples the shared `TimeSource` once
+and normalizes every IF-06 SET to one compact UTC long before it enters `RaceDataState`.
+A time-only value retains only UTC `HHmmsscc` and therefore remains below `100000000`;
+a value that contains a date is stored as UTC `yyyyMMddHHmmsscc`. No missing date is added.
+
+Absolute IF-06 values already define their UTC instant. Local date/time values use the
+configured TimeSource zone and reject ambiguous/nonexistent DST wall times. A time-only
+value uses only the zone offset active for the sampled timing context; the result remains
+time-only. If a variable-offset zone has a transition within the relevant twelve-hour
+window, the time-only value is rejected rather than guessing which offset applies.
+
+`StageTiming` is the single elapsed/rollover rule. For a dated start it compares the
+explicit UTC date/time directly with the absolute registration passage. For a time-only
+start it evaluates same-UTC-day/previous-UTC-day rollover and accepts only the unique
+interpretation with `0 <= elapsed < 12 hours`. Exactly twelve hours or otherwise
+unresolvable values remain known stage starts but do not produce elapsed time or rank.
 
 The `domain.node.registration` package contains only **active-WP registration-derived
 state**. It is not a second history store. The LogBook remains authoritative for all
@@ -3090,7 +3103,7 @@ node's own startup/execution path.
 Neither condition replaces functional OPEN/CLOSED state or current LocationId.
 
 RACE_DATA therefore does **not** cross to the Data Lane: sequence validation,
-UTC stage-start normalization, transactional live-state mutation and ACK happen on Task
+compact UTC stage-start normalization, transactional live-state mutation and ACK happen on Task
 Lane task turns. TIMING_DATA
 REQ/replay is different because its source is Data Lane-owned LogBookData; that path uses
 bounded asynchronous handoff and bounded TimingData batches. A cooperative task that needs
