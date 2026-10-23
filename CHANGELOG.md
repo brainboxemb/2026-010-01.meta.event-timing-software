@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Correct SI-01 stage-start semantics to match IF-06: preserve missing date knowledge in compact UTC longs (`HHmmsscc` vs `yyyyMMddHHmmsscc`), source civil-time zone from `TimeSource`/`ClockTimeSource`, centralize rollover in `StageTiming`, and resolve time-only elapsed only for a unique result below 12 hours.
+
 - Align the SI-01 Java design with the explicit node application boundaries: shared `EventData` is supplied directly to presentation/application composition instead of passing through `TimingNode`/`NodeService`, and `NodeStateTestControl` is separated from read-only `NodeStateAccessor` for engineering/test mutation.
 
 - Align the SI-01 Java component design with the implemented NodeState boundary: `NodeService` keeps Task Lane processing/lifecycle coordination, `service.state.NodeState` owns retained live/derived node data and implements `NodeStateAccessor`, and `DataTask`/`StateQuery` remain state-owned cooperative tasks.
