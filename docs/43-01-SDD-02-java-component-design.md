@@ -285,8 +285,9 @@ domain/
     service/
       NodeService.java                  Task Lane processing + lifecycle/status coordination
       state/
-        NodeState.java                  retained live/derived node data + accessor implementation
+        NodeState.java                  retained live/derived node data + boundary implementation
         NodeStateAccessor.java          read-only ordered/catch-up-aware state boundary
+        NodeStateTestControl.java       engineering/test mutation boundary
         DataTask.java                   bounded active-WP TimingData catch-up from LogBook
         StateQuery.java                 ordered result-bearing state read task
 domain/
@@ -748,7 +749,9 @@ startup step on the shared node worker.
 
 NodeService owns Task Lane input processing, lifecycle and LogBook-status coordination.
 Its MainTask handles only LogBook availability. `NodeState` owns the retained live and
-derived node data and directly implements the read-only `NodeStateAccessor` boundary.
+derived node data and directly implements both the read-only `NodeStateAccessor` and the
+separate engineering/test `NodeStateTestControl`. Normal consumers receive only the
+read-only accessor; engineering composition receives the test control explicitly.
 `DataTask` owns bounded active-WP TimingData catch-up and `StateQuery` owns
 result-bearing ordered state reads. `RaceDataState`, `ActiveRegistrations` and
 `RegisteredTeams` keep their specialized data responsibilities behind NodeState rather
@@ -895,6 +898,13 @@ The Domain boundary stays small. `TimingNode` owns OPEN/CLOSED state and
 scope for application work that must stay ordered with OPEN/CLOSE. The Supplier runs
 on the caller thread while the TimingNode operation lock is held. The method does not
 queue work and is not a commit/rollback transaction.
+
+Runtime composition supplies `TimingNodeProxy` with the shared immutable `EventData`,
+the node's `NodeStateAccessor`, the engineering-only `NodeStateTestControl` and
+`LogBookAccessor` directly. The proxy does not depend on `NodeService`, and neither
+`TimingNode` nor `NodeService` proxies EventData reference-data lookups. A team-based
+presentation command combines the current `TimingNode.locationId()` with
+`EventData.registrationIdFor(locationId, teamId)` at the application boundary.
 
 State-sensitive presentation writes build the concrete typed LogBook command inside that
 locked scope so the OPEN check and current LocationId cannot change between the check and
@@ -2983,8 +2993,9 @@ Each later successful commit publishes the committed TimingData record.
 The **Task Lane** is the TimingNode's `SerialTaskRunner`. `NodeService.MainTask` handles
 only LogBook availability. NodeState groups the retained Task Lane-owned data while
 RaceDataState, ActiveRegistrations and RegisteredTeams keep their specialized internal
-responsibilities. NodeState directly implements NodeStateAccessor; callers therefore see
-one read-only state boundary without an additional accessor implementation object.
+responsibilities. NodeState directly implements NodeStateAccessor and NodeStateTestControl.
+Normal callers see the read-only accessor; engineering/test composition receives the mutation
+control separately, without an additional state-wrapper implementation object.
 
 NodeState owns DataTask and StateQuery as execution helpers. DataTask owns the source
 cursor, bounded asynchronous LogBook reads and catch-up completion. It reads the current
@@ -3117,7 +3128,7 @@ node.logBook().execute(
 // LogBookState owns passive state and committed TimingData; LogBookStatus owns published status.
 // SerialTaskRunner owns cooperative TaskRun execution for the TimingNode Task Lane.
 // NodeService.MainTask handles LogBook status and input-processing coordination.
-// NodeState implements NodeStateAccessor and owns the retained Task Lane data boundary.
+// NodeState implements NodeStateAccessor and NodeStateTestControl; Runtime exposes them separately.
 // DataTask rebuilds/catches up the OPEN-WP projection; StateQuery preserves ordered reads.
 // ActiveRegistrations owns ordered ADD rows and validity for the currently open WP.
 // RegisteredTeams owns the current open-WP unique-team set and live + / - changes.

@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Align the SI-01 Java design with the explicit node application boundaries: shared `EventData` is supplied directly to presentation/application composition instead of passing through `TimingNode`/`NodeService`, and `NodeStateTestControl` is separated from read-only `NodeStateAccessor` for engineering/test mutation.
+
 - Align the SI-01 Java component design with the implemented NodeState boundary: `NodeService` keeps Task Lane processing/lifecycle coordination, `service.state.NodeState` owns retained live/derived node data and implements `NodeStateAccessor`, and `DataTask`/`StateQuery` remain state-owned cooperative tasks.
 
 - Clarify the internal timing representation from antenna passage selection through LogBook: absolute event time remains primitive UTC epoch milliseconds, semantic timestamp wrappers are boundary values, default IF-05 effective `time` is canonicalized to 10 ms at commit, and `recTime` retains full 1 ms precision.
