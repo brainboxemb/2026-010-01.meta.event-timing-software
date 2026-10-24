@@ -75,20 +75,20 @@ Top-level members:
 
 The wire name `pckNr` denotes packet delivery/debug number (`packetNr` in the typed Java model), while `seqNr` remains the IF-05 TimingData/LogBook sequence. The RECV wire name `rcvPckNr` denotes `receivedPacketNr` in the typed semantic model.
 
-Packet identity is separate from TimingData identity. In particular,
+The packet number is separate from TimingData identity. In particular,
 `pckNr=42` does not imply TimingData sequence 42.
 
 Both directions use packet numbers because they materially improve engineering traces and
-message inspection. In the current baseline only positive DN_PACKET ids participate in
-RECV/resend. UP_PACKET ids are visible delivery/debug identity and are not themselves
+message inspection. In the current baseline only positive DN_PACKET numbers participate in
+RECV/resend. UP_PACKET numbers are visible delivery/debug numbers and are not themselves
 acknowledged.
 
-Normal positive DN_PACKET ids advance in send order. Central keeps at most one positive
+Normal positive DN_PACKET numbers advance in send order. Central keeps at most one positive
 DN_PACKET unconfirmed for a TimingNode. It does not advance to the next normal downstream
 packet until the outstanding packet has been confirmed. A resend uses the same packetNr
 and the same semantic message.
 
-Packet id 0 is reserved for PING packets. A PING packet does not consume the normal
+Packet number 0 is reserved for PING packets. A PING packet does not consume the normal
 positive packet counter and is not confirmed with RECV.
 
 ## Message families
@@ -157,7 +157,7 @@ Central requests retained TimingData with a normal DN_PACKET:
 `fromSeq` is inclusive and uses the IF-05/LogBook sequence. The request itself has no
 TimingData source sequence.
 
-Because this is a normal positive-ID DN_PACKET, SI-01 confirms processing of the request
+Because this is a normal positive-numbered DN_PACKET, SI-01 confirms processing of the request
 with RECV in its own UP_PACKET. Serving the requested TIMING_DATA remains a separate
 semantic action from confirming receipt of the request packet.
 
@@ -361,7 +361,7 @@ The reader:
 - rejects missing required members;
 - rejects unsupported `v` representation versions;
 - rejects pckNr 0 for non-PING messages;
-- rejects a positive-ID PING packet;
+- rejects a positive-numbered PING packet;
 - rejects unknown semantic message types as unsupported rather than reinterpreting them;
 - may ignore unknown additional members when all required known members remain valid.
 
