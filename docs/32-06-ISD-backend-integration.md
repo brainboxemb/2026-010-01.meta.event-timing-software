@@ -87,24 +87,24 @@ message meaning:
 - `UP_PACKET` carries one semantic message from SI-01 to the Central System;
 - `DN_PACKET` carries one semantic message from the Central System to SI-01.
 
-Both packet directions have a `packetId`. The packet identifier is delivery identity
+Both packet directions have a `packetNr`. The packet identifier is delivery identity
 and must not be confused with the IF-05/LogBook TimingData sequence. The public/default
 representation includes packet identifiers in both directions because they make traces,
 logs and engineering inspection unambiguous. In the current contract only a positive
-`DN_PACKET.packetId` participates in `RECV`/resend handling. A normal
-`UP_PACKET.packetId` is not itself acknowledged.
+`DN_PACKET.packetNr` participates in `RECV`/resend handling. A normal
+`UP_PACKET.packetNr` is not itself acknowledged.
 
-Each packet also carries a ``, separate from `packetId`. It describes the
+Each packet also carries a ``, separate from `packetNr`. It describes the
 producer's packet/state generation rather than delivery order:
 
 - an **even**  denotes stable state;
 - an **odd**  denotes unstable/in-transition state.
 
  is not acknowledged by RECV, is not a replay cursor and does not replace
-the TIMING_DATA/LogBook sequence. Delivery retry keeps the same packetId and the same
+the TIMING_DATA/LogBook sequence. Delivery retry keeps the same packetNr and the same
 . The exact producer-side transition that moves a generation from stable to
 unstable and back to stable is owned by the packet/state producer and shall not be
-inferred from packetId parity.
+inferred from packetNr parity.
 
 The current semantic message families carried by those packets are:
 
@@ -144,7 +144,7 @@ another TimingData sequence.
 
 `RACE_DATA` carries Central-owned live race-state changes for one addressed TimingNode.
 It is **not** a durable historical stream and does not have a second source sequence.
-The containing `DN_PACKET.packetId` provides delivery identity; it does not become a
+The containing `DN_PACKET.packetNr` provides delivery identity; it does not become a
 RaceData revision or a TimingData sequence.
 
 Each RACE_DATA message carries one message-level `LocationId`. The LocationId identifies
@@ -168,7 +168,7 @@ to a stable TeamId through EventData shall not be remapped by RaceData.
 Normal Central-to-node delivery uses stop-and-wait semantics. For each TimingNode, Central
 keeps at most one positive-ID DN_PACKET outstanding. It does not send the next normal
 positive-ID DN_PACKET until the current one has been confirmed by RECV. If confirmation
-is not received, Central may resend the **same packet with the same packetId and semantic
+is not received, Central may resend the **same packet with the same packetNr and semantic
 content**.
 
 SI-01 applies a new RACE_DATA packet only after the complete message has validated. It
@@ -248,8 +248,8 @@ A receiver of a valid PING `op = REQ` replies immediately with one PING
 a manual request. This applies in both directions.
 
 PING is deliberately outside normal downstream confirmation. A packet carrying PING
-uses packetId 0 and is not followed by RECV. A PING packet carries no other semantic
-message. The PING answer also uses packetId 0. This keeps liveness response independent
+uses packetNr 0 and is not followed by RECV. A PING packet carries no other semantic
+message. The PING answer also uses packetNr 0. This keeps liveness response independent
 from a normal positive-ID DN_PACKET that may still be awaiting confirmation.
 
 There is no separate PONG message type in the default model. A request/correlation
@@ -530,7 +530,7 @@ remain separately representable.
 The public/reference implementation shall provide a versioned JSON representation of
 UpstreamData suitable for development, engineering and integration verification. It
 shall represent the two directions explicitly as UP_PACKET and DN_PACKET, each with a
-packetId for traceability. Committed TimingData records shall be nested in a TIMING_DATA
+packetNr for traceability. Committed TimingData records shall be nested in a TIMING_DATA
 message payload rather than being transmitted as standalone legacy log-line messages.
 :::
 
@@ -568,8 +568,8 @@ means no position yet.
 :status: D  
 
 Both public/default packet directions shall carry packet identity for traceability.
-A positive DN_PACKET packetId shall participate in RECV/resend handling; an UP_PACKET
-packetId shall not itself require acknowledgement in the current baseline. Packet
+A positive DN_PACKET packetNr shall participate in RECV/resend handling; an UP_PACKET
+packetNr shall not itself require acknowledgement in the current baseline. Packet
 identity shall not replace or advance the IF-05/LogBook TIMING_DATA sequence.
 :::
 
@@ -627,7 +627,7 @@ DN_PACKET turns; it shall not create a RaceData source sequence.
 For one TimingNode, Central shall keep at most one normal positive-ID DN_PACKET
 unconfirmed. It shall not send the next normal positive-ID DN_PACKET until RECV confirms
 the current one. If confirmation is absent, Central may resend the exact same packet
-with the same packetId and semantic content. SI-01 shall not apply a resent already
+with the same packetNr and semantic content. SI-01 shall not apply a resent already
 processed packet twice.
 :::
 
@@ -666,7 +666,7 @@ belong to SI-01 domain behaviour, not to transport or codec layers.
 
 When a configured upstream connector reaches its operational connected state, SI-01
 shall send one PING message with `op = REQ` and `mode = HB` immediately
-in a packet with packetId 0. PING packets shall not use RECV.
+in a packet with packetNr 0. PING packets shall not use RECV.
 :::
 
 :::{ifreq} Periodic upstream PING while connected  
