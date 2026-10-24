@@ -85,7 +85,7 @@ acknowledged.
 
 Normal positive DN_PACKET ids advance in send order. Central keeps at most one positive
 DN_PACKET unconfirmed for a TimingNode. It does not advance to the next normal downstream
-packet until the outstanding packet has been confirmed. A resend uses the same packetId
+packet until the outstanding packet has been confirmed. A resend uses the same packetNr
 and the same semantic message.
 
 Packet id 0 is reserved for PING packets. A PING packet does not consume the normal
@@ -349,7 +349,7 @@ The packet-oriented default/reference writer:
 - emits UTF-8 JSON without BOM;
 - emits integer `v = 1` for the current unstable/development representation;
 - emits top-level `type = UP_PACKET | DN_PACKET`;
-- emits one NodeId and one packetId;
+- emits one NodeId and one packetNr;
 - emits exactly one semantic `msg`;
 - uses positive pckNr for ordinary packets and pckNr 0 only for PING;
 - emits at most 16 TimingData records or 16 combined RaceData changes in one semantic message;
@@ -461,7 +461,7 @@ format.
 | IF06-REQ-015 | `teamAssignments` carries live RegistrationId -> TeamId SET/DEL changes |
 | IF06-REQ-016 | `stageStartTimes` carries RegistrationId-scoped SET/DEL changes |
 | IF06-REQ-006/017 | SEQ REQ/ANS/NTF exchanges only the TIMING_DATA position |
-| IF06-REQ-018 | both packet directions expose packetId; only downstream packetId participates in current RECV handling |
+| IF06-REQ-018 | both packet directions expose packetNr; only downstream packetNr participates in current RECV handling |
 | IF06-REQ-019 | TIMING_DATA replay reuses original TimingData identity/content |
 | IF06-REQ-020 | TIMING_DATA_REQ uses inclusive `fromSeq` |
 | IF06-REQ-021 | fresh SEQ plus TIMING_DATA_REQ re-establish the replay-to-live handoff; RECV 0 requests current downstream-state resend |
