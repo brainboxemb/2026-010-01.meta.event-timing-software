@@ -64,7 +64,7 @@ TimingSystem
 
 `NodeUpstream` owns node-scoped UpstreamData semantics, packet delivery state,
 `UpstreamDataCodec` ownership and heartbeat cadence/state. `UpstreamData` is represented
-as one node-scoped `UP_PACKET` or `DN_PACKET` carrying packetId and one semantic
+as one node-scoped `UP_PACKET` or `DN_PACKET` carrying packetNr and one semantic
 message. Current semantic messages include TimingData, TimingDataReq, Seq,
 RaceData, Recv and Ping; there is no hidden implementation hierarchy behind subtype
 interfaces. `DefaultUpstreamData` remains only the reference-profile
@@ -139,8 +139,8 @@ wraps each payload in a second NodeId-bearing message object.
 
 `UpstreamData` is the reusable/public semantic packet contract defined by IF-06. The
 default implementation uses one JSON packet shape with explicit `UP_PACKET` and
-`DN_PACKET` direction, a packetId for delivery/debug identity, and one semantic message.
-RECV confirms a downstream packetId. The JSON `v` member is the representation version
+`DN_PACKET` direction, a packetNr for delivery/debug identity, and one semantic message.
+RECV confirms a downstream packetNr. The JSON `v` member is the representation version
 owned by the IF-06 IDD and follows the project-wide odd/even maturity convention; it is
 not runtime packet state and does not replace the IF-05 TimingData sequence. Deployment-specific adapters may translate
 asymmetric external wire protocols at the connector boundary without exposing them to
@@ -255,7 +255,7 @@ ST-2 scenarios include:
 
 - connect the upstream-role WebSocket and observe STATUS_SNAPSHOT followed by immediate
   PING plus the packet/sequence exchange;
-- inspect packetId in both directions and verify the current IF-06 JSON representation
+- inspect packetNr in both directions and verify the current IF-06 JSON representation
   version independently from packet delivery;
 - send RACE_DATA in a normal DN_PACKET, verify semantic apply followed by RECV, and
   verify that a lost RECV causes the exact same downstream packet to be resent without
@@ -417,7 +417,7 @@ publish heartbeat PING REQUEST messages at the 30-second period while that conne
 remains connected. A manual PING request omits `mode`; the answer does too. Manual
 request/answer does not reset the heartbeat scheduler.
 
-PING uses packetId 0 in both directions. It therefore bypasses normal positive-ID
+PING uses packetNr 0 in both directions. It therefore bypasses normal positive-ID
 DN_PACKET stop-and-wait state and is never followed by RECV. A PING packet contains no
 other semantic message. The receiver answers a PING REQUEST immediately, even when a
 normal downstream packet is still awaiting confirmation.
@@ -452,11 +452,11 @@ Central System -> TimingNode
   current Central state
        |
        +--> one normal DN_PACKET outstanding
-               packetId = delivery identity
+               packetNr = delivery identity
                message  = RACE_DATA / SEQ / TIMING_DATA_REQ / ...
                     |
                     +--> SI-01 processes message
-                    +--> UP_PACKET / RECV(receivedPacketId)
+                    +--> UP_PACKET / RECV(receivedPacketNr)
 ```
 
 ### Downstream delivery
@@ -464,7 +464,7 @@ Central System -> TimingNode
 For one TimingNode, Central has at most one normal positive-ID DN_PACKET outstanding.
 Central does not send the next normal positive-ID packet until the current one is
 confirmed through RECV. If confirmation does not arrive, Central resends the exact same
-packet with the same packetId and semantic content.
+packet with the same packetNr and semantic content.
 
 SI-01 keeps enough receive state to recognize a resend of the already processed
 downstream packet. It must not apply RACE_DATA or another state-changing message twice;
@@ -520,9 +520,9 @@ BackofficeStatus
       active
       lastMessage
     packet
-      lastUpPacketId
-      lastDnPacketId
-      outstandingDnPacketId
+      lastUpPacketNr
+      lastDnPacketNr
+      outstandingDnPacketNr
     timingData
       localHead
       remoteProcessedHead
@@ -682,7 +682,7 @@ start SI-01 with RabbitMqUpstreamConnector
 connect SI-02 Central System Simulator using RabbitMqCentralSystemTransport
 exercise inbound/outbound source flows
 force/recover broker or client connection where practical
-verify packetId handling, RECV/resend and TIMING_DATA SEQ/replay
+verify packetNr handling, RECV/resend and TIMING_DATA SEQ/replay
 clean up test topology
 ```
 

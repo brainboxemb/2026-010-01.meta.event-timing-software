@@ -522,7 +522,7 @@ tag-pair mapping (`TT-A-NNNN-1/-2`) or TeamId lookup.
 **Purpose**
 
 Verify bidirectional PING request/answer semantics: required `op = REQ | ANS`,
-optional heartbeat `mode = HB`, manual behavior when mode is absent, packetId 0 without
+optional heartbeat `mode = HB`, manual behavior when mode is absent, packetNr 0 without
 RECV, and optional reference correlation, without creating TimingData.
 
 **Setup**
@@ -540,8 +540,8 @@ RECV, and optional reference correlation, without creating TimingData.
    operational connected state.
 3. Verify `PING(op=REQ, mode=HB)` is published immediately rather
    than waiting for the first 30-second period. In the default packet representation,
-   verify that the PING is the only semantic message in a packet with `packetId = 0`.
-4. Return `PING(op=ANS, mode=HB)` in a packet with `packetId = 0` and verify SI-01
+   verify that the PING is the only semantic message in a packet with `packetNr = 0`.
+4. Return `PING(op=ANS, mode=HB)` in a packet with `packetNr = 0` and verify SI-01
    processes it as the response, without emitting another answer or RECV.
    If the default reference codec includes `pingId`, verify it is echoed.
 5. Keep the connection operational and verify the next heartbeat PING REQUEST
@@ -568,7 +568,7 @@ RECV, and optional reference correlation, without creating TimingData.
 - optional reference `pingId` is echoed when present and is not required for a valid exchange;
 - no PING task remains active after disconnect;
 - PING request/answer does not alter TimingData or LogBook history;
-- PING uses packetId 0, is isolated in its packet and does not participate in RECV.
+- PING uses packetNr 0, is isolated in its packet and does not participate in RECV.
 
 The exact 30-second schedule should additionally have a deterministic component-level
 test around the scheduler boundary so CI does not rely only on long wall-clock sleeps.
@@ -583,7 +583,7 @@ The test does not assert a missing-PING-ANSWER timeout because that policy is no
 **Purpose**
 
 Verify that the default JSON representation uses explicit UP_PACKET/DN_PACKET envelopes,
-keeps packetId separate from TimingData identity, and embeds committed
+keeps packetNr separate from TimingData identity, and embeds committed
 IF-05 TimingData records as structured child values.
 
 **Setup**
@@ -596,27 +596,27 @@ IF-05 TimingData records as structured child values.
 **Procedure**
 
 1. Deliver the committed TimingData record to the backend peer. Verify the outer JSON
-   has `v = 1`, `type = UP_PACKET`, the proper `nodeId`, a positive `packetId`,
+   has `v = 1`, `type = UP_PACKET`, the proper `nodeId`, a positive `packetNr`,
    and exactly one semantic `message`.
 2. Verify `message.type = TIMING_DATA` and `message.data` contains the complete
    IF-05 TimingData object, preserving node, sequence, record type and timestamps.
-3. Verify changing packetId does not alter the embedded TimingData identity. Verify
+3. Verify changing packetNr does not alter the embedded TimingData identity. Verify
    `v = 1` is treated as the current IF-06 development representation rather than as a
    delivery sequence or TimingData identity.
 4. Verify no standalone legacy log-line or opaque serialized LBR string is used in
    place of the child TimingData object.
-5. Send a backend PING REQUEST in a DN_PACKET with `packetId = 0`; verify the SI-01
-   answer is an UP_PACKET with `packetId = 0`, `message.type = PING` and
+5. Send a backend PING REQUEST in a DN_PACKET with `packetNr = 0`; verify the SI-01
+   answer is an UP_PACKET with `packetNr = 0`, `message.type = PING` and
    `message.data.op = ANS`, with no RECV generated.
-6. Verify encode/decode preserves the packet direction, packetId, representation `v`
+6. Verify encode/decode preserves the packet direction, packetNr, representation `v`
    and semantic payload without allocating another TimingData identity.
 
 **Expected result**
 
 - one versioned packet shape with explicit UP_PACKET/DN_PACKET direction;
-- packetId and representation `v` are visible independently from TimingData sequence;
+- packetNr and representation `v` are visible independently from TimingData sequence;
 - the timing record remains an embedded IF-05 object inside TIMING_DATA;
-- PING uses packetId 0 without RECV;
+- PING uses packetNr 0 without RECV;
 - packet framing does not change TimingData identity.
 
 :::
@@ -639,16 +639,16 @@ apply RACE_DATA twice.
 
 **Procedure**
 
-1. Send a DN_PACKET with positive `packetId = N` and one valid RACE_DATA message.
+1. Send a DN_PACKET with positive `packetNr = N` and one valid RACE_DATA message.
 2. Verify SI-01 applies the RACE_DATA change and emits an UP_PACKET containing
-   `RECV(receivedPacketId=N)`.
+   `RECV(receivedPacketNr=N)`.
 3. Suppress/drop that RECV at the Central peer and resend the exact DN_PACKET with the
-   same packetId and semantic content.
+   same packetNr and semantic content.
 4. Verify SI-01 does not apply the change twice and repeats RECV for N.
 5. Verify Central does not send normal packet N+1 before N is confirmed.
 6. Send a semantically invalid RACE_DATA packet and verify SI-01 does not advance its
    accepted downstream position and exposes the rejection.
-7. Send `RECV(receivedPacketId=0)` from SI-01/test control and verify Central rebuilds
+7. Send `RECV(receivedPacketNr=0)` from SI-01/test control and verify Central rebuilds
    current downstream state rather than replaying a RACE_DATA source history.
 
 **Expected result**
