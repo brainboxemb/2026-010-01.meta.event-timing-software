@@ -578,12 +578,12 @@ The test does not assert a missing-PING-ANSWER timeout because that policy is no
 
 :::{vc} Verify default UpstreamData packet envelope and embedded TimingData  
 :id: VC-ST1-010  
-:verifies: IF06-REQ-001, IF06-REQ-002, IF06-REQ-003, IF06-REQ-008, IF06-REQ-010, IF06-REQ-018, IF06-REQ-023  
+:verifies: IF06-REQ-001, IF06-REQ-002, IF06-REQ-003, IF06-REQ-008, IF06-REQ-010, IF06-REQ-018  
 
 **Purpose**
 
 Verify that the default JSON representation uses explicit UP_PACKET/DN_PACKET envelopes,
-keeps packetId and packetVersion separate from TimingData identity, and embeds committed
+keeps packetId separate from TimingData identity, and embeds committed
 IF-05 TimingData records as structured child values.
 
 **Setup**
@@ -597,25 +597,24 @@ IF-05 TimingData records as structured child values.
 
 1. Deliver the committed TimingData record to the backend peer. Verify the outer JSON
    has `v = 1`, `type = UP_PACKET`, the proper `nodeId`, a positive `packetId`,
-   a `packetVersion`, and exactly one semantic `message`.
+   and exactly one semantic `message`.
 2. Verify `message.type = TIMING_DATA` and `message.data` contains the complete
    IF-05 TimingData object, preserving node, sequence, record type and timestamps.
-3. Verify changing packetId or packetVersion does not alter the embedded TimingData
-   identity. Verify an even packetVersion is interpreted as stable and an odd
-   packetVersion as unstable/in-transition.
+3. Verify changing packetId does not alter the embedded TimingData identity. Verify
+   `v = 1` is treated as the current IF-06 development representation rather than as a
+   delivery sequence or TimingData identity.
 4. Verify no standalone legacy log-line or opaque serialized LBR string is used in
    place of the child TimingData object.
 5. Send a backend PING REQUEST in a DN_PACKET with `packetId = 0`; verify the SI-01
    answer is an UP_PACKET with `packetId = 0`, `message.type = PING` and
    `message.data.op = ANS`, with no RECV generated.
-6. Verify encode/decode preserves the packet direction, packetId, packetVersion and
-   semantic payload without allocating another TimingData identity.
+6. Verify encode/decode preserves the packet direction, packetId, representation `v`
+   and semantic payload without allocating another TimingData identity.
 
 **Expected result**
 
 - one versioned packet shape with explicit UP_PACKET/DN_PACKET direction;
-- packetId and packetVersion are visible independently from TimingData sequence;
-- even packetVersion denotes stable state and odd denotes unstable/in-transition state;
+- packetId and representation `v` are visible independently from TimingData sequence;
 - the timing record remains an embedded IF-05 object inside TIMING_DATA;
 - PING uses packetId 0 without RECV;
 - packet framing does not change TimingData identity.
@@ -624,7 +623,7 @@ IF-05 TimingData records as structured child values.
 
 :::{vc} Verify downstream stop-and-wait RECV and idempotent RaceData apply  
 :id: VC-ST1-011  
-:verifies: SI01-REQ-063, SI01-REQ-078, SI01-REQ-084, IF06-REQ-004, IF06-REQ-005, IF06-REQ-014, IF06-REQ-018, IF06-REQ-023  
+:verifies: SI01-REQ-063, SI01-REQ-078, SI01-REQ-084, IF06-REQ-004, IF06-REQ-005, IF06-REQ-014, IF06-REQ-018  
 
 **Purpose**
 
@@ -640,12 +639,11 @@ apply RACE_DATA twice.
 
 **Procedure**
 
-1. Send a DN_PACKET with positive `packetId = N`, an even stable packetVersion and one
-   valid RACE_DATA message.
+1. Send a DN_PACKET with positive `packetId = N` and one valid RACE_DATA message.
 2. Verify SI-01 applies the RACE_DATA change and emits an UP_PACKET containing
    `RECV(receivedPacketId=N)`.
 3. Suppress/drop that RECV at the Central peer and resend the exact DN_PACKET with the
-   same packetId, packetVersion and semantic content.
+   same packetId and semantic content.
 4. Verify SI-01 does not apply the change twice and repeats RECV for N.
 5. Verify Central does not send normal packet N+1 before N is confirmed.
 6. Send a semantically invalid RACE_DATA packet and verify SI-01 does not advance its
@@ -658,7 +656,6 @@ apply RACE_DATA twice.
 - one normal positive-ID downstream packet outstanding at a time;
 - successful semantic apply precedes RECV;
 - retransmission is idempotent by downstream packet identity;
-- packetVersion remains separate from RECV;
 - RACE_DATA has no independent source-sequence replay history;
 - RECV 0 requests a full current-state resend.
 
