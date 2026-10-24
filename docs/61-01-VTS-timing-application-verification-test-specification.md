@@ -522,8 +522,8 @@ tag-pair mapping (`TT-A-NNNN-1/-2`) or TeamId lookup.
 **Purpose**
 
 Verify bidirectional PING request/answer semantics: required `op = REQ | ANS`,
-optional heartbeat `mode = HB`, manual behavior when mode is absent, and optional
-reference correlation, without creating TimingData.
+optional heartbeat `mode = HB`, manual behavior when mode is absent, packetId 0 without
+RECV, and optional reference correlation, without creating TimingData.
 
 **Setup**
 
@@ -539,9 +539,10 @@ reference correlation, without creating TimingData.
 2. Establish the backend/engineering connection and observe the connector reach its
    operational connected state.
 3. Verify `PING(op=REQ, mode=HB)` is published immediately rather
-   than waiting for the first 30-second period.
-4. Return `PING(op=ANS, mode=HB)` and verify SI-01 processes it
-   as the response, without emitting another answer.
+   than waiting for the first 30-second period. In the default packet representation,
+   verify that the PING is the only semantic message in a packet with `packetId = 0`.
+4. Return `PING(op=ANS, mode=HB)` in a packet with `packetId = 0` and verify SI-01
+   processes it as the response, without emitting another answer or RECV.
    If the default reference codec includes `pingId`, verify it is echoed.
 5. Keep the connection operational and verify the next heartbeat PING REQUEST
    after the 30-second period; return the corresponding PING ANSWER.
@@ -566,7 +567,8 @@ reference correlation, without creating TimingData.
 - REQUEST receives exactly one ANSWER preserving optional HEARTBEAT `mode` or its absence in both directions;
 - optional reference `pingId` is echoed when present and is not required for a valid exchange;
 - no PING task remains active after disconnect;
-- PING request/answer does not alter TimingData or LogBook history.
+- PING request/answer does not alter TimingData or LogBook history;
+- PING uses packetId 0, is isolated in its packet and does not participate in RECV.
 
 The exact 30-second schedule should additionally have a deterministic component-level
 test around the scheduler boundary so CI does not rely only on long wall-clock sleeps.
@@ -574,44 +576,137 @@ The test does not assert a missing-PING-ANSWER timeout because that policy is no
 
 :::
 
-:::{vc} Verify default UpstreamData envelope and embedded TimingData  
+:::{vc} Verify default UpstreamData packet envelope and embedded TimingData  
 :id: VC-ST1-010  
-:verifies: IF06-REQ-001, IF06-REQ-002, IF06-REQ-003, IF06-REQ-008, IF06-REQ-010  
+:verifies: IF06-REQ-001, IF06-REQ-002, IF06-REQ-003, IF06-REQ-008, IF06-REQ-010, IF06-REQ-018, IF06-REQ-023  
 
 **Purpose**
 
-Verify that the default JSON representation uses one message envelope in both
-directions and embeds committed IF-05 TimingData records as structured child
-values rather than sending a standalone legacy log-line frame.
+Verify that the default JSON representation uses explicit UP_PACKET/DN_PACKET envelopes,
+keeps packetId and packetVersion separate from TimingData identity, and embeds committed
+IF-05 TimingData records as structured child values.
 
 **Setup**
 
-- SI-01 and an independent backend/engineering peer using the default UpstreamData
-  JSON representation over the Engineering API connector;
-- one configured TimingNode with a committed TimingData record of known identity
-  and values.
+- SI-01 and an independent backend/engineering peer using the default UpstreamData JSON
+  representation over the Engineering API connector;
+- one configured TimingNode with a committed TimingData record of known identity and
+  values.
 
 **Procedure**
 
-1. Deliver the committed TimingData record to the backend peer. Verify the outer
-   message has `v = 1`, `type = TIMING_DATA` and the proper `nodeId`.
-2. Verify `data` is an array containing the complete IF-05 TimingData object,
-   preserving its node, sequence, record type and timestamp exactly.
-3. Verify no standalone legacy log-line or opaque serialized LBR string is used
-   in place of that child object.
-4. Send a PING REQUEST from the backend peer using the same UpstreamData envelope;
-   verify the outbound PING ANSWER has the same top-level `type = PING` but
-   `data.op = ANS`, preserving the optional request `data.mode`
-   (including omission for manual requests).
-5. Verify encode/decode of both message families preserves their respective
-   payload semantics and does not allocate an additional TimingData identity.
+1. Deliver the committed TimingData record to the backend peer. Verify the outer JSON
+   has `v = 1`, `type = UP_PACKET`, the proper `nodeId`, a positive `packetId`,
+   a `packetVersion`, and exactly one semantic `message`.
+2. Verify `message.type = TIMING_DATA` and `message.data` contains the complete
+   IF-05 TimingData object, preserving node, sequence, record type and timestamps.
+3. Verify changing packetId or packetVersion does not alter the embedded TimingData
+   identity. Verify an even packetVersion is interpreted as stable and an odd
+   packetVersion as unstable/in-transition.
+4. Verify no standalone legacy log-line or opaque serialized LBR string is used in
+   place of the child TimingData object.
+5. Send a backend PING REQUEST in a DN_PACKET with `packetId = 0`; verify the SI-01
+   answer is an UP_PACKET with `packetId = 0`, `message.type = PING` and
+   `message.data.op = ANS`, with no RECV generated.
+6. Verify encode/decode preserves the packet direction, packetId, packetVersion and
+   semantic payload without allocating another TimingData identity.
 
 **Expected result**
 
-- one common versioned UpstreamData JSON envelope for inbound and outbound exchange;
-- the timing log record is an embedded IF-05 object inside TIMING_DATA `data`;
-- PING REQUEST/ANSWER uses the same `type = PING` envelope in both directions, not separate message formats;
-- neither transport metadata nor message framing changes TimingData identity.
+- one versioned packet shape with explicit UP_PACKET/DN_PACKET direction;
+- packetId and packetVersion are visible independently from TimingData sequence;
+- even packetVersion denotes stable state and odd denotes unstable/in-transition state;
+- the timing record remains an embedded IF-05 object inside TIMING_DATA;
+- PING uses packetId 0 without RECV;
+- packet framing does not change TimingData identity.
+
+:::
+
+:::{vc} Verify downstream stop-and-wait RECV and idempotent RaceData apply  
+:id: VC-ST1-011  
+:verifies: SI01-REQ-063, SI01-REQ-078, SI01-REQ-084, IF06-REQ-004, IF06-REQ-005, IF06-REQ-014, IF06-REQ-018, IF06-REQ-023  
+
+**Purpose**
+
+Verify that normal Central-to-node delivery has at most one positive-ID DN_PACKET
+outstanding, that RECV confirms the processed packet, and that retransmission does not
+apply RACE_DATA twice.
+
+**Setup**
+
+- one configured TimingNode;
+- Engineering API upstream peer acting as Central;
+- synthetic RACE_DATA change with an observable live-state result.
+
+**Procedure**
+
+1. Send a DN_PACKET with positive `packetId = N`, an even stable packetVersion and one
+   valid RACE_DATA message.
+2. Verify SI-01 applies the RACE_DATA change and emits an UP_PACKET containing
+   `RECV(receivedPacketId=N)`.
+3. Suppress/drop that RECV at the Central peer and resend the exact DN_PACKET with the
+   same packetId, packetVersion and semantic content.
+4. Verify SI-01 does not apply the change twice and repeats RECV for N.
+5. Verify Central does not send normal packet N+1 before N is confirmed.
+6. Send a semantically invalid RACE_DATA packet and verify SI-01 does not advance its
+   accepted downstream position and exposes the rejection.
+7. Send `RECV(receivedPacketId=0)` from SI-01/test control and verify Central rebuilds
+   current downstream state rather than replaying a RACE_DATA source history.
+
+**Expected result**
+
+- one normal positive-ID downstream packet outstanding at a time;
+- successful semantic apply precedes RECV;
+- retransmission is idempotent by downstream packet identity;
+- packetVersion remains separate from RECV;
+- RACE_DATA has no independent source-sequence replay history;
+- RECV 0 requests a full current-state resend.
+
+:::
+
+:::{vc} Verify TimingData SEQ and retained LogBook replay  
+:id: VC-ST1-012  
+:verifies: SI01-REQ-081, SI01-REQ-082, SI01-REQ-083, SI01-REQ-084, SI01-REQ-085, IF06-REQ-017, IF06-REQ-019, IF06-REQ-020, IF06-REQ-021  
+
+**Purpose**
+
+Verify that TIMING_DATA is the current durable sequence-synchronized data domain, that
+SEQ exchanges positions in both directions, and that actual replay is requested through
+TIMING_DATA_REQ.
+
+**Setup**
+
+- one TimingNode with a retained LogBook containing known consecutive TimingData records;
+- Central peer with a known highest contiguous processed TimingData sequence;
+- Engineering API upstream connection.
+
+**Procedure**
+
+1. Send SEQ REQ from Central and verify SI-01 answers with SEQ ANS containing its current
+   LogBook/IF-05 head.
+2. Send SEQ REQ from SI-01/test control and verify Central answers with its highest
+   contiguous processed TIMING_DATA sequence.
+3. Commit one additional TimingData record and verify SI-01 may publish SEQ NTF with the
+   new LogBook head.
+4. Send `TIMING_DATA_REQ(fromSeq=M)` from Central and verify SI-01 captures its current
+   LogBook head and replays the original records M..capturedHead in source order and
+   bounded TIMING_DATA messages.
+5. Commit another record after the captured head while replay is active. Verify it is not
+   interleaved into the captured replay range and becomes eligible for live forwarding
+   only after that range completes.
+6. Repeat with `fromSeq = capturedHead + 1` and verify the empty replay range completes
+   the replay-to-live handoff without inventing data.
+7. Disconnect/reconnect and verify positions are refreshed through SEQ; no RACE_DATA
+   source-head SYNC is required.
+
+**Expected result**
+
+- SEQ REQ/ANS/NTF concerns TIMING_DATA position only;
+- SI-01 position equals its LogBook/IF-05 head;
+- Central position equals its highest contiguous processed TIMING_DATA sequence;
+- TIMING_DATA_REQ uses the retained LogBook as replay source;
+- replay preserves original record identity and ordering;
+- no second durable TimingData outbox or RACE_DATA replay sequence is required.
 
 :::
 ## Evidence
