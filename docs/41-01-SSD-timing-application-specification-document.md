@@ -442,7 +442,7 @@ resolve the addressed TimingNode, validate the complete change set and apply acc
 changes only to that TimingNode's live race state. RACE_DATA shall be processed within
 the containing DN_PACKET delivery contract: a new valid packet is applied before RECV,
 and a resend of an already processed packet shall not apply the same changes twice.
-packetId and rejection/error state shall be observable.
+packetNr and rejection/error state shall be observable.
 :::
 
 :::{req} Transport-independent upstream synchronization  
@@ -454,7 +454,7 @@ packetId and rejection/error state shall be observable.
 SI-01 shall expose committed TimingNode-scoped outbound TimingData and protocol
 messages to configured upstream connectors through transport-independent UpstreamData
 packets while preserving TimingData source identity and ordering. The public/default
-packet model shall keep packetId and semantic message content separate.
+packet model shall keep packetNr and semantic message content separate.
 Concrete connector routing shall not redefine TimingNode identity or registration
 semantics.
 :::
