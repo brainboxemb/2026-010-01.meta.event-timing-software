@@ -442,7 +442,7 @@ resolve the addressed TimingNode, validate the complete change set and apply acc
 changes only to that TimingNode's live race state. RACE_DATA shall be processed within
 the containing DN_PACKET delivery contract: a new valid packet is applied before RECV,
 and a resend of an already processed packet shall not apply the same changes twice.
-packetId, packetVersion and rejection/error state shall be observable.
+packetId and rejection/error state shall be observable.
 :::
 
 :::{req} Transport-independent upstream synchronization  
@@ -454,7 +454,7 @@ packetId, packetVersion and rejection/error state shall be observable.
 SI-01 shall expose committed TimingNode-scoped outbound TimingData and protocol
 messages to configured upstream connectors through transport-independent UpstreamData
 packets while preserving TimingData source identity and ordering. The public/default
-packet model shall keep packetId, packetVersion and semantic message content separate.
+packet model shall keep packetId and semantic message content separate.
 Concrete connector routing shall not redefine TimingNode identity or registration
 semantics.
 :::
@@ -513,11 +513,11 @@ Central System requesting the required LogBook sequence again.
 :::{req} Expose diagnosable packet and TimingData synchronization state  
 :id: SI01-REQ-084  
 :status: D  
-:depends_on: SI01-REQ-081, SI01-REQ-078, IF06-REQ-017, IF06-REQ-018, IF06-REQ-023  
+:depends_on: SI01-REQ-081, SI01-REQ-078, IF06-REQ-017, IF06-REQ-018  
 
 For each TimingNode, SI-01 shall expose at least the current TIMING_DATA LogBook head,
 the known Central processed TIMING_DATA position, the last accepted downstream packet
-identity and packetVersion stability state, plus any outstanding/rejected packet state
+identity, plus any outstanding/rejected packet state
 needed for diagnosis. Transport connection state shall remain separately observable.
 :::
 
@@ -971,7 +971,7 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-081 | UC-011/012 + IF06-REQ-017 | TIMING_DATA SEQ REQ/ANS/NTF positions |
 | SI01-REQ-082 | UC-011/012 + IF06-REQ-019/020 | serve TIMING_DATA_REQ from LogBook |
 | SI01-REQ-083 | UC-012/013 + SI01-REQ-042 | LogBook is replay payload source; no duplicate durable outbox history |
-| SI01-REQ-084 | IF06-REQ-017/018/023 + SI01-REQ-078/081 | observable TimingData positions + packetId/packetVersion state |
+| SI01-REQ-084 | IF06-REQ-017/018 + SI01-REQ-078/081 | observable TimingData positions + downstream packet state |
 | SI01-REQ-085 | UC-011/012 + IF06-REQ-021 | fresh SEQ/TIMING_DATA_REQ plus downstream-state recovery after reconnect |
 | SI01-REQ-086 | UC-001/002/009/020/021 + SI01-REQ-026/046 | result-bearing operation failure logging |
 | SI01-REQ-066 | UC-015 | simulation composition through production paths |
@@ -1433,7 +1433,7 @@ receives the mutable LogBook.
 
 One `Upstream` responsibility belongs to each TimingSystem. It contains one
 `NodeUpstream` per TimingNode and owns the semantic protocol state that must remain
-node-scoped: downstream DN_PACKET/RECV delivery, packetVersion state,
+node-scoped: downstream DN_PACKET/RECV delivery,
 TIMING_DATA SEQ/replay and PING/heartbeat state.
 
 Each `NodeUpstream` consumes one bidirectional non-blocking `UpstreamStream`
@@ -1451,8 +1451,8 @@ earlier message that is still awaiting node or LogBook work.
 
 One `NodeUpstream` belongs to one TimingNode within the TimingSystem-owned
 `Upstream` component. It owns that node's semantic upstream protocol ordering:
-downstream packet duplicate/RECV state, packetVersion observation, TimingData
-SEQ/TIMING_DATA_REQ replay coordination, and heartbeat request/answer state.
+downstream packet duplicate/RECV state, TimingData SEQ/TIMING_DATA_REQ replay
+coordination, and heartbeat request/answer state.
 
 NodeUpstream exchanges semantic UpstreamData only through its bidirectional
 node-scoped `UpstreamStream`. It does not know whether the active connector uses
