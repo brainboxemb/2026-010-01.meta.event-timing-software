@@ -151,8 +151,8 @@ contain this compatible v1 branch:
           "nodeId": "A",
           "sync": "SYNCED",
           "timingDataHead": 42,
-          "raceDataAppliedSeq": 123,
-          "raceDataGapFrom": null
+          "centralTimingDataSeq": 42,
+          "lastDnPacketId": 123
         }
       ]
     }
@@ -161,12 +161,14 @@ contain this compatible v1 branch:
 ```
 
 `state` is `DISCONNECTED`, `SYNCHRONIZING`, `CONNECTED` or `ERROR`.
-Node `sync` is `UNKNOWN`, `SYNCED`, `GAP` or `CONFLICT`.
+Node `sync` is `UNKNOWN`, `SYNCED` or `CONFLICT` and describes TIMING_DATA
+position/replay state rather than a second RACE_DATA sequence.
 `timingDataHead` is the local LogBook/IF-05 source head.
-`raceDataAppliedSeq` is the highest contiguously applied Central RACE_DATA sequence;
-`raceDataGapFrom` is non-null only while a missing RaceData sequence is known.
-These are semantic status values; socket/library diagnostics may be added separately
-without redefining them.
+`centralTimingDataSeq` is the highest contiguous TIMING_DATA sequence SI-01 currently
+knows Central has processed; it may be absent/unknown before a SEQ exchange.
+`lastDnPacketId` is the last normal downstream packet SI-01 accepted and is delivery
+state, not a TimingData sequence. Socket/library diagnostics may be added separately
+without redefining these values.
 
 ## IF03-OP-004 — Capabilities
 
@@ -637,9 +639,9 @@ The request body is exactly one public/default IF-06 UpstreamData JSON object.
 There is no opaque RabbitMQ/private frame wrapper around it.
 
 The development-v1 Engineering API upstream connector accepts Central System
-messages needed for deterministic ST-2, including `RACE_DATA`,
-`SYNC(stream=RACE_DATA,...)`, `REQ(stream=TIMING_DATA,...)` and `PING`.
-A message family or direction not supported by IF-06 is rejected explicitly.
+DN_PACKET messages needed for deterministic ST-2, including `RACE_DATA`, `SEQ`,
+`TIMING_DATA_REQ` and `PING`. A message family or direction not supported by IF-06
+is rejected explicitly.
 
 Examples of successful response bodies are:
 
@@ -647,34 +649,35 @@ Examples of successful response bodies are:
 {"result":"ACCEPTED"}
 ```
 
-for accepted control input, and:
+for accepted protocol input, and:
 
 ```json
-{"result":"APPLIED","seq":123}
+{"result":"APPLIED","packetId":123}
 ```
 
-after ordered RACE_DATA sequence 123 has been applied. An already-applied RaceData
-sequence may return `DUPLICATE`; it is not applied a second time. A detected sequence
-gap returns `GAP` and causes SI-01 to emit a RACE_DATA REQ from the first missing
-sequence on the upstream event connection.
+after a new normal DN_PACKET carrying RACE_DATA has been applied. A resend of an
+already processed packet may return `DUPLICATE`; it is not applied a second time.
+If engineering injection presents a downstream packet gap, the operation may return
+`GAP` together with the last accepted downstream packet id; normal stop-and-wait
+delivery should prevent that situation.
 
 HTTP mapping:
 
 | Situation | HTTP | Result/error |
 | --- | ---: | --- |
-| semantic control input accepted | 200 | `ACCEPTED` |
-| next RACE_DATA sequence applied | 200 | `APPLIED` + applied `seq` |
-| already-applied RACE_DATA sequence | 200 | `DUPLICATE` |
-| RACE_DATA sequence gap | 409 | `GAP` + expected sequence |
+| semantic protocol input accepted | 200 | `ACCEPTED` |
+| new RACE_DATA packet applied | 200 | `APPLIED` + applied `packetId` |
+| already-processed downstream packet | 200 | `DUPLICATE` |
+| downstream packet gap during engineering injection | 409 | `GAP` + last accepted packet id |
 | malformed/unsupported message or direction | 400 | stable error code |
 | unknown TimingNode | 404 | `UNKNOWN_NODE` |
 | semantic conflict/invalid RaceData change | 409 | `CONFLICT` |
 | no active upstream-role peer | 409 | `UPSTREAM_NOT_CONNECTED` |
 | bounded application admission unavailable | 503 | `BUSY` / `UNAVAILABLE` |
 
-The HTTP result confirms processing of the inbound operation only. IF-06 control
-messages generated while processing it, such as RACE_DATA ACK/REQ or a PING answer,
-are emitted as outbound UpstreamData on the designated upstream event peer.
+The HTTP result confirms processing of the inbound operation only. IF-06 messages
+generated while processing it, such as RECV, SEQ answers or a PING answer, are emitted
+as outbound UpstreamData on the designated upstream event peer.
 
 ## IF03-OP-003 — Live events
 
@@ -746,12 +749,12 @@ change. `NO_CHANGE`, `INVALID` and `RESTART_REQUIRED` do not emit it.
 WebSocket listener startup does not wait for TimingNode recovery. After connection
 SI-01 sends a **complete** `STATUS_SNAPSHOT` before the client relies on subsequent
 change events. For a `role=upstream` connection, the Engineering API connector is marked
-operationally connected only after that initial snapshot is successfully sent. It then emits
-its immediate heartbeat PING and node-scoped
-`SYNC(stream=TIMING_DATA, seq=<LogBook head>)` as normal `UPSTREAM_DATA` events. The
-Central System Simulator answers with its RACE_DATA source-head SYNC and can issue
-TIMING_DATA REQ as required. Closing that WebSocket marks the connector disconnected and
-stops its heartbeat lifecycle without clearing LogBook or applied RaceData state.
+operationally connected only after that initial snapshot is successfully sent. It then
+emits its immediate heartbeat PING and performs the node-scoped TIMING_DATA position
+exchange through SEQ as normal `UPSTREAM_DATA` events. Central may issue
+TIMING_DATA_REQ as required. RACE_DATA does not perform a separate source-head exchange.
+Closing that WebSocket marks the connector disconnected and stops its heartbeat lifecycle
+without clearing LogBook or applied RaceData state.
 
 The TimingNode snapshot contains its current functional state and LocationId even while
 persisted-data recovery is still in progress. Recovery completion or failure does not create
