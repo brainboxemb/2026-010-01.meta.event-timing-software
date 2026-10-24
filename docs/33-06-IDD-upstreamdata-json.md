@@ -43,7 +43,7 @@ UTF-8 JSON packet shape with an explicit direction:
 - `DN_PACKET`: Central System -> SI-01.
 
 Each packet carries exactly one semantic message in v1. Keeping one semantic message per
-packet makes delivery numbering unambiguous and makes the PING isolation rule explicit.
+packet makes packet numbering unambiguous and makes the PING isolation rule explicit.
 
 A normal packet has this shape:
 
@@ -70,7 +70,7 @@ Top-level members:
 | `v` | integer | IF-06 JSON representation version; current development value is 1 |
 | `type` | `UP_PACKET` or `DN_PACKET` | packet direction |
 | `nodeId` | string | TimingNode owning/addressed by this packet |
-| `pckNr` | integer | packet delivery/debug identity; 0 is reserved for PING |
+| `pckNr` | integer | packet delivery/debug number; 0 is reserved for PING |
 | `msg` | object | exactly one semantic IF-06 message |
 
 The wire name `pckNr` denotes packet delivery/debug number (`packetNr` in the typed Java model), while `seqNr` remains the IF-05 TimingData/LogBook sequence. The RECV wire name `rcvPckNr` denotes `receivedPacketNr` in the typed semantic model.
