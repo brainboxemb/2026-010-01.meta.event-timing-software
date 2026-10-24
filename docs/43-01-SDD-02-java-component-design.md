@@ -296,8 +296,8 @@ domain/
       Upstream.java                     TimingSystem-owned upstream protocol group
       node/
         NodeUpstream.java               one node-scoped semantic protocol owner
-        RaceDataSync.java               RaceData sequence/ACK/REQ/SYNC state
-        TimingDataSync.java             TimingData head/replay state
+        DownstreamDelivery.java         DN_PACKET/RECV resend + accepted packet/version state
+        TimingDataSync.java             SEQ/TIMING_DATA_REQ head/replay state
         Heartbeat.java                  node-scoped PING protocol state
     racedata/
       RaceDataState.java                Task Lane-owned transactional RACE_DATA state
@@ -500,13 +500,14 @@ The ownership rule is responsibility-based:
   ACCEPTED/UNKNOWN_NODE/INPUT_FULL. The connector forwards `NodeId + encodedMessage`
   through its fixed Messaging-internal gateway input; that setup mechanism is not public
   application API.
-- `NodeUpstream` owns the `UpstreamDataCodec`, semantic protocol ordering,
-  validation and heartbeat cadence/state. Only one decoded inbound semantic message
-  operation is active per node.
-- `UpstreamData` is one node-scoped immutable semantic base with small concrete
-  message values: `TimingDataTransfer`, `RaceData`, `Sync`, `Ack`, `Req`
-  and `Ping`. The public semantic type is the stored value itself; there is no
-  subtype-interface plus hidden implementation-object hierarchy.
+- `NodeUpstream` owns the `UpstreamDataCodec`, node-scoped packet/protocol
+  ordering, validation and heartbeat cadence/state. Only one decoded inbound semantic
+  message operation is active per node.
+- `UpstreamData` is one node-scoped packet value with direction
+  `UP_PACKET | DN_PACKET`, packetId, packetVersion and one semantic message.
+  Semantic message values include TimingDataTransfer, TimingDataRequest, Sequence,
+  RaceData, Receive and Ping. The public semantic type is the stored value itself;
+  there is no subtype-interface plus hidden implementation-object hierarchy.
 - `DefaultUpstreamData` is only the reference-profile factory/convenience layer.
   It does not own an alternative runtime representation.
 - `UpstreamStream.CONNECTED` and `DATA_AVAILABLE` are typed local events whose
@@ -516,10 +517,11 @@ The ownership rule is responsibility-based:
   and data-available facts; it does not expose composition-only EventInput objects.
 - The owning `TimingSystem` installs each fixed `UpstreamStream -> NodeUpstream`
   subscription before activation, using the node mapping already resolved by Runtime.
-- `RaceDataSync` owns RaceData sequence/gap/ACK state. Node changes are applied through
-  the node service boundary before ACK.
-- `TimingDataSync` owns source-head and retained replay coordination through
-  LogBookAccessor.
+- `DownstreamDelivery` owns the accepted normal DN_PACKET identity, packetVersion
+  state and RECV/resend rules. RACE_DATA changes are applied through the node service
+  boundary before the containing packet is confirmed.
+- `TimingDataSync` owns SEQ position exchange and retained TIMING_DATA_REQ replay
+  coordination through LogBookAccessor.
 - `Heartbeat` owns node-scoped PING request/answer state; NodeUpstream schedules the
   protocol cadence on its Runtime-owned scheduler.
 - RabbitMQ queue/exchange topology and WebSocket mechanics stay below the stream and
@@ -731,8 +733,9 @@ The duplicate filter remains keyed by RegistrationId. Once TimingNode accepts a
 registration, every TagId resolving to that RegistrationId is suppressed by the
 same duplicate window.
 
-`RACE_DATA` is the ordered upstream message stream, not a mutable domain object.
-Its incremental changes are applied on the Task Lane to passive state such as
+`RACE_DATA` is semantic Central-owned current-state input, not a mutable domain
+object and not a historical source-sequenced stream. Its incremental changes are
+applied on the Task Lane to passive state such as
 `TeamAssignments` and `StageStartTimes`. EventData remains the owner of stable
 TagId/RegistrationId/TeamId profile semantics; TeamAssignments owns only live
 RegistrationId-to-TeamId overrides where EventData has no stable TeamId.
@@ -1052,9 +1055,11 @@ semantics and routing boundaries.
 `TimingNode` owns its active LogBook and node state. `TimingSystem` additionally owns
 one `Upstream` component with one `NodeUpstream` per TimingNode.
 
-`UpstreamData` carries semantic RaceData, TimingData, SYNC, ACK, REQ and PING
-messages. `NodeUpstream` owns the UpstreamData codec and is the first component that
-turns an encoded message into that semantic hierarchy.
+`UpstreamData` carries one semantic message inside an UP_PACKET or DN_PACKET.
+Current messages include RaceData, TimingData, TIMING_DATA_REQ, SEQ, RECV and PING.
+The packet carries packetId plus packetVersion independently from the semantic payload.
+`NodeUpstream` owns the UpstreamData codec and is the first component that turns an
+encoded packet into that semantic hierarchy.
 
 Generic Messaging resolves routing once at its transport ingress. A connector supplies
 `NodeId + encodedMessage` to the gateway's explicit ConnectorPort. `UpstreamGateway`
@@ -1184,8 +1189,8 @@ mutable collaborators:
   mutable `LogBookData` remains Data Lane-owned.
 - `RaceDataState` validates a RACE_DATA change set against copies and installs
 `TeamAssignments` and `StageStartTimes` atomically on the Task Lane. The
-RACE_DATA ACK follows that successful Task Lane application; no Data Lane hop
-is required for RaceData. LogBook publishes `LogBookStatus.LOADED` after persisted TimingData has loaded and
+containing DN_PACKET is confirmed with RECV only after that successful Task Lane
+application; no Data Lane hop is required for RaceData. LogBook publishes `LogBookStatus.LOADED` after persisted TimingData has loaded and
 `LogBookStatus.ERROR` after load failure. NodeService.MainTask handles only that status.
 NodeState owns DataTask, which then chooses its own bounded `timingDataRange(...)` reads
 and yields between those reads while rebuilding Task Lane-owned active-WP state.
@@ -3102,10 +3107,10 @@ startup path to operational `OK`; `TimingNode.ERROR` is reserved for failure of 
 node's own startup/execution path.
 Neither condition replaces functional OPEN/CLOSED state or current LocationId.
 
-RACE_DATA therefore does **not** cross to the Data Lane: sequence validation,
-compact UTC stage-start normalization, transactional live-state mutation and ACK happen on Task
-Lane task turns. TIMING_DATA
-REQ/replay is different because its source is Data Lane-owned LogBookData; that path uses
+RACE_DATA therefore does **not** cross to the Data Lane: packet duplicate detection,
+compact UTC stage-start normalization, transactional live-state mutation and downstream
+RECV completion happen on Task Lane task turns. TIMING_DATA_REQ/replay is different
+because its source is Data Lane-owned LogBookData; that path uses
 bounded asynchronous handoff and bounded TimingData batches. A cooperative task that needs
 a Data Lane query uses `LogBookAccessor.submit(...)` and `TaskStep.await(...)`; it never
 blocks the shared worker waiting on that completion.
@@ -3146,7 +3151,8 @@ node.logBook().execute(
 // ActiveRegistrations owns ordered ADD rows and validity for the currently open WP.
 // RegisteredTeams owns the current open-WP unique-team set and live + / - changes.
 // Calculated presentation/query models are added only for an actual production consumer.
-// UpstreamDataSync invokes NodeService.applyRaceData(...) synchronously on the Task Lane.
+// DownstreamDelivery invokes NodeService.applyRaceData(...) synchronously on the Task Lane
+// before confirming the containing DN_PACKET.
 ```
 
 The visible `TimingNode` delegates execution mechanics to its child components.
