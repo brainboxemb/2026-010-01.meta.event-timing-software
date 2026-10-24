@@ -73,7 +73,7 @@ Top-level members:
 | `pckNr` | integer | packet delivery/debug identity; 0 is reserved for PING |
 | `msg` | object | exactly one semantic IF-06 message |
 
-The wire name `pckNr` denotes packet delivery identity (`packetId` in the typed Java model), while `seqNr` remains the IF-05 TimingData/LogBook sequence. The RECV wire name `rcvPckNr` denotes `receivedPacketId` in the typed semantic model.
+The wire name `pckNr` denotes packet delivery identity (`packetNr` in the typed Java model), while `seqNr` remains the IF-05 TimingData/LogBook sequence. The RECV wire name `rcvPckNr` denotes `receivedPacketNr` in the typed semantic model.
 
 Packet identity is separate from TimingData identity. In particular,
 `pckNr=42` does not imply TimingData sequence 42.
