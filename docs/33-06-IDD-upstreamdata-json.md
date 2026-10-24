@@ -32,20 +32,20 @@ Connector/session realization belongs to
 
 ## Design baseline
 
-The packet-oriented default/reference representation is version **2**. It uses one
+The packet-oriented default/reference representation is version **1**. It uses one
 UTF-8 JSON packet shape with an explicit direction:
 
 - \`UP_PACKET\`: SI-01 -> Central System;
 - \`DN_PACKET\`: Central System -> SI-01.
 
-Each packet carries exactly one semantic message in v2. Keeping one semantic message per
+Each packet carries exactly one semantic message in v1. Keeping one semantic message per
 packet makes delivery identity unambiguous and makes the PING isolation rule explicit.
 
 A normal packet has this shape:
 
 \`\`\`json
 {
-  "v": 2,
+  "v": 1,
   "type": "DN_PACKET",
   "nodeId": "A",
   "packetId": 42,
@@ -63,7 +63,7 @@ Top-level members:
 
 | Member | Type | Meaning |
 | --- | --- | --- |
-| \`v\` | integer | representation version; packet-oriented form is 2 |
+| \`v\` | integer | representation version; packet-oriented form is 1 |
 | \`type\` | \`UP_PACKET\` or \`DN_PACKET\` | packet direction |
 | \`nodeId\` | string | TimingNode owning/addressed by this packet |
 | \`packetId\` | integer | packet delivery/debug identity; 0 is reserved for PING |
@@ -87,7 +87,7 @@ positive packet counter and is not confirmed with RECV.
 
 ## Message families
 
-The v2 semantic message object reserves:
+The semantic message object reserves:
 
 - \`TIMING_DATA\`;
 - \`TIMING_DATA_REQ\`;
@@ -104,7 +104,7 @@ TimingData values as elements of its \`data\` array.
 
 \`\`\`json
 {
-  "v": 2,
+  "v": 1,
   "type": "UP_PACKET",
   "nodeId": "A",
   "packetId": 57,
@@ -135,7 +135,7 @@ Central requests retained TimingData with a normal DN_PACKET:
 
 \`\`\`json
 {
-  "v": 2,
+  "v": 1,
   "type": "DN_PACKET",
   "nodeId": "A",
   "packetId": 41,
@@ -169,7 +169,7 @@ Request:
 
 \`\`\`json
 {
-  "v": 2,
+  "v": 1,
   "type": "DN_PACKET",
   "nodeId": "A",
   "packetId": 42,
@@ -186,7 +186,7 @@ Answer:
 
 \`\`\`json
 {
-  "v": 2,
+  "v": 1,
   "type": "UP_PACKET",
   "nodeId": "A",
   "packetId": 58,
@@ -213,7 +213,7 @@ comes from the containing packet.
 
 \`\`\`json
 {
-  "v": 2,
+  "v": 1,
   "type": "DN_PACKET",
   "nodeId": "A",
   "packetId": 43,
@@ -254,7 +254,7 @@ RECV is an UP_PACKET semantic message referring to downstream delivery:
 
 \`\`\`json
 {
-  "v": 2,
+  "v": 1,
   "type": "UP_PACKET",
   "nodeId": "A",
   "packetId": 59,
@@ -292,7 +292,7 @@ Request:
 
 \`\`\`json
 {
-  "v": 2,
+  "v": 1,
   "type": "UP_PACKET",
   "nodeId": "A",
   "packetId": 0,
@@ -311,7 +311,7 @@ Answer:
 
 \`\`\`json
 {
-  "v": 2,
+  "v": 1,
   "type": "DN_PACKET",
   "nodeId": "A",
   "packetId": 0,
@@ -327,7 +327,7 @@ Answer:
 \`\`\`
 
 A PING REQ is answered immediately. PING packets are not followed by RECV and do not
-consume the normal positive packet-id sequence. In v2 each packet already carries one
+consume the normal positive packet-id sequence. Each packet already carries one
 semantic message, so a PING packet cannot contain another message.
 
 ### STATUS
@@ -427,31 +427,26 @@ IF-06 interface requirements.
 
 ## Compatibility and versioning
 
-The integer \`v\` identifies the default UpstreamData JSON representation version.
+The integer `v` identifies the default UpstreamData JSON representation version.
 
-The packet-oriented shape is version 2 because introducing UP_PACKET/DN_PACKET and
-packetId changes the v1 top-level envelope. Version 1 used a flat message envelope with
-SYNC/ACK/REQ control families and an independently sequenced RACE_DATA stream. Those
-semantics are superseded by the v2 packet model.
+The current packet-oriented representation is version 1. IF-06 and this IDD are still
+under development, so the earlier flat implementation shape with SYNC/ACK/REQ control
+families is not a released compatibility baseline. It is superseded by this packet model
+and may be migrated directly.
 
-A migration implementation may temporarily decode v1 while producing v2, but it shall
-keep the version-specific meanings explicit. It must not silently reinterpret a v1
-RACE_DATA source sequence as a v2 packetId or a v1 SYNC/ACK field as TIMING_DATA sequence
-state when the semantic meaning cannot be preserved.
-
-Compatible v2 additions may add optional members whose absence preserves existing
-meaning. Breaking v2 changes require another representation version.
+Compatible v1 additions may add optional members whose absence preserves existing
+meaning. A future breaking change after the interface has a released compatibility
+baseline requires another representation version.
 
 A custom representation is not required to use JSON or this version member. It conforms
 through preservation of the applicable IF-06 semantics, not by copying the default wire
 format.
 
-
 ## ISD mapping
 
 | IF-06 requirement | Default JSON realization |
 | --- | --- |
-| IF06-REQ-001 | v2 represents transport-independent IF-06 packet/message semantics |
+| IF06-REQ-001 | v1 represents transport-independent IF-06 packet/message semantics |
 | IF06-REQ-002 | TIMING_DATA embeds IF-05-compatible TimingData values |
 | IF06-REQ-003 | packetId remains separate from NodeId + IF-05 sequence identity |
 | IF06-REQ-004/005 | RACE_DATA carries NodeId + LocationId + current changes and is confirmed through its DN_PACKET |
@@ -465,7 +460,7 @@ format.
 | IF06-REQ-021 | fresh SEQ plus TIMING_DATA_REQ re-establish the replay-to-live handoff; RECV 0 requests current downstream-state resend |
 | IF06-REQ-022 | TIMING_DATA is limited to 16 records/message and RACE_DATA to 16 combined changes/message |
 | IF06-REQ-007 | representation does not couple local TimingData commit to delivery |
-| IF06-REQ-008 | v2 JSON is the packet-oriented public/default representation |
+| IF06-REQ-008 | v1 JSON is the packet-oriented public/default representation |
 | IF06-REQ-009 | provider/codec boundary permits alternative representations |
 | IF06-REQ-010 | the same packet/message semantics can be mapped to IF-03 or RabbitMQ |
 | IF06-REQ-011/012/013 | PING uses packetId 0, immediate REQ/ANS and no RECV |
