@@ -181,10 +181,12 @@ shall prevent future submissions but cannot reverse accepted server requests.
 :specifies: UC-009
 
 SI-02 shall provide an engineering-only Central System Simulator for IF-06
-UpstreamData semantics. The simulator shall own Central-side RaceData source
-sequence state per NodeId, inspect and react to ACK/REQ/SYNC, request retained
-TimingData and answer PING requests. It shall communicate through supported
-external transports and shall not call SI-01 domain objects directly.
+UpstreamData semantics. The simulator shall own Central-side downstream packet state
+per NodeId, including packetId, packetVersion, the one normal outstanding DN_PACKET and
+the current RaceData state needed to rebuild delivery. It shall inspect/react to RECV
+and SEQ, issue TIMING_DATA_REQ, inspect TIMING_DATA and answer PING requests. It shall
+communicate through supported external transports and shall not call SI-01 domain objects
+directly.
 
 For deterministic ST-2 operation the simulator shall use the existing IF-03
 event WebSocket in `role=upstream` mode as one full-duplex connection. A later
