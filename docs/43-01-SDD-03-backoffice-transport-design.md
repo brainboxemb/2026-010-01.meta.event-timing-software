@@ -683,7 +683,7 @@ real SI-01
 
 A hosted broker such as CloudAMQP is a suitable initial environment. This verifies
 broker connection/channel/consumer behaviour, source-specific queues/routing,
-acknowledgement, outbox recovery and reconnect/recovery scenarios. Hosted-broker
+packet acknowledgement/resend and reconnect/recovery scenarios. Hosted-broker
 availability is integration evidence and must not become a prerequisite for every fast CI
 run.
 
@@ -707,7 +707,7 @@ start SI-01 with RabbitMqUpstreamConnector
 connect SI-02 Central System Simulator using RabbitMqCentralSystemTransport
 exercise inbound/outbound source flows
 force/recover broker or client connection where practical
-verify source-head SYNC, ACK/REQ and replay synchronization
+verify packetId/packetVersion handling, RECV/resend and TIMING_DATA SEQ/replay
 clean up test topology
 ```
 
@@ -725,7 +725,7 @@ Temporary identifiers only.
 - **CAND-BO-008** — External transport callbacks shall not directly mutate timing-domain state.
 - **CAND-BO-009** — Transport connection status and per-source inbound/outbound status shall be observable independently.
 - **CAND-BO-010** — Loss of external upstream transport shall not discard locally committed registration data; LogBook remains the authoritative replay payload history.
-- **CAND-BO-011** — Reconnection shall exchange fresh source-head SYNC state and use bidirectional REQ to recover missing TIMING_DATA or RACE_DATA without changing either source sequence.
+- **CAND-BO-011** — Reconnection shall refresh TIMING_DATA positions through SEQ and use TIMING_DATA_REQ for missing LogBook records; downstream current-state recovery shall use DN_PACKET/RECV rather than a retained RACE_DATA source sequence.
 - **CAND-BO-012** — Production broker/source topology, protocol details and credentials shall remain external/private configuration or implementation.
 - **CAND-BO-013** — ST-3 shall support an external RabbitMQ test broker and an SI-02 Central System transport so the Engineering Client can exercise the upstream Central System role end-to-end.
 - **CAND-BO-014** — SI-01 shall support zero or more configured upstream connectors within one application composition.
@@ -741,6 +741,7 @@ Temporary identifiers only.
 - At what point does RabbitMQ deserve its own Maven library rather than a `comm` package inside the core artifact?
 - What connector-specific retry/backoff timing is appropriate for the Engineering API
   and RabbitMQ implementations?
-- Should cached per-target synchronization progress be persisted for faster status
-  restoration, even though it is never authoritative and is re-established by SYNC?
+- Should cached per-target TIMING_DATA processed progress be persisted for faster status
+  restoration, even though the LogBook sequence remains authoritative and progress is
+  refreshed through SEQ?
 - What broker/client settings are appropriate on the Raspberry Pi Zero memory/CPU budget?
