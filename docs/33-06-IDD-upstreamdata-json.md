@@ -35,15 +35,15 @@ Connector/session realization belongs to
 The packet-oriented default/reference representation is version **1**. It uses one
 UTF-8 JSON packet shape with an explicit direction:
 
-- \`UP_PACKET\`: SI-01 -> Central System;
-- \`DN_PACKET\`: Central System -> SI-01.
+- `UP_PACKET`: SI-01 -> Central System;
+- `DN_PACKET`: Central System -> SI-01.
 
 Each packet carries exactly one semantic message in v1. Keeping one semantic message per
 packet makes delivery identity unambiguous and makes the PING isolation rule explicit.
 
 A normal packet has this shape:
 
-\`\`\`json
+```json
 {
   "v": 1,
   "type": "DN_PACKET",
@@ -57,20 +57,20 @@ A normal packet has this shape:
     }
   }
 }
-\`\`\`
+```
 
 Top-level members:
 
 | Member | Type | Meaning |
 | --- | --- | --- |
-| \`v\` | integer | representation version; packet-oriented form is 1 |
-| \`type\` | \`UP_PACKET\` or \`DN_PACKET\` | packet direction |
-| \`nodeId\` | string | TimingNode owning/addressed by this packet |
-| \`packetId\` | integer | packet delivery/debug identity; 0 is reserved for PING |
-| \`message\` | object | exactly one semantic IF-06 message |
+| `v` | integer | representation version; packet-oriented form is 1 |
+| `type` | `UP_PACKET` or `DN_PACKET` | packet direction |
+| `nodeId` | string | TimingNode owning/addressed by this packet |
+| `packetId` | integer | packet delivery/debug identity; 0 is reserved for PING |
+| `message` | object | exactly one semantic IF-06 message |
 
 Packet identity is separate from TimingData identity. In particular,
-\`packetId=42\` does not imply TimingData sequence 42.
+`packetId=42` does not imply TimingData sequence 42.
 
 Both directions use packet ids because they materially improve engineering traces and
 message inspection. In the current baseline only positive DN_PACKET ids participate in
@@ -89,20 +89,20 @@ positive packet counter and is not confirmed with RECV.
 
 The semantic message object reserves:
 
-- \`TIMING_DATA\`;
-- \`TIMING_DATA_REQ\`;
-- \`SEQ\` (REQ, ANS and NTF);
-- \`RACE_DATA\`;
-- \`RECV\`;
-- \`PING\` (REQ and ANS);
-- \`STATUS\`.
+- `TIMING_DATA`;
+- `TIMING_DATA_REQ`;
+- `SEQ` (REQ, ANS and NTF);
+- `RACE_DATA`;
+- `RECV`;
+- `PING` (REQ and ANS);
+- `STATUS`.
 
 ### TIMING_DATA
 
 TIMING_DATA ordinarily travels in an UP_PACKET and carries **1..16** committed
-TimingData values as elements of its \`data\` array.
+TimingData values as elements of its `data` array.
 
-\`\`\`json
+```json
 {
   "v": 1,
   "type": "UP_PACKET",
@@ -124,16 +124,16 @@ TimingData values as elements of its \`data\` array.
     ]
   }
 }
-\`\`\`
+```
 
 The child values use the applicable public IF-05 JSON mapping. Batching never creates
-another TimingData sequence; the original \`seqNr\` remains the record identity/order.
+another TimingData sequence; the original `seqNr` remains the record identity/order.
 
 ### TIMING_DATA_REQ
 
 Central requests retained TimingData with a normal DN_PACKET:
 
-\`\`\`json
+```json
 {
   "v": 1,
   "type": "DN_PACKET",
@@ -146,9 +146,9 @@ Central requests retained TimingData with a normal DN_PACKET:
     }
   }
 }
-\`\`\`
+```
 
-\`fromSeq\` is inclusive and uses the IF-05/LogBook sequence. The request itself has no
+`fromSeq` is inclusive and uses the IF-05/LogBook sequence. The request itself has no
 TimingData source sequence.
 
 Because this is a normal positive-ID DN_PACKET, SI-01 confirms processing of the request
@@ -157,17 +157,17 @@ semantic action from confirming receipt of the request packet.
 
 ### SEQ
 
-SEQ exchanges the current TIMING_DATA position and has one required \`op\`:
+SEQ exchanges the current TIMING_DATA position and has one required `op`:
 
 | op | seq | Meaning |
 | --- | --- | --- |
-| \`REQ\` | absent | ask the peer for its current TIMING_DATA position |
-| \`ANS\` | required | answer a SEQ REQ |
-| \`NTF\` | required | notify the peer of the sender's current position |
+| `REQ` | absent | ask the peer for its current TIMING_DATA position |
+| `ANS` | required | answer a SEQ REQ |
+| `NTF` | required | notify the peer of the sender's current position |
 
 Request:
 
-\`\`\`json
+```json
 {
   "v": 1,
   "type": "DN_PACKET",
@@ -180,11 +180,11 @@ Request:
     }
   }
 }
-\`\`\`
+```
 
 Answer:
 
-\`\`\`json
+```json
 {
   "v": 1,
   "type": "UP_PACKET",
@@ -198,20 +198,20 @@ Answer:
     }
   }
 }
-\`\`\`
+```
 
 The same family works in either direction. SI-01's sequence value is its current
 LogBook/IF-05 head. Central's sequence value is the highest contiguous TIMING_DATA
-sequence it has accepted/processed. \`seq=0\` means no position yet.
+sequence it has accepted/processed. `seq=0` means no position yet.
 
 A SEQ message never refers to RACE_DATA.
 
 ### RACE_DATA
 
-RACE_DATA travels in a normal DN_PACKET. It has no independent \`seq\`; delivery identity
+RACE_DATA travels in a normal DN_PACKET. It has no independent `seq`; delivery identity
 comes from the containing packet.
 
-\`\`\`json
+```json
 {
   "v": 1,
   "type": "DN_PACKET",
@@ -238,7 +238,7 @@ comes from the containing packet.
     }
   }
 }
-\`\`\`
+```
 
 One RACE_DATA message carries at most 16 changes total across all supported sections.
 A resent DN_PACKET is identified by the same packetId and must not cause the same
@@ -252,7 +252,7 @@ the current race state plus the exact outstanding packet required for retry.
 
 RECV is an UP_PACKET semantic message referring to downstream delivery:
 
-\`\`\`json
+```json
 {
   "v": 1,
   "type": "UP_PACKET",
@@ -265,12 +265,12 @@ RECV is an UP_PACKET semantic message referring to downstream delivery:
     }
   }
 }
-\`\`\`
+```
 
-The outer \`packetId=59\` identifies this upstream packet for tracing. The inner
-\`receivedPacketId=43\` is the downstream packet position being reported.
+The outer `packetId=59` identifies this upstream packet for tracing. The inner
+`receivedPacketId=43` is the downstream packet position being reported.
 
-For a positive value, \`receivedPacketId\` is the last normal DN_PACKET that SI-01 has
+For a positive value, `receivedPacketId` is the last normal DN_PACKET that SI-01 has
 successfully processed. In the normal stop-and-wait flow it equals Central's outstanding
 packet id and confirms that packet. If confirmation is lost and Central resends the same
 packet, SI-01 repeats RECV without reapplying the semantic message.
@@ -279,18 +279,18 @@ A receiver that detects it cannot advance because an earlier downstream packet i
 missing reports its last successfully processed downstream packet. Under the normal
 stop-and-wait rule Central never sends packet N+1 before N is confirmed.
 
-\`receivedPacketId=0\` is special: it is not acknowledgement of a normal DN_PACKET. It
+`receivedPacketId=0` is special: it is not acknowledgement of a normal DN_PACKET. It
 requests that Central rebuild and resend the applicable current downstream state. It
 does not request historical RACE_DATA by source sequence.
 
 ### PING
 
-PING is carried in a packet with \`packetId=0\` in either direction. It has \`op=REQ|ANS\`,
-optional \`mode=HB\`, optional absolute UTC \`time\` and optional \`pingId\`.
+PING is carried in a packet with `packetId=0` in either direction. It has `op=REQ|ANS`,
+optional `mode=HB`, optional absolute UTC `time` and optional `pingId`.
 
 Request:
 
-\`\`\`json
+```json
 {
   "v": 1,
   "type": "UP_PACKET",
@@ -305,11 +305,11 @@ Request:
     }
   }
 }
-\`\`\`
+```
 
 Answer:
 
-\`\`\`json
+```json
 {
   "v": 1,
   "type": "DN_PACKET",
@@ -324,7 +324,7 @@ Answer:
     }
   }
 }
-\`\`\`
+```
 
 A PING REQ is answered immediately. PING packets are not followed by RECV and do not
 consume the normal positive packet-id sequence. Each packet already carries one
@@ -341,10 +341,10 @@ ordinary UP_PACKET or DN_PACKET according to direction.
 The packet-oriented default/reference writer:
 
 - emits UTF-8 JSON without BOM;
-- emits integer \`v = 2\`;
-- emits top-level \`type = UP_PACKET | DN_PACKET\`;
+- emits integer `v = 2`;
+- emits top-level `type = UP_PACKET | DN_PACKET`;
 - emits one NodeId and one packetId;
-- emits exactly one semantic \`message\`;
+- emits exactly one semantic `message`;
 - uses positive packetId for ordinary packets and packetId 0 only for PING;
 - emits at most 16 TimingData records or 16 combined RaceData changes in one semantic message;
 - does not copy transport-specific routing/session metadata into semantic message content.
@@ -451,12 +451,12 @@ format.
 | IF06-REQ-003 | packetId remains separate from NodeId + IF-05 sequence identity |
 | IF06-REQ-004/005 | RACE_DATA carries NodeId + LocationId + current changes and is confirmed through its DN_PACKET |
 | IF06-REQ-014 | positive DN_PACKET uses stop-and-wait RECV/resend |
-| IF06-REQ-015 | \`teamAssignments\` carries live RegistrationId -> TeamId SET/DEL changes |
-| IF06-REQ-016 | \`stageStartTimes\` carries RegistrationId-scoped SET/DEL changes |
+| IF06-REQ-015 | `teamAssignments` carries live RegistrationId -> TeamId SET/DEL changes |
+| IF06-REQ-016 | `stageStartTimes` carries RegistrationId-scoped SET/DEL changes |
 | IF06-REQ-006/017 | SEQ REQ/ANS/NTF exchanges only the TIMING_DATA position |
 | IF06-REQ-018 | both packet directions expose packetId; only downstream packetId participates in current RECV handling |
 | IF06-REQ-019 | TIMING_DATA replay reuses original TimingData identity/content |
-| IF06-REQ-020 | TIMING_DATA_REQ uses inclusive \`fromSeq\` |
+| IF06-REQ-020 | TIMING_DATA_REQ uses inclusive `fromSeq` |
 | IF06-REQ-021 | fresh SEQ plus TIMING_DATA_REQ re-establish the replay-to-live handoff; RECV 0 requests current downstream-state resend |
 | IF06-REQ-022 | TIMING_DATA is limited to 16 records/message and RACE_DATA to 16 combined changes/message |
 | IF06-REQ-007 | representation does not couple local TimingData commit to delivery |
