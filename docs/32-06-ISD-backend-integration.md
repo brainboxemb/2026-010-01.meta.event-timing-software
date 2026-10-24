@@ -91,6 +91,18 @@ logs and engineering inspection unambiguous. In the current contract only a posi
 `DN_PACKET.packetId` participates in `RECV`/resend handling. A normal
 `UP_PACKET.packetId` is not itself acknowledged.
 
+Each packet also carries a `packetVersion`, separate from `packetId`. It describes the
+producer's packet/state generation rather than delivery order:
+
+- an **even** packetVersion denotes stable state;
+- an **odd** packetVersion denotes unstable/in-transition state.
+
+packetVersion is not acknowledged by RECV, is not a replay cursor and does not replace
+the TIMING_DATA/LogBook sequence. Delivery retry keeps the same packetId and the same
+packetVersion. The exact producer-side transition that moves a generation from stable to
+unstable and back to stable is owned by the packet/state producer and shall not be
+inferred from packetId parity.
+
 The current semantic message families carried by those packets are:
 
 | Message | Typical direction | Purpose |
@@ -644,6 +656,16 @@ DEL removes the current definition. Elapsed-time and race-time-zone interpretati
 belong to SI-01 domain behaviour, not to transport or codec layers.
 :::
 
+:::{ifreq} Expose packet-state stability independently from delivery identity  
+:id: IF06-REQ-023  
+:status: D  
+
+The public/default packet model shall carry a packetVersion independently from packetId.
+An even packetVersion shall denote stable producer state and an odd packetVersion shall
+denote unstable/in-transition producer state. packetVersion shall not be used as a
+TIMING_DATA sequence, RECV acknowledgement value or resend cursor.
+:::
+
 :::{ifreq} Immediate upstream PING on connect  
 :id: IF06-REQ-011  
 :status: D  
@@ -688,6 +710,10 @@ not consume TimingData sequence identity or create TimingData/LogBook records.
 :::
 
 ## Open points
+
+- Exact producer-side rules for advancing packetVersion around a multi-packet state
+  mutation/snapshot; the parity meaning is fixed (even stable, odd unstable), but the
+  transition boundary still needs to be made explicit in the implementation design.
 
 - Exact retry/backoff timing for an unconfirmed normal DN_PACKET; stop-and-wait
   identity/resend semantics are defined while connector timing remains an implementation
