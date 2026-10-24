@@ -655,7 +655,7 @@ apply RACE_DATA twice.
 
 - one normal positive-ID downstream packet outstanding at a time;
 - successful semantic apply precedes RECV;
-- retransmission is idempotent by downstream packet identity;
+- retransmission is idempotent by downstream packet number;
 - RACE_DATA has no independent source-sequence replay history;
 - RECV 0 requests a full current-state resend.
 
