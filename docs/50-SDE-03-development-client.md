@@ -362,9 +362,10 @@ timezone. This includes Registrations, Node/Central LogBook Effective/Recorded,
 Central Messages Time/Received, Events and HTTP timestamps. Raw IF-03/IF-05/IF-06
 payloads remain unchanged canonical UTC and are the protocol evidence surface.
 
-For Central Messages, TIMING_DATA **Time** comes from IF-05 `recTime`; when one
+For Central Messages, TIMING_DATA **Time** comes from IF-05 effective `time`; when one
 message carries multiple records, the last record in retained source order supplies
-that row's Time. **Received** remains the separate local WebSocket receive timestamp.
+that row's Time. Optional `recTime` remains diagnostic metadata and does not drive the
+normal Time column. **Received** remains the separate local WebSocket receive timestamp.
 Other message families retain their own source/message timestamp semantics.
 
 A blank trailing table row is **presentation-only** follow-latest state: selecting it
