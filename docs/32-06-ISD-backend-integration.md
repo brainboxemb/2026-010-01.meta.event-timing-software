@@ -339,7 +339,7 @@ TIMING_DATA sequence it has accepted/processed. Sequence 0 means no position yet
 
 RECV refers to downstream delivery, not to TimingData source identity. A positive value
 confirms the last normal DN_PACKET that SI-01 has successfully processed. Central keeps
-at most one positive-ID downstream packet outstanding and resends that exact packet when
+at most one positive-numbered downstream packet outstanding and resends that exact packet when
 confirmation is absent.
 
 If SI-01 observes that the current downstream delivery cannot be advanced because an
