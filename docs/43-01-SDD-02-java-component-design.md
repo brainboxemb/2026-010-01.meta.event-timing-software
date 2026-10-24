@@ -517,7 +517,7 @@ The ownership rule is responsibility-based:
   and data-available facts; it does not expose composition-only EventInput objects.
 - The owning `TimingSystem` installs each fixed `UpstreamStream -> NodeUpstream`
   subscription before activation, using the node mapping already resolved by Runtime.
-- `DownstreamDelivery` owns the accepted normal DN_PACKET identity and RECV/resend
+- `DownstreamDelivery` owns the accepted normal DN_PACKET number and RECV/resend
   rules. RACE_DATA changes are applied through the node service
   boundary before the containing packet is confirmed.
 - `TimingDataSync` owns SEQ position exchange and retained TIMING_DATA_REQ replay

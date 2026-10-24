@@ -87,24 +87,19 @@ message meaning:
 - `UP_PACKET` carries one semantic message from SI-01 to the Central System;
 - `DN_PACKET` carries one semantic message from the Central System to SI-01.
 
-Both packet directions have a `packetNr`. The packet identifier is delivery identity
-and must not be confused with the IF-05/LogBook TimingData sequence. The public/default
-representation includes packet identifiers in both directions because they make traces,
-logs and engineering inspection unambiguous. In the current contract only a positive
-`DN_PACKET.packetNr` participates in `RECV`/resend handling. A normal
+Both packet directions have a `packetNr`. `packetNr` is the delivery/debug number and must not be confused with the IF-05/LogBook TimingData sequence. The
+public/default representation includes packet numbers in both directions because they
+make traces, logs and engineering inspection unambiguous. In the current contract only
+a positive `DN_PACKET.packetNr` participates in `RECV`/resend handling. A normal
 `UP_PACKET.packetNr` is not itself acknowledged.
 
-Each packet also carries a ``, separate from `packetNr`. It describes the
-producer's packet/state generation rather than delivery order:
-
-- an **even**  denotes stable state;
-- an **odd**  denotes unstable/in-transition state.
-
- is not acknowledged by RECV, is not a replay cursor and does not replace
-the TIMING_DATA/LogBook sequence. Delivery retry keeps the same packetNr and the same
-. The exact producer-side transition that moves a generation from stable to
-unstable and back to stable is owned by the packet/state producer and shall not be
-inferred from packetNr parity.
+The public/default JSON representation also carries integer `v`, separate from
+`packetNr`. `v` is the representation version: odd values denote a development/
+unstable representation and even values denote a stable/released representation.
+It is not packet-delivery state, is not acknowledged by RECV, is not a replay cursor
+and does not replace the TIMING_DATA/LogBook sequence. Delivery retry keeps the same
+`packetNr` and semantic content; packet ordering or stability must not be inferred
+from `v` or from packet-number parity.
 
 The current semantic message families carried by those packets are:
 
@@ -144,7 +139,7 @@ another TimingData sequence.
 
 `RACE_DATA` carries Central-owned live race-state changes for one addressed TimingNode.
 It is **not** a durable historical stream and does not have a second source sequence.
-The containing `DN_PACKET.packetNr` provides delivery identity; it does not become a
+The containing `DN_PACKET.packetNr` provides delivery numbering; it does not become a
 RaceData revision or a TimingData sequence.
 
 Each RACE_DATA message carries one message-level `LocationId`. The LocationId identifies
@@ -166,8 +161,8 @@ only the live RegistrationId -> TeamId assignment. A RegistrationId that already
 to a stable TeamId through EventData shall not be remapped by RaceData.
 
 Normal Central-to-node delivery uses stop-and-wait semantics. For each TimingNode, Central
-keeps at most one positive-ID DN_PACKET outstanding. It does not send the next normal
-positive-ID DN_PACKET until the current one has been confirmed by RECV. If confirmation
+keeps at most one positive-numbered DN_PACKET outstanding. It does not send the next normal
+positive-numbered DN_PACKET until the current one has been confirmed by RECV. If confirmation
 is not received, Central may resend the **same packet with the same packetNr and semantic
 content**.
 
@@ -250,7 +245,7 @@ a manual request. This applies in both directions.
 PING is deliberately outside normal downstream confirmation. A packet carrying PING
 uses packetNr 0 and is not followed by RECV. A PING packet carries no other semantic
 message. The PING answer also uses packetNr 0. This keeps liveness response independent
-from a normal positive-ID DN_PACKET that may still be awaiting confirmation.
+from a normal positive-numbered DN_PACKET that may still be awaiting confirmation.
 
 There is no separate PONG message type in the default model. A request/correlation
 identifier is not part of the mandatory semantic contract; a representation may expose
@@ -316,7 +311,7 @@ Input:
 - addressed TimingNode;
 - message-level LocationId identifying the WP context;
 - **1..16** current RaceData changes total across all change sections;
-- containing DN_PACKET delivery identity.
+- containing DN_PACKET delivery number.
 
 Outcome:
 
@@ -343,7 +338,7 @@ TIMING_DATA sequence it has accepted/processed. Sequence 0 means no position yet
 
 RECV refers to downstream delivery, not to TimingData source identity. A positive value
 confirms the last normal DN_PACKET that SI-01 has successfully processed. Central keeps
-at most one positive-ID downstream packet outstanding and resends that exact packet when
+at most one positive-numbered downstream packet outstanding and resends that exact packet when
 confirmation is absent.
 
 If SI-01 observes that the current downstream delivery cannot be advanced because an
@@ -563,14 +558,13 @@ is the highest contiguous TIMING_DATA sequence it has accepted/processed. Sequen
 means no position yet.
 :::
 
-:::{ifreq} Separate packet identity from TimingData synchronization  
+:::{ifreq} Separate packet numbering from TimingData synchronization  
 :id: IF06-REQ-018  
 :status: D  
 
-Both public/default packet directions shall carry packet identity for traceability.
+Both public/default packet directions shall carry a packet number for traceability.
 A positive DN_PACKET packetNr shall participate in RECV/resend handling; an UP_PACKET
-packetNr shall not itself require acknowledgement in the current baseline. Packet
-identity shall not replace or advance the IF-05/LogBook TIMING_DATA sequence.
+packetNr shall not itself require acknowledgement in the current baseline. Packet numbering shall not replace or advance the IF-05/LogBook TIMING_DATA sequence.
 :::
 
 :::{ifreq} Make TimingData retransmission idempotent by record identity  
@@ -624,8 +618,8 @@ DN_PACKET turns; it shall not create a RaceData source sequence.
 :id: IF06-REQ-014  
 :status: D  
 
-For one TimingNode, Central shall keep at most one normal positive-ID DN_PACKET
-unconfirmed. It shall not send the next normal positive-ID DN_PACKET until RECV confirms
+For one TimingNode, Central shall keep at most one normal positive-numbered DN_PACKET
+unconfirmed. It shall not send the next normal positive-numbered DN_PACKET until RECV confirms
 the current one. If confirmation is absent, Central may resend the exact same packet
 with the same packetNr and semantic content. SI-01 shall not apply a resent already
 processed packet twice.

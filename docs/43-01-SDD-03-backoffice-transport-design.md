@@ -139,7 +139,7 @@ wraps each payload in a second NodeId-bearing message object.
 
 `UpstreamData` is the reusable/public semantic packet contract defined by IF-06. The
 default implementation uses one JSON packet shape with explicit `UP_PACKET` and
-`DN_PACKET` direction, a packetNr for delivery/debug identity, and one semantic message.
+`DN_PACKET` direction, a packetNr for delivery/debug numbering, and one semantic message.
 RECV confirms a downstream packetNr. The JSON `v` member is the representation version
 owned by the IF-06 IDD and follows the project-wide odd/even maturity convention; it is
 not runtime packet state and does not replace the IF-05 TimingData sequence. Deployment-specific adapters may translate
@@ -244,7 +244,7 @@ Connector connection/disconnection are typed post-fact events. Heartbeat/PING ca
 is scheduled by NodeUpstream because it is IF-06 protocol behavior rather than
 Engineering WebSocket session behavior.
 
-The SI-02 Central System Simulator owns peer behavior. It can allocate packet ids, keep
+The SI-02 Central System Simulator owns peer behavior. It can allocate packet numbers, keep
 one normal DN_PACKET outstanding, inspect RECV/SEQ/TIMING_DATA,
 answer PING, issue TIMING_DATA_REQ and deliberately disconnect/reconnect for recovery
 tests.
@@ -417,7 +417,7 @@ publish heartbeat PING REQUEST messages at the 30-second period while that conne
 remains connected. A manual PING request omits `mode`; the answer does too. Manual
 request/answer does not reset the heartbeat scheduler.
 
-PING uses packetNr 0 in both directions. It therefore bypasses normal positive-ID
+PING uses packetNr 0 in both directions. It therefore bypasses normal positive-numbered
 DN_PACKET stop-and-wait state and is never followed by RECV. A PING packet contains no
 other semantic message. The receiver answers a PING REQUEST immediately, even when a
 normal downstream packet is still awaiting confirmation.
@@ -452,7 +452,7 @@ Central System -> TimingNode
   current Central state
        |
        +--> one normal DN_PACKET outstanding
-               packetNr = delivery identity
+               packetNr = delivery number
                message  = RACE_DATA / SEQ / TIMING_DATA_REQ / ...
                     |
                     +--> SI-01 processes message
@@ -461,8 +461,8 @@ Central System -> TimingNode
 
 ### Downstream delivery
 
-For one TimingNode, Central has at most one normal positive-ID DN_PACKET outstanding.
-Central does not send the next normal positive-ID packet until the current one is
+For one TimingNode, Central has at most one normal positive-numbered DN_PACKET outstanding.
+Central does not send the next normal positive-numbered packet until the current one is
 confirmed through RECV. If confirmation does not arrive, Central resends the exact same
 packet with the same packetNr and semantic content.
 
