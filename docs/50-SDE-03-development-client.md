@@ -357,10 +357,19 @@ visual/interaction and async presentation review guidance.
 
 ### Data/time and technical views
 
-Normal Registrations displays interpreted TeamID/time in local time; the
-LogBook contains committed source records and their raw context. A blank
-trailing table row is **presentation-only** follow-latest state: selecting it follows
-new records; inspecting older records pauses automatic follow.
+Engineering Client viewer/table timestamps are presented in the host's local
+timezone. This includes Registrations, Node/Central LogBook Effective/Recorded,
+Central Messages Time/Received, Events and HTTP timestamps. Raw IF-03/IF-05/IF-06
+payloads remain unchanged canonical UTC and are the protocol evidence surface.
+
+For Central Messages, TIMING_DATA **Time** comes from IF-05 effective `time`; when one
+message carries multiple records, the last record in retained source order supplies
+that row's Time. Optional `recTime` remains diagnostic metadata and does not drive the
+normal Time column. **Received** remains the separate local WebSocket receive timestamp.
+Other message families retain their own source/message timestamp semantics.
+
+A blank trailing table row is **presentation-only** follow-latest state: selecting it
+follows new records; inspecting older records pauses automatic follow.
 
 Direct auto-registration is an IF-03 injection of an already accepted
 registration and **bypasses** the antenna processing path. Simulated tags

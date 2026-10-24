@@ -135,8 +135,8 @@ TimingData values as elements of its `data` array.
 
 The child values are the public IF-05 TimingData records themselves; IF-06 does not
 define a second record mapping. In the default writer their record timestamps therefore
-remain canonical UTC: `time` is the IF-05 effective time and `recTime` is the IF-05
-record-creation time, both with literal `Z`. Batching never creates another TimingData
+remain canonical UTC: `time` is the IF-05 effective time. Optional `recTime` is
+record-creation/debug metadata when present. Both use literal `Z`. Batching never creates another TimingData
 sequence; the original `seqNr` remains the record identity/order.
 
 ### TIMING_DATA_REQ
