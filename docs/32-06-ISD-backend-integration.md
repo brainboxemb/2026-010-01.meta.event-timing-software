@@ -112,8 +112,10 @@ When an UpstreamData message carries TimingData:
 - retransmission of an already committed record does not create a new TimingData
   record merely because it is sent again.
 
-A transport may batch multiple TimingData records into one delivery, but the
-contained records retain their individual IF-05 identity and ordering.
+One TIMING_DATA UpstreamData message carries **1..16** TimingData records. The
+contained records retain their individual IF-05 identity and ordering. A larger
+replay is split into multiple ordered TIMING_DATA messages; batching never creates
+another TimingData sequence.
 
 ### RaceData relationship
 
@@ -121,23 +123,28 @@ contained records retain their individual IF-05 identity and ordering.
 changes owned by one addressed TimingNode. It is **not** a complete snapshot and
 does not carry a separate revision number.
 
-Each RACE_DATA message carries one positive source `seq` for that NodeId. The
-Central System allocates this sequence monotonically starting at 1. SI-01 keeps the
-highest contiguously applied RaceData sequence for each TimingNode.
+Each RACE_DATA message carries the addressed `NodeId`, one message-level
+`LocationId` and one positive source `seq`. The LocationId identifies the WP
+context for which Central created that message; individual team/stage-start changes
+remain keyed by RegistrationId and do not repeat LocationId. The Central System
+allocates the RACE_DATA sequence monotonically starting at 1 for the NodeId. SI-01
+keeps the highest contiguously applied RaceData sequence for each TimingNode.
 
 The current v1 RaceData payload can contain one or more incremental change sections:
 
 - `teamAssignments` changes the live RegistrationId -> TeamId assignment;
 - `stageStartTimes` changes RegistrationId-scoped stage-start definitions.
 
-Each change uses an explicit operation such as `SET` or `DEL`. Absence of a
-section means no change to that part of RaceData. Receiving a RACE_DATA message
-therefore never implies that omitted state must be cleared.
+Each change uses an explicit operation such as `SET` or `DEL`. One RACE_DATA
+message carries **1..16 changes total** across all supported sections. A larger
+logical update is split into multiple consecutively sequenced RACE_DATA messages.
+Absence of a section means no change to that part of RaceData. Receiving a RACE_DATA
+message therefore never implies that omitted state must be cleared.
 
 The reserve mapping is keyed by RegistrationId rather than physical TagId because
 stable EventData already resolves both reserve tags, for example
-`TT-R-0001-1/2 -> RT-R-0001`. RaceData supplies only the live
-`RT-R-0001 -> TeamId` assignment. A RegistrationId that already resolves to a
+`TT-R-0001-1/2 -> R0001`. RaceData supplies only the live
+`R0001 -> TeamId` assignment. A RegistrationId that already resolves to a
 stable TeamId through EventData shall not be remapped by RaceData.
 
 A RACE_DATA message is validated as one ordered unit before its sequence advances:
@@ -258,7 +265,7 @@ to messages, routes, topics, requests or events without changing their meaning.
 
 Input:
 
-- one or more already committed TimingData records;
+- **1..16** already committed TimingData records;
 - source/node scope sufficient to route the records.
 
 Required behaviour:
@@ -273,8 +280,9 @@ Required behaviour:
 Input:
 
 - addressed TimingNode;
+- message-level LocationId identifying the WP context;
 - positive Central-owned RACE_DATA `seq`;
-- one or more incremental RaceData changes.
+- **1..16** incremental RaceData changes total across all change sections.
 
 Outcome:
 
@@ -442,8 +450,10 @@ TimingData record key or source sequence.
 :status: D  
 
 IF-06 shall support Central System-to-SI-01 RACE_DATA messages with explicit NodeId,
-positive ordered source sequence and incremental race-state changes. RaceData source
-ordering shall be independent from TimingData source ordering.
+message-level LocationId, positive ordered source sequence and incremental race-state
+changes. LocationId supplies the WP context for the whole message while individual
+changes remain RegistrationId-scoped. RaceData source ordering shall be independent
+from TimingData source ordering.
 :::
 
 :::{ifreq} Explicit reference-data outcome  
@@ -554,6 +564,17 @@ received/applied position and request missing data with REQ. Progress remembered
 an earlier transport/session shall not cause either source sequence to be skipped.
 :::
 
+:::{ifreq} Bound IF-06 data-message size  
+:id: IF06-REQ-022  
+:status: D  
+
+One TIMING_DATA message shall carry at most 16 TimingData records. One RACE_DATA
+message shall carry at most 16 incremental changes total across all supported change
+sections. A producer with more retained records or changes shall split them across
+multiple ordered messages without changing the underlying TimingData or RACE_DATA
+source sequences.
+:::
+
 :::{ifreq} Ordered RaceData application and acknowledgement  
 :id: IF06-REQ-014  
 :status: D  
@@ -581,8 +602,10 @@ Physical TagIds remain resolved to their RegistrationId by EventData.
 :status: D  
 
 RACE_DATA shall be able to carry incremental RegistrationId-scoped stage-start-time changes.
-The RegistrationId is the timing-domain identity whose start is being defined; consumers shall
-not need an intermediate TeamId lookup to match a registration to its stage start.
+The message-level LocationId supplies the WP context in which those definitions are sent;
+the individual change remains keyed by RegistrationId. The RegistrationId is the timing-domain
+identity whose start is being defined; consumers shall not need an intermediate TeamId lookup
+to match a registration to its stage start.
 A SET shall carry one `TimingTimestamp` value containing at least local race
 time-of-day. The timestamp may also contain a local date or already be absolute
 when the source knows that information. A source that knows only time-of-day
