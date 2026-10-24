@@ -223,7 +223,7 @@ regId
 code
 tagSrc    # when known, AUTO_REG only
 timeSrc   # when known, AUTO_REG only
-recTime   # when present
+recTime
 ```
 
 Validation rules:
@@ -395,5 +395,5 @@ using another representation version's semantics.
 | IF05-REQ-010 | no lifecycle JSON record is written for no-op/already/rejected/failed transitions |
 
 JSON Lines completion rules, unknown-member handling, integer `v`, the v1
-`seqNr` limit and optional `recTime` are concrete representation-design
+`seqNr` limit and required default-v1 `recTime` are concrete representation-design
 choices. They are intentionally not additional IF-05 requirements.
