@@ -182,7 +182,7 @@ shall prevent future submissions but cannot reverse accepted server requests.
 
 SI-02 shall provide an engineering-only Central System Simulator for IF-06
 UpstreamData semantics. The simulator shall own Central-side downstream packet state
-per NodeId, including packetId, the one normal outstanding DN_PACKET and the current
+per NodeId, including packetNr, the one normal outstanding DN_PACKET and the current
 RaceData state needed to rebuild delivery. It shall inspect/react to RECV
 and SEQ, issue TIMING_DATA_REQ, inspect TIMING_DATA and answer PING requests. It shall
 communicate through supported external transports and shall not call SI-01 domain objects
