@@ -195,10 +195,23 @@ transport/session delivery acknowledgement is not a substitute. A sequence gap c
 REQ rather than advancement of the ACK point.
 
 For TimingData, the LogBook remains the authoritative replay source. SI-01 may publish
-newly committed records proactively, but loss does not require a second durable outbox:
-after reconnect or SYNC, the Central System can request any retained TimingData sequence
-again through REQ. Retransmission preserves the original IF-05 record identity and
-content.
+newly committed records proactively, but only after the connection's SYNC/REQ handoff has
+completed. After each SI-01 `SYNC(stream=TIMING_DATA)`, Central System sends
+`REQ(stream=TIMING_DATA, fromSeq=centralHead+1)` even when its contiguous receive head
+already equals the advertised SI-01 source head. That REQ is the replay-to-live handoff
+barrier.
+
+When SI-01 handles the TIMING_DATA REQ it captures its current LogBook source head and
+replays from `fromSeq` through that captured head. Records committed after the captured
+head shall not be interleaved into that replay; they may be sent proactively only after
+the requested replay range has completed. A record committed after SYNC but before REQ is
+therefore included in the captured replay range. When `fromSeq` is exactly one greater
+than the captured head, the replay range is empty and the handoff completes immediately.
+
+Loss does not require a second durable outbox: after reconnect or a fresh SYNC/REQ
+handoff, Central System can request any retained TimingData sequence again from LogBook.
+Retransmission preserves the original IF-05 record identity and content. Public v1 does
+not introduce TIMING_DATA ACK; RACE_DATA remains the stream that requires semantic ACK.
 
 PING, ACK, REQ and SYNC are control messages. They do not consume TimingData `seqNr`
 or RaceData `seq` values themselves.
@@ -558,10 +571,14 @@ from the retained beginning of that stream.
 :status: D  
 
 When an upstream semantic connection is established or re-established, the peers
-shall exchange fresh SYNC source-head state for the applicable TimingNodes. Each
-receiver shall compare the advertised source head with its own highest contiguous
-received/applied position and request missing data with REQ. Progress remembered from
-an earlier transport/session shall not cause either source sequence to be skipped.
+shall exchange fresh SYNC source-head state for the applicable TimingNodes. For
+TIMING_DATA, Central System shall answer each fresh SI-01 source-head SYNC with REQ from
+its next expected sequence even when Central is already caught up. SI-01 shall capture
+its current LogBook head when handling that REQ, replay through that captured head, and
+shall not proactively send later committed TimingData until that replay handoff has
+completed. For RACE_DATA, a receiver that is behind shall request missing data with REQ.
+Progress remembered from an earlier transport/session shall not cause either source
+sequence to be skipped.
 :::
 
 :::{ifreq} Bound IF-06 data-message size  

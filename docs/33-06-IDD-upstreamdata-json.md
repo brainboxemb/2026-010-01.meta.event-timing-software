@@ -251,6 +251,13 @@ For TIMING_DATA, `seq` is the TimingNode's LogBook/IF-05 source head. For RACE_D
 `seq` is the Central System's RaceData source head. A receiver that is behind uses
 REQ from its first missing sequence.
 
+For the SI-01 -> Central TIMING_DATA stream, Central also sends REQ when it is already
+caught up: `fromSeq = centralHead + 1`. This empty-range request is the explicit
+replay-to-live handoff barrier. SI-01 captures its current LogBook head while handling
+the REQ, so a record committed after SYNC but before REQ joins replay rather than
+arriving early as live data. Proactive live TIMING_DATA resumes only after that captured
+replay range has completed.
+
 SYNC carries no stream payload and consumes no source sequence itself.
 
 ### ACK
@@ -307,7 +314,11 @@ TimingNode requests RaceData:
 ```
 
 `fromSeq` is in the range 1..9007199254740991 and is inclusive. `fromSeq = 1`
-means replay from the retained beginning of the selected stream.
+means replay from the retained beginning of the selected stream. For TIMING_DATA,
+Central sends `fromSeq = centralHead + 1` after each fresh source-head SYNC, including
+when the advertised source head equals `centralHead`. SI-01 captures its current
+LogBook head on that request and completes replay through the captured head before
+proactive live forwarding resumes.
 
 A deployment-specific legacy codec may map the semantic request
 
@@ -519,7 +530,7 @@ format.
 | IF06-REQ-018 | transport acknowledgement does not replace RACE_DATA semantic ACK/source sync |
 | IF06-REQ-019 | TIMING_DATA replay reuses original TimingData identity/content |
 | IF06-REQ-020 | REQ uses `stream` + inclusive `fromSeq` in either direction |
-| IF06-REQ-021 | fresh source-head SYNC/REQ re-establish state after connect/reconnect |
+| IF06-REQ-021 | every fresh TIMING_DATA SYNC receives a next-expected REQ handoff before live forwarding resumes |
 | IF06-REQ-022 | TIMING_DATA is limited to 16 records/message and RACE_DATA to 16 combined changes/message |
 | IF06-REQ-007 | representation does not couple local commit to transport delivery |
 | IF06-REQ-008 | v1 JSON is the public/default representation |
