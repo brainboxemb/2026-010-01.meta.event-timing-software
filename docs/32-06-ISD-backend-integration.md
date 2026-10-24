@@ -94,7 +94,7 @@ The current semantic families are:
 | SYNC | bidirectional | advertise the current source head of one ordered stream |
 | ACK | SI-01 -> Central System | acknowledge contiguously applied RaceData through a sequence number |
 | REQ | bidirectional | request retransmission of TIMING_DATA or RACE_DATA from a sequence number |
-| Ping request / answer | bidirectional | one PING family with REQ/ANS op and an optional HB heartbeat mode; mode absence denotes a manual check |
+| Ping request / answer | bidirectional | one PING family with REQ/ANS op, optional HB heartbeat mode and optional absolute UTC message time; mode absence denotes a manual check |
 | Status | bidirectional | expose upstream/source synchronization and connector health relevant to integration |
 
 The public RaceData and synchronization semantics are defined below. Their
@@ -657,17 +657,21 @@ consume TimingData sequence identity or create TimingData/LogBook records.
 :status: D  
 
 IF-06 shall use one PING semantic message family with required
-`op = REQ | ANS` and optional `mode = HB`. A PING REQUEST
-without `mode` denotes an explicitly initiated/manual check; no `MANUAL`
-value is required. The receiver of a valid PING REQUEST shall send one
-PING ANSWER preserving the request's `mode` (including its absence)
-as part of processing the request, without waiting for the 30-second
-heartbeat schedule. A PING with `op = ANS` shall not itself be answered. This applies in
-both directions. Unknown `mode` values shall not silently be treated as manual
-checks. No separate PONG message type, PING sequence number or correlation
-identifier is mandated by the interface; a representation/implementation may add
-optional correlation. PING REQUEST/ANSWER shall not consume TimingData sequence
-identity or create TimingData/LogBook records.
+`op = REQ | ANS`, optional `mode = HB` and optional absolute UTC message
+`time`. A PING REQUEST without `mode` denotes an explicitly initiated/manual
+check; no `MANUAL` value is required. When present, `time` denotes the creation/send
+time of that specific PING message. A PING ANSWER therefore creates its own message
+time and shall not reuse the request's time as the answer time.
+
+The receiver of a valid PING REQUEST shall send one PING ANSWER preserving the
+request's `mode` (including its absence) as part of processing the request, without
+waiting for the 30-second heartbeat schedule. A PING with `op = ANS` shall not itself
+be answered. This applies in both directions. Unknown `mode` values shall not silently
+be treated as manual checks. No separate PONG message type, PING sequence number or
+correlation identifier is mandated by the interface; a representation/implementation
+may add optional correlation. Reference producers should populate `time`, while
+readers remain compatible with PING messages that omit it. PING REQUEST/ANSWER shall
+not consume TimingData sequence identity or create TimingData/LogBook records.
 :::
 
 ## Open points

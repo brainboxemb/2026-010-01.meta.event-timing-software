@@ -335,12 +335,13 @@ express them.
 ### PING (REQUEST / ANSWER)
 
 PING uses the **same UpstreamData message type** in both directions and for both
-request and answer. The `data` object has one required field and two optional fields:
+request and answer. The `data` object has one required field and three optional fields:
 
 | Member | Values | Meaning |
 | --- | --- | --- |
 | `op` | `REQ`, `ANS` (required) | request or answer |
 | `mode` | `HB` (optional) | scheduled heartbeat; absence means manual/explicit |
+| `time` | absolute UTC `TimingTimestamp` (optional) | creation/send time of this specific PING message |
 | `pingId` | string (optional) | reference correlation token for a specific exchange |
 
 PING is system/upstream-scoped and does not require `nodeId`. A receiver of
@@ -357,7 +358,8 @@ Heartbeat request (`REQ`):
   "type": "PING",
   "data": {
     "op": "REQ",
-    "mode": "HB"
+    "mode": "HB",
+    "time": "2026-10-24T14:12:00.123Z"
   }
 }
 ```
@@ -370,7 +372,8 @@ Heartbeat answer (`ANS`):
   "type": "PING",
   "data": {
     "op": "ANS",
-    "mode": "HB"
+    "mode": "HB",
+    "time": "2026-10-24T14:12:00.137Z"
   }
 }
 ```
@@ -399,10 +402,13 @@ Manual answer (`ANS`):
 }
 ```
 
-The default v1 reader accepts missing `mode` as manual/explicit. It rejects an
-unsupported `mode` value rather than guessing it means manual. A manual request
-does not reset the periodic heartbeat cycle. There is **no separate PONG
-message family** in the default representation.
+The default v1 reader accepts missing `mode` as manual/explicit and missing `time`
+for compatibility. When `time` is present it must be an absolute UTC TimingTimestamp;
+time-only or local date/time forms are invalid for PING. The default/reference producers
+populate `time` on newly created PING messages. A corresponding ANS uses its own current
+message time and does not echo the REQ time. Unsupported `mode` values are rejected
+rather than guessed as manual. A manual request does not reset the periodic heartbeat
+cycle. There is **no separate PONG message family** in the default representation.
 
 A reference implementation may include optional `pingId` on a `REQ` and
 echo it on the corresponding `ANS`, for example `"pingId": "p-0001"`.
@@ -410,8 +416,9 @@ It is not mandatory IF-06 semantics, TimingData identity or transport sequence.
 Legacy fixed-field protocol positions are not normative public JSON fields.
 
 PING REQUEST/ANSWER carries no TimingData record and consumes no TimingData
-sequence identity. Its lifecycle/timing semantics are defined by
-IF06-REQ-011/012/013.
+sequence identity. The optional PING `time` is message metadata only; it does not become
+a TimingData identity, source sequence or clock-synchronization protocol. Its
+lifecycle/timing semantics are defined by IF06-REQ-011/012/013.
 
 ### STATUS
 
