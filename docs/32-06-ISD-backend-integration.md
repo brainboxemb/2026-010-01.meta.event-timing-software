@@ -87,8 +87,7 @@ message meaning:
 - `UP_PACKET` carries one semantic message from SI-01 to the Central System;
 - `DN_PACKET` carries one semantic message from the Central System to SI-01.
 
-Both packet directions have a `packetNr`. The packet number is delivery/debug
-numbering and must not be confused with the IF-05/LogBook TimingData sequence. The
+Both packet directions have a `packetNr`. `packetNr` is the delivery/debug number and must not be confused with the IF-05/LogBook TimingData sequence. The
 public/default representation includes packet numbers in both directions because they
 make traces, logs and engineering inspection unambiguous. In the current contract only
 a positive `DN_PACKET.packetNr` participates in `RECV`/resend handling. A normal
@@ -565,8 +564,7 @@ means no position yet.
 
 Both public/default packet directions shall carry a packet number for traceability.
 A positive DN_PACKET packetNr shall participate in RECV/resend handling; an UP_PACKET
-packetNr shall not itself require acknowledgement in the current baseline. Packet
-identity shall not replace or advance the IF-05/LogBook TIMING_DATA sequence.
+packetNr shall not itself require acknowledgement in the current baseline. Packet numbering shall not replace or advance the IF-05/LogBook TIMING_DATA sequence.
 :::
 
 :::{ifreq} Make TimingData retransmission idempotent by record identity  
