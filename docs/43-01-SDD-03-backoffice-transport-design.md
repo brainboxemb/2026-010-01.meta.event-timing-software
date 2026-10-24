@@ -64,8 +64,8 @@ TimingSystem
 
 `NodeUpstream` owns node-scoped UpstreamData semantics, packet delivery state,
 `UpstreamDataCodec` ownership and heartbeat cadence/state. `UpstreamData` is represented
-as one node-scoped `UP_PACKET` or `DN_PACKET` carrying packetId, packetVersion and one
-semantic message. Current semantic messages include TimingData, TimingDataReq, Seq,
+as one node-scoped `UP_PACKET` or `DN_PACKET` carrying packetId and one semantic
+message. Current semantic messages include TimingData, TimingDataReq, Seq,
 RaceData, Recv and Ping; there is no hidden implementation hierarchy behind subtype
 interfaces. `DefaultUpstreamData` remains only the reference-profile
 factory/convenience layer.
@@ -139,11 +139,10 @@ wraps each payload in a second NodeId-bearing message object.
 
 `UpstreamData` is the reusable/public semantic packet contract defined by IF-06. The
 default implementation uses one JSON packet shape with explicit `UP_PACKET` and
-`DN_PACKET` direction, a packetId for delivery/debug identity, a packetVersion for
-producer state consistency, and one semantic message. packetId and packetVersion are
-independent: RECV confirms a downstream packetId, while packetVersion parity reports
-whether the producer state is stable (even) or unstable/in-transition (odd). Neither
-value replaces the IF-05 TimingData sequence. Deployment-specific adapters may translate
+`DN_PACKET` direction, a packetId for delivery/debug identity, and one semantic message.
+RECV confirms a downstream packetId. The JSON `v` member is the representation version
+owned by the IF-06 IDD and follows the project-wide odd/even maturity convention; it is
+not runtime packet state and does not replace the IF-05 TimingData sequence. Deployment-specific adapters may translate
 asymmetric external wire protocols at the connector boundary without exposing them to
 application or domain code.
 
@@ -245,8 +244,8 @@ Connector connection/disconnection are typed post-fact events. Heartbeat/PING ca
 is scheduled by NodeUpstream because it is IF-06 protocol behavior rather than
 Engineering WebSocket session behavior.
 
-The SI-02 Central System Simulator owns peer behavior. It can allocate packet ids and
-packet versions, keep one normal DN_PACKET outstanding, inspect RECV/SEQ/TIMING_DATA,
+The SI-02 Central System Simulator owns peer behavior. It can allocate packet ids, keep
+one normal DN_PACKET outstanding, inspect RECV/SEQ/TIMING_DATA,
 answer PING, issue TIMING_DATA_REQ and deliberately disconnect/reconnect for recovery
 tests.
 
@@ -256,9 +255,8 @@ ST-2 scenarios include:
 
 - connect the upstream-role WebSocket and observe STATUS_SNAPSHOT followed by immediate
   PING plus the packet/sequence exchange;
-- inspect packetId and packetVersion in both directions and verify that even versions
-  represent stable producer state while odd versions represent unstable/in-transition
-  state;
+- inspect packetId in both directions and verify the current IF-06 JSON representation
+  version independently from packet delivery;
 - send RACE_DATA in a normal DN_PACKET, verify semantic apply followed by RECV, and
   verify that a lost RECV causes the exact same downstream packet to be resent without
   applying its changes twice;
@@ -424,10 +422,6 @@ DN_PACKET stop-and-wait state and is never followed by RECV. A PING packet conta
 other semantic message. The receiver answers a PING REQUEST immediately, even when a
 normal downstream packet is still awaiting confirmation.
 
-packetVersion remains separate from this special packetId rule. If the default packet
-shape carries the current producer packetVersion on PING, its parity remains the ordinary
-stable/unstable state indication; it does not turn PING into a confirmed packet.
-
 When the connector disconnects, deactivates or is replaced, its scheduled PING task is
 cancelled. Reconnect begins a new cycle with another immediate PING. Only one active PING
 task may exist per active connector.
@@ -458,9 +452,8 @@ Central System -> TimingNode
   current Central state
        |
        +--> one normal DN_PACKET outstanding
-               packetId      = delivery identity
-               packetVersion = producer state generation
-               message       = RACE_DATA / SEQ / TIMING_DATA_REQ / ...
+               packetId = delivery identity
+               message  = RACE_DATA / SEQ / TIMING_DATA_REQ / ...
                     |
                     +--> SI-01 processes message
                     +--> UP_PACKET / RECV(receivedPacketId)
@@ -471,7 +464,7 @@ Central System -> TimingNode
 For one TimingNode, Central has at most one normal positive-ID DN_PACKET outstanding.
 Central does not send the next normal positive-ID packet until the current one is
 confirmed through RECV. If confirmation does not arrive, Central resends the exact same
-packet with the same packetId, packetVersion and semantic content.
+packet with the same packetId and semantic content.
 
 SI-01 keeps enough receive state to recognize a resend of the already processed
 downstream packet. It must not apply RACE_DATA or another state-changing message twice;
@@ -483,22 +476,6 @@ its current race/reference state and the one exact outstanding packet needed for
 
 RECV position 0 requests a complete resend of the applicable current Central-owned
 downstream state. It is not a request for a retained RACE_DATA history.
-
-### Packet state version
-
-packetVersion is independent from packetId. packetId describes delivery order; the
-packetVersion describes the producer's state generation.
-
-The current rule is:
-
-- even packetVersion: producer state is stable;
-- odd packetVersion: producer state is unstable/in-transition.
-
-A retry does not create a new version: the resent packet retains its original
-packetVersion. packetVersion is not acknowledged by RECV and is not used as a TimingData
-replay cursor. The exact mutation boundary that advances the version from stable to
-unstable and back to stable still needs to be made explicit when the producer state
-update implementation is designed.
 
 ### TimingData synchronization
 
@@ -546,8 +523,6 @@ BackofficeStatus
       lastUpPacketId
       lastDnPacketId
       outstandingDnPacketId
-      packetVersion
-      packetStateStable
     timingData
       localHead
       remoteProcessedHead
@@ -707,7 +682,7 @@ start SI-01 with RabbitMqUpstreamConnector
 connect SI-02 Central System Simulator using RabbitMqCentralSystemTransport
 exercise inbound/outbound source flows
 force/recover broker or client connection where practical
-verify packetId/packetVersion handling, RECV/resend and TIMING_DATA SEQ/replay
+verify packetId handling, RECV/resend and TIMING_DATA SEQ/replay
 clean up test topology
 ```
 
