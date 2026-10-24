@@ -26,6 +26,9 @@ The concrete public/default JSON representation is defined in
 implement the same semantic contract behind the UpstreamData representation/codec
 boundary.
 
+The project-wide odd/even maturity convention for integer JSON `v` fields is guidance
+owned by `12-GPD-documentation-guide.md`; IF-06 does not redefine that convention.
+
 IF-06 does not define RabbitMQ queues/exchanges, HTTP routes, WebSocket event names,
 Java classes, provider discovery or private deployment protocol details.
 
@@ -91,15 +94,15 @@ logs and engineering inspection unambiguous. In the current contract only a posi
 `DN_PACKET.packetId` participates in `RECV`/resend handling. A normal
 `UP_PACKET.packetId` is not itself acknowledged.
 
-Each packet also carries a `packetVersion`, separate from `packetId`. It describes the
+Each packet also carries a ``, separate from `packetId`. It describes the
 producer's packet/state generation rather than delivery order:
 
-- an **even** packetVersion denotes stable state;
-- an **odd** packetVersion denotes unstable/in-transition state.
+- an **even**  denotes stable state;
+- an **odd**  denotes unstable/in-transition state.
 
-packetVersion is not acknowledged by RECV, is not a replay cursor and does not replace
+ is not acknowledged by RECV, is not a replay cursor and does not replace
 the TIMING_DATA/LogBook sequence. Delivery retry keeps the same packetId and the same
-packetVersion. The exact producer-side transition that moves a generation from stable to
+. The exact producer-side transition that moves a generation from stable to
 unstable and back to stable is owned by the packet/state producer and shall not be
 inferred from packetId parity.
 
@@ -656,15 +659,6 @@ DEL removes the current definition. Elapsed-time and race-time-zone interpretati
 belong to SI-01 domain behaviour, not to transport or codec layers.
 :::
 
-:::{ifreq} Expose packet-state stability independently from delivery identity  
-:id: IF06-REQ-023  
-:status: D  
-
-The public/default packet model shall carry a packetVersion independently from packetId.
-An even packetVersion shall denote stable producer state and an odd packetVersion shall
-denote unstable/in-transition producer state. packetVersion shall not be used as a
-TIMING_DATA sequence, RECV acknowledgement value or resend cursor.
-:::
 
 :::{ifreq} Immediate upstream PING on connect  
 :id: IF06-REQ-011  
@@ -711,7 +705,7 @@ not consume TimingData sequence identity or create TimingData/LogBook records.
 
 ## Open points
 
-- Exact producer-side rules for advancing packetVersion around a multi-packet state
+- Exact producer-side rules for advancing  around a multi-packet state
   mutation/snapshot; the parity meaning is fixed (even stable, odd unstable), but the
   transition boundary still needs to be made explicit in the implementation design.
 
