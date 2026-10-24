@@ -152,7 +152,7 @@ contain this compatible v1 branch:
           "sync": "SYNCED",
           "timingDataHead": 42,
           "centralTimingDataSeq": 42,
-          "lastDnPacketId": 123
+          "lastDnPacketNr": 123
         }
       ]
     }
@@ -166,7 +166,7 @@ position/replay state rather than a second RACE_DATA sequence.
 `timingDataHead` is the local LogBook/IF-05 source head.
 `centralTimingDataSeq` is the highest contiguous TIMING_DATA sequence SI-01 currently
 knows Central has processed; it may be absent/unknown before a SEQ exchange.
-`lastDnPacketId` is the last normal downstream packet SI-01 accepted and is delivery
+`lastDnPacketNr` is the last normal downstream packet SI-01 accepted and is delivery
 state, not a TimingData sequence. Socket/library diagnostics may be added separately
 without redefining these values.
 
@@ -652,7 +652,7 @@ Examples of successful response bodies are:
 for accepted protocol input, and:
 
 ```json
-{"result":"APPLIED","packetId":123}
+{"result":"APPLIED","packetNr":123}
 ```
 
 after a new normal DN_PACKET carrying RACE_DATA has been applied. A resend of an
@@ -666,7 +666,7 @@ HTTP mapping:
 | Situation | HTTP | Result/error |
 | --- | ---: | --- |
 | semantic protocol input accepted | 200 | `ACCEPTED` |
-| new RACE_DATA packet applied | 200 | `APPLIED` + applied `packetId` |
+| new RACE_DATA packet applied | 200 | `APPLIED` + applied `packetNr` |
 | already-processed downstream packet | 200 | `DUPLICATE` |
 | downstream packet gap during engineering injection | 409 | `GAP` + last accepted packet id |
 | malformed/unsupported message or direction | 400 | stable error code |
