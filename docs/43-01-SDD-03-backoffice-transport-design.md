@@ -62,12 +62,13 @@ TimingSystem
                 Connector            Connector
 ```
 
-`NodeUpstream` owns node-scoped UpstreamData semantics, protocol ordering,
-`UpstreamDataCodec` ownership and heartbeat cadence/state. `UpstreamData` is
-represented internally by one immutable node-scoped base plus small concrete message
-values (`TimingDataTransfer`, `RaceData`, `Sync`, `Ack`, `Req`, `Ping`);
-there is no hidden implementation hierarchy behind subtype interfaces.
-`DefaultUpstreamData` remains only the reference-profile factory/convenience layer.
+`NodeUpstream` owns node-scoped UpstreamData semantics, packet delivery state,
+`UpstreamDataCodec` ownership and heartbeat cadence/state. `UpstreamData` is represented
+as one node-scoped `UP_PACKET` or `DN_PACKET` carrying packetId, packetVersion and one
+semantic message. Current semantic messages include TimingData, TimingDataReq, Seq,
+RaceData, Recv and Ping; there is no hidden implementation hierarchy behind subtype
+interfaces. `DefaultUpstreamData` remains only the reference-profile
+factory/convenience layer.
 One concrete `UpstreamStream` is composed for each NodeUpstream.
 
 Runtime composition first constructs the fixed node-scoped UpstreamStreams from
@@ -136,15 +137,15 @@ NodeUpstream decodes immediately after `read()` and encodes immediately before
 routing and is otherwise implicit in the composed stream. No generic Messaging type
 wraps each payload in a second NodeId-bearing message object.
 
-`UpstreamData` is the reusable/public semantic message contract defined by IF-06.
-In the default implementation, both inbound and outbound exchanges use the same
-UpstreamData JSON envelope. A message variant that carries TimingData embeds one
-or more committed IF-05 records as child values of a `TIMING_DATA` message; it
-does not send standalone legacy log lines or redefine TimingData identity/order
-semantics. PING request/answer and other message families share that envelope, with their
-own payloads. Deployment-specific adapters may translate asymmetric external
-wire protocols at the connector boundary without exposing them to application
-or domain code.
+`UpstreamData` is the reusable/public semantic packet contract defined by IF-06. The
+default implementation uses one JSON packet shape with explicit `UP_PACKET` and
+`DN_PACKET` direction, a packetId for delivery/debug identity, a packetVersion for
+producer state consistency, and one semantic message. packetId and packetVersion are
+independent: RECV confirms a downstream packetId, while packetVersion parity reports
+whether the producer state is stable (even) or unstable/in-transition (odd). Neither
+value replaces the IF-05 TimingData sequence. Deployment-specific adapters may translate
+asymmetric external wire protocols at the connector boundary without exposing them to
+application or domain code.
 
 These semantic contracts form the boundary between application `UpstreamGateway` and I/O `Messaging`. Transport/session/wire types stay with `io.messaging`; domain objects do not depend on them.
 
@@ -244,21 +245,28 @@ Connector connection/disconnection are typed post-fact events. Heartbeat/PING ca
 is scheduled by NodeUpstream because it is IF-06 protocol behavior rather than
 Engineering WebSocket session behavior.
 
-The SI-02 Central System Simulator owns peer behavior. It can allocate/send RACE_DATA
-source sequences, inspect ACK/REQ/SYNC and TIMING_DATA, answer PING, issue replay
-requests and deliberately disconnect/reconnect for recovery tests.
+The SI-02 Central System Simulator owns peer behavior. It can allocate packet ids and
+packet versions, keep one normal DN_PACKET outstanding, inspect RECV/SEQ/TIMING_DATA,
+answer PING, issue TIMING_DATA_REQ and deliberately disconnect/reconnect for recovery
+tests.
 
 ### ST-2 scenarios
 
 ST-2 scenarios include:
 
 - connect the upstream-role WebSocket and observe STATUS_SNAPSHOT followed by immediate
-  PING/SYNC UpstreamData;
-- send RACE_DATA and StageStartTimes over that same WebSocket and inspect ordered
-  apply/duplicate/gap behavior;
-- observe outbound TIMING_DATA, ACK, REQ, SYNC and PING over the same connection;
-- disconnect/reconnect and verify fresh SYNC state plus replay from the current
-  contiguous sequence;
+  PING plus the packet/sequence exchange;
+- inspect packetId and packetVersion in both directions and verify that even versions
+  represent stable producer state while odd versions represent unstable/in-transition
+  state;
+- send RACE_DATA in a normal DN_PACKET, verify semantic apply followed by RECV, and
+  verify that a lost RECV causes the exact same downstream packet to be resent without
+  applying its changes twice;
+- observe outbound TIMING_DATA and bidirectional SEQ REQ/ANS/NTF;
+- issue TIMING_DATA_REQ and verify bounded LogBook replay plus the replay-to-live handoff;
+- request full current downstream-state resend through RECV position 0;
+- disconnect/reconnect and verify fresh TIMING_DATA sequence reconciliation without a
+  RACE_DATA source-history replay;
 - repeat against configured bindings for one or multiple TimingNodes.
 
 This profile verifies semantic routing and recovery without proving RabbitMQ
@@ -395,100 +403,127 @@ For two configured sources, two inbound consumers exist even if they share one p
 ## PING scheduling and connector lifecycle
 
 PING scheduling belongs to the lifecycle of each configured upstream connector/session,
-while node-scoped PING protocol state belongs to NodeUpstream and not to TimingData persistence.
+while node-scoped PING protocol state belongs to NodeUpstream and not to TimingData
+persistence.
 
-When a connector reports that it has reached its operational connected state, the owning
-connector/gateway lifecycle starts one periodic PING task with:
+When a connector reaches its operational connected state, the owning lifecycle schedules
+PING with:
 
 ```text
 initial delay: 0
 period:        30 seconds
 ```
 
-The first execution therefore publishes `PING(op=REQ, mode=HB)`
-immediately. Later executions publish heartbeat PING REQUEST messages at the
-30-second period while that connector remains operationally connected. The
-reference implementation may assign a connector-scoped opaque `pingId` to
-individual requests and track whether a PING ANSWER echoing that identifier has
-been observed. This is an implementation choice rather than an IF-06 interface
-obligation. A manual PING request omits `mode`; the answer does too.
-A manual request/answer exchange does not reset the heartbeat scheduler.
+The first execution publishes `PING(op=REQ, mode=HB)` immediately. Later executions
+publish heartbeat PING REQUEST messages at the 30-second period while that connector
+remains connected. A manual PING request omits `mode`; the answer does too. Manual
+request/answer does not reset the heartbeat scheduler.
+
+PING uses packetId 0 in both directions. It therefore bypasses normal positive-ID
+DN_PACKET stop-and-wait state and is never followed by RECV. A PING packet contains no
+other semantic message. The receiver answers a PING REQUEST immediately, even when a
+normal downstream packet is still awaiting confirmation.
+
+packetVersion remains separate from this special packetId rule. If the default packet
+shape carries the current producer packetVersion on PING, its parity remains the ordinary
+stable/unstable state indication; it does not turn PING into a confirmed packet.
 
 When the connector disconnects, deactivates or is replaced, its scheduled PING task is
-cancelled. Reconnect creates a new task/cycle and again begins with an immediate PING.
-Only one active PING task may exist per active connector.
+cancelled. Reconnect begins a new cycle with another immediate PING. Only one active PING
+task may exist per active connector.
 
-The Java implementation should use the application's existing scheduled-executor
-infrastructure rather than introduce a separate `java.util.Timer` thread solely for
-heartbeat work. PING submission goes through the normal UpstreamData publisher/connector
-path. It bypasses TimingData sequence allocation and LogBook persistence because PING is
-not a TimingData record.
+The Java implementation uses the application's existing scheduled-executor
+infrastructure rather than introducing a separate timer thread solely for heartbeat
+work. PING bypasses TimingData sequence allocation and LogBook persistence.
 
-Inbound PING REQUEST is handled at the same upstream semantic boundary:
-SI-01 creates one PING ANSWER retaining the request's optional `mode`
-(`HB` when present; absent for manual) and publishes it through
-the connector without entering the TimingData/LogBook path. Incoming PING ANSWER messages are processed as
-responses and must never trigger another answer. The reference codec echoes
-an optional incoming `pingId` when present.
+No missing-answer timeout or disconnect threshold is fixed yet. Transport-level
+keepalive mechanisms may coexist with this application-level PING exchange but do not
+replace IF06-REQ-011/012/013.
 
-No missing-answer timeout or disconnect threshold is fixed yet. Connector status may
-expose the last sent PING REQUEST, last received PING ANSWER and whether exchanges
-remain unconfirmed, but policy for changing connection health remains a later decision.
+## Packet delivery and TimingData replay
 
-Transport-level keepalive mechanisms (for example broker/TCP heartbeat features) may
-coexist with this application-level PING request/answer exchange but do not replace
-IF06-REQ-011/012/013.
-
-## Ordered stream synchronization and replay
-
-Local TimingData commitment and external delivery remain deliberately separated. The
-public v1 design uses the **existing source sequence of each direction** rather than
-a second outbox sequence.
+Local TimingData commitment, packet delivery and external synchronization remain separate.
 
 ```text
 TimingNode -> Central System
-  TimingNode LogBook
-    seqNr 1..N
+  LogBook seqNr 1..N
        |
-       +--> proactive TIMING_DATA publish
-       +--> SYNC stream=TIMING_DATA seq=N
-       +--> serve REQ stream=TIMING_DATA fromSeq=M
+       +--> UP_PACKET / TIMING_DATA
+       +--> UP_PACKET / SEQ NTF
+       +--> answer SEQ REQ
+       +--> serve TIMING_DATA_REQ fromSeq=M
               by replaying retained LogBook records M..N
 
 Central System -> TimingNode
-  RACE_DATA source
-    seq 1..R
+  current Central state
        |
-       v
-  TimingNode ordered apply boundary
-       |
-       +--> next expected seq: apply all changes, then ACK seq
-       +--> duplicate seq: do not apply again; ACK may repeat
-       +--> gap: do not apply; REQ stream=RACE_DATA fromSeq=missing
+       +--> one normal DN_PACKET outstanding
+               packetId      = delivery identity
+               packetVersion = producer state generation
+               message       = RACE_DATA / SEQ / TIMING_DATA_REQ / ...
+                    |
+                    +--> SI-01 processes message
+                    +--> UP_PACKET / RECV(receivedPacketId)
 ```
 
-For TimingData, the LogBook is the durable replay payload history. SI-01 does not
-persist a second copy of each committed TimingData merely to implement an outbox.
-A failed proactive publish is therefore recoverable: after SYNC, the Central System
-can request the required LogBook sequence again.
+### Downstream delivery
 
-For RaceData, the Central System owns the source sequence. SI-01 advances its
-node-scoped applied RaceData sequence only after the complete message has been
-validated and applied on the TimingNode serialization boundary. ACK is semantic
-confirmation of that application, not merely transport delivery.
+For one TimingNode, Central has at most one normal positive-ID DN_PACKET outstanding.
+Central does not send the next normal positive-ID packet until the current one is
+confirmed through RECV. If confirmation does not arrive, Central resends the exact same
+packet with the same packetId, packetVersion and semantic content.
 
-No out-of-order RaceData buffering is required by the v1 baseline. When sequence N
-is expected and a later sequence arrives, SI-01 leaves state unchanged and requests
-RaceData from N. The Central System is responsible for retaining enough RaceData
-history to satisfy the supported REQ range.
+SI-01 keeps enough receive state to recognize a resend of the already processed
+downstream packet. It must not apply RACE_DATA or another state-changing message twice;
+it repeats RECV for the packet already processed.
 
-A reconnect creates a new transport session but does not create new source sequence
-namespaces. The peers exchange fresh source-head SYNC messages and use REQ where the
-receiver is behind.
+Central does not retain a historical RACE_DATA sequence. Once a downstream packet is
+confirmed, its old wire packet is not required for future source replay. Central keeps
+its current race/reference state and the one exact outstanding packet needed for retry.
 
-No exact millisecond retry/backoff policy is fixed by D03. Connectors may use suitable
-transport retry/backoff for control-message retransmission, while the semantic recovery
-mechanism remains SYNC + REQ + source sequence.
+RECV position 0 requests a complete resend of the applicable current Central-owned
+downstream state. It is not a request for a retained RACE_DATA history.
+
+### Packet state version
+
+packetVersion is independent from packetId. packetId describes delivery order; the
+packetVersion describes the producer's state generation.
+
+The current rule is:
+
+- even packetVersion: producer state is stable;
+- odd packetVersion: producer state is unstable/in-transition.
+
+A retry does not create a new version: the resent packet retains its original
+packetVersion. packetVersion is not acknowledged by RECV and is not used as a TimingData
+replay cursor. The exact mutation boundary that advances the version from stable to
+unstable and back to stable still needs to be made explicit when the producer state
+update implementation is designed.
+
+### TimingData synchronization
+
+TIMING_DATA is the only current application-data domain with durable sequence replay.
+Its source identity remains the IF-05/LogBook sequence.
+
+SEQ has REQ/ANS/NTF operations. Central may ask SI-01 for its current LogBook head; SI-01
+may ask Central for the highest contiguous TimingData sequence Central processed; either
+side may answer, and SI-01 may proactively notify a new source head.
+
+Central requests actual records with TIMING_DATA_REQ from an inclusive IF-05 sequence.
+When SI-01 handles that request it captures the current LogBook head and replays through
+that captured position in bounded TIMING_DATA messages. Later commits are not
+interleaved into the captured replay range. This request remains the replay-to-live
+handoff barrier, including the empty-range case when Central is already caught up.
+
+The LogBook is the durable replay payload history; SI-01 does not persist a duplicate
+TimingData outbox solely for upstream recovery.
+
+A reconnect creates a new transport session but does not create a new TimingData source
+sequence. The peers refresh their TimingData positions through SEQ and use
+TIMING_DATA_REQ where required. RACE_DATA recovery remains packet/state based rather than
+source-history based.
+
+No exact millisecond retry/backoff policy is fixed by this SDD.
 
 ## Status model
 
@@ -507,11 +542,16 @@ BackofficeStatus
       configured
       active
       lastMessage
-    streams
-      timingDataHead
-      raceDataAppliedSeq
-      raceDataGapFrom
-      syncState
+    packet
+      lastUpPacketId
+      lastDnPacketId
+      outstandingDnPacketId
+      packetVersion
+      packetStateStable
+    timingData
+      localHead
+      remoteProcessedHead
+      replayState
       lastPublish
       lastFailure
 
@@ -536,7 +576,7 @@ shared/upstream-data
     default/reference JSON implementation
 
 application/domain
-    semantic routing, RaceData ordered application, ACK/REQ/SYNC state
+    semantic packet handling, downstream RECV/resend state, SEQ/TIMING_DATA_REQ replay state
 
 io.messaging
     UpstreamGateway
