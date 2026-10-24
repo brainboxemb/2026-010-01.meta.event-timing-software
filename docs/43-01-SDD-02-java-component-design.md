@@ -469,7 +469,7 @@ I/O Messaging
         +--> UpstreamStream B <--> NodeUpstream B
 
 NodeUpstream A
-  ├── RaceDataSync
+  ├── DownstreamDelivery
   ├── TimingDataSync
   └── Heartbeat
         |
