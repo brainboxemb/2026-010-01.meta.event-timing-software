@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Extend DR-09 with the stable `Upstream received:` INFO boundary after successful IF-06 decode, using the same compact semantic summaries as queued/sent logging while keeping semantic processing failures as separate WARN facts.
+
 - Clarify SI-01 Java logging rule DR-09 with stable operational INFO prefixes for registration, LogBook persistence and upstream session/delivery boundaries; require transport logs to follow the actual message/batch boundary and avoid routine full protocol-payload logging at any normal runtime level.
 
 - Define optional absolute UTC `PING.data.time` as the creation/send time of that specific PING message. Reference producers populate it, ANS creates its own time instead of echoing REQ time, and readers remain compatible with PING messages that omit the field.
