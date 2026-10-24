@@ -125,15 +125,19 @@ TimingData values as elements of its `data` array.
         "recType": "AUTO_REG",
         "time": "2026-10-13T08:00:00.00Z",
         "regId": "A0042",
-        "code": ["ADD"]
+        "code": ["ADD"],
+        "recTime": "2026-10-13T08:00:00.123Z"
       }
     ]
   }
 }
 ```
 
-The child values use the applicable public IF-05 JSON mapping. Batching never creates
-another TimingData sequence; the original `seqNr` remains the record identity/order.
+The child values are the public IF-05 TimingData records themselves; IF-06 does not
+define a second record mapping. In the default writer their record timestamps therefore
+remain canonical UTC: `time` is the IF-05 effective time and `recTime` is the IF-05
+record-creation time, both with literal `Z`. Batching never creates another TimingData
+sequence; the original `seqNr` remains the record identity/order.
 
 ### TIMING_DATA_REQ
 

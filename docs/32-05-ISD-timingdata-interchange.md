@@ -144,7 +144,7 @@ Lifecycle-record values are:
   default/reference representation.
 
 The lifecycle `time` is the effective transition time. It is distinct from
-optional record-creation metadata such as the default/reference `recTime`.
+record-creation metadata such as the default/reference `recTime`.
 
 A state-changing OPEN/CLOSE operation and its lifecycle TimingData commit form
 one externally successful semantic operation. The transition shall not be
