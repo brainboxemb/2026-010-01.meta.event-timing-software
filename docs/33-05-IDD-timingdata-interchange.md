@@ -36,6 +36,10 @@ this document defines its JSON/JSON Lines representation. Software-item design,
 reference codecs/stores and compatible consumers use this design without redefining
 IF-05 semantics.
 
+The project-wide odd/even maturity convention for integer JSON `v` fields is defined
+by `12-GPD-documentation-guide.md`. This IDD remains the authority for the concrete
+IF-05 representation.
+
 ## Design overview
 
 The reference design uses:
@@ -350,8 +354,13 @@ reference record.
 
 ## Compatibility and versioning
 
-The integer `v` member identifies the representation version. This document
-defines `v = 1`.
+The integer `v` member identifies the representation version. This document defines
+the current development representation as `v = 1`.
+
+Per the shared project convention in `12-GPD-documentation-guide.md`, odd `v` values
+are development/unstable and even `v` values are stable/released. IF-05 is therefore
+still using an unstable development representation while this IDD remains draft; a
+future stabilization publishes the corresponding even representation version.
 
 A v1 writer:
 
