@@ -627,7 +627,7 @@ IF-05 TimingData records as structured child values.
 
 **Purpose**
 
-Verify that normal Central-to-node delivery has at most one positive-ID DN_PACKET
+Verify that normal Central-to-node delivery has at most one positive-numbered DN_PACKET
 outstanding, that RECV confirms the processed packet, and that retransmission does not
 apply RACE_DATA twice.
 
@@ -653,7 +653,7 @@ apply RACE_DATA twice.
 
 **Expected result**
 
-- one normal positive-ID downstream packet outstanding at a time;
+- one normal positive-numbered downstream packet outstanding at a time;
 - successful semantic apply precedes RECV;
 - retransmission is idempotent by downstream packet number;
 - RACE_DATA has no independent source-sequence replay history;
