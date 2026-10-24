@@ -668,7 +668,7 @@ HTTP mapping:
 | semantic protocol input accepted | 200 | `ACCEPTED` |
 | new RACE_DATA packet applied | 200 | `APPLIED` + applied `packetNr` |
 | already-processed downstream packet | 200 | `DUPLICATE` |
-| downstream packet gap during engineering injection | 409 | `GAP` + last accepted packet id |
+| downstream packet gap during engineering injection | 409 | `GAP` + last accepted packet number |
 | malformed/unsupported message or direction | 400 | stable error code |
 | unknown TimingNode | 404 | `UNKNOWN_NODE` |
 | semantic conflict/invalid RaceData change | 409 | `CONFLICT` |
