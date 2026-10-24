@@ -125,7 +125,7 @@ member, the project uses one shared maturity convention:
 
 The convention applies to the representation version, not to runtime data stability,
 message delivery state, packet ordering or application build versions. A field such as
-`packetId`, a TimingData sequence number, an API path such as `/api/v1`, and the
+`packetNr`, a TimingData sequence number, an API path such as `/api/v1`, and the
 application/Maven version are separate concepts.
 
 A new representation may therefore begin as `v = 1` while its contract is still under
