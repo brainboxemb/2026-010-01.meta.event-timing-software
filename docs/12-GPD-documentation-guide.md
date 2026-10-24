@@ -115,6 +115,26 @@ Keep its other applicable relations (`:refines:`, `:depends_on:`) instead.
 Use a separate requirement for a genuinely distinct missing obligation rather
 than inserting unrelated obligations into an existing requirement.
 
+## Versioned JSON representation convention
+
+For project-owned JSON data representations that carry an integer top-level `v`
+member, the project uses one shared maturity convention:
+
+- **odd `v` values** identify a development/unstable representation;
+- **even `v` values** identify a stable/released representation.
+
+The convention applies to the representation version, not to runtime data stability,
+message delivery state, packet ordering or application build versions. A field such as
+`packetId`, a TimingData sequence number, an API path such as `/api/v1`, and the
+application/Maven version are separate concepts.
+
+A new representation may therefore begin as `v = 1` while its contract is still under
+active development. Stabilizing that representation publishes the corresponding even
+version, for example `v = 2`. Later incompatible development starts on the next odd
+version and is stabilized on the following even version. An IDD remains the authority for
+the concrete fields and compatibility rules of its representation; this GPD only defines
+the shared odd/even maturity convention.
+
 ## Verification scripts and engineering data ownership
 
 Engineering verification checks the **transformation of authored content**, not a

@@ -73,10 +73,12 @@ activities:
     kind: decision
     state: done
     note: >-
-      IF-06 now defines transport-independent UpstreamData: canonical TimingData,
-      ordered RaceData, SYNC/ACK/REQ control, PING request/answer and status families. The public reference representation is versioned JSON; deployment-specific
-      representations remain behind an UpstreamData provider/codec boundary. RabbitMQ
-      and IF-03 remain connector transports below those semantics.
+      IF-06 now defines transport-independent UpstreamData packet semantics:
+      UP_PACKET/DN_PACKET delivery, canonical TimingData, current-state RACE_DATA,
+      SEQ/TIMING_DATA_REQ, RECV/resend, PING request/answer and status. The public
+      reference representation is versioned JSON; deployment-specific representations
+      remain behind an UpstreamData provider/codec boundary. RabbitMQ and IF-03 remain
+      connector transports below those semantics.
 
   - id: D02
     lane: documentation
@@ -84,11 +86,12 @@ activities:
     state: done
     depends_on: [D01]
     note: >-
-      EventData owns stable profile identity. RACE_DATA is the Central-owned ordered
-      per-node live-data stream; reserveTagMap and stageStartTimes are incremental SET/DEL
-      sections inside it. The TimingNode applies only the next expected RaceData seq,
-      updates passive ReserveTagMap/StageStartTimes state, then ACKs the applied seq.
-      StageTiming derives results from committed TimingData plus that live state.
+      EventData owns stable profile identity. RACE_DATA carries Central-owned current
+      per-node live-state changes; reserveTagMap and stageStartTimes are incremental
+      SET/DEL sections inside it. The TimingNode applies a new valid downstream packet
+      once, then confirms the packet through RECV. RACE_DATA has no independent source
+      sequence/history. StageTiming derives results from committed TimingData plus that
+      live state.
 
   - id: D03
     lane: documentation
@@ -96,11 +99,11 @@ activities:
     state: done
     depends_on: [D01]
     note: >-
-      Synchronization keeps two independent source sequences per NodeId: TIMING_DATA
-      uses the existing LogBook/IF-05 seqNr and RACE_DATA uses the Central-owned message
-      seq. SYNC advertises a source head; REQ requests either stream from an inclusive
-      sequence. RaceData is ACKed only after semantic application. The LogBook remains
-      the TimingData replay source; control messages consume neither source sequence.
+      TIMING_DATA is the only durable sequence-synchronized application-data domain.
+      SEQ REQ/ANS/NTF exchanges LogBook/processed positions and TIMING_DATA_REQ requests
+      retained records from an inclusive sequence. Normal Central-to-node delivery uses
+      one outstanding DN_PACKET plus RECV/resend; RECV position 0 requests a full
+      current downstream-state resend.
 
   - id: D04
     lane: documentation
@@ -141,10 +144,11 @@ activities:
     state: done
     depends_on: [D01, D02, V01]
     note: >-
-      Implement the Central-to-node ordered RACE_DATA ingress base: source-sequence
-      validation, semantic apply-before-ACK, gap detection/REQ, ReserveTagMap and
-      StageStartTimes SET/DEL application, and TeamID interpretation without changing
-      committed TimingData identity.
+      The Java implementation completed the earlier ordered RACE_DATA draft:
+      source-sequence validation, apply-before-ACK and gap-to-REQ plus
+      ReserveTagMap/StageStartTimes SET/DEL application. That delivered the live-state
+      behavior, but its protocol mechanics are superseded by the current DN_PACKET/RECV
+      IF-06 design and require migration in follow-up implementation work.
 
   - id: A03
     lane: application
@@ -162,10 +166,11 @@ activities:
     state: done
     depends_on: [D01, D03, V01]
     note: >-
-      Transport-independent SYNC/REQ replay is implemented: NodeUpstream advertises
-      the TimingData LogBook head, serves TIMING_DATA REQ from retained LogBook data,
-      compares Central RACE_DATA source head with applied RaceData and requests missing
-      messages. Local registration remains independent from upstream availability.
+      The Java implementation completed the earlier flat SYNC/REQ replay draft:
+      NodeUpstream advertises the TimingData LogBook head and serves retained LogBook
+      data while also synchronizing a RACE_DATA source sequence. The durable LogBook
+      replay behavior remains useful, but protocol mechanics are superseded by
+      SEQ/TIMING_DATA_REQ plus DN_PACKET/RECV and require migration.
 
   - id: A05
     lane: application
@@ -174,10 +179,11 @@ activities:
     depends_on: [D04, A02, A04]
     note: >-
       Complete the SI-02 Central System Simulator pane over the already implemented
-      SI-01 EngineeringApiConnector. SI-02 shall use its ApiEventClient connection in
-      role=upstream mode, send ordered RACE_DATA and PING answers, inspect ACK/REQ/SYNC,
-      and request retained TIMING_DATA over the same full-duplex WebSocket. Direct
-      domain-object calls and RabbitMQ/private wire-frame tunnelling are not allowed.
+      SI-01 EngineeringApiConnector using the current IF-06 packet model. SI-02 shall use
+      its ApiEventClient connection in role=upstream mode, send DN_PACKET RACE_DATA and
+      PING answers, inspect RECV/SEQ, and request retained TIMING_DATA with
+      TIMING_DATA_REQ over the same full-duplex WebSocket. Direct domain-object calls
+      and RabbitMQ/private wire-frame tunnelling are not allowed.
 
   - id: V02
     lane: verification
@@ -187,8 +193,8 @@ activities:
     note: >-
       Use the SI-02 Backend pane over the full-duplex IF-03 upstream-role WebSocket to verify
       node-scoped reference-data application, TeamID/StageTiming results, outbound
-      semantic events, acknowledgement/synchronization behaviour and recovery after
-      IF-03 reconnect. This verifies upstream semantics but not RabbitMQ session/channel behaviour,
+      semantic events, DN_PACKET/RECV delivery, TIMING_DATA SEQ/replay behaviour and
+      recovery after IF-03 reconnect. This verifies upstream semantics but not RabbitMQ session/channel behaviour,
       which belongs to V03.
 
   - id: A06

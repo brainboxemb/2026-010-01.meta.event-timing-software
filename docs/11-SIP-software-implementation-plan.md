@@ -981,7 +981,7 @@ backoffice test environment while preserving local operation during outages.
 
 - promote IF-06 Backend Integration semantics before transport implementation drives them;
 - define RaceData, StageStartTimes, TeamID interpretation, StagePassageList and StageRanking ownership;
-- define freshness, acknowledgement, duplicate/idempotency and source-head/REQ/LogBook synchronization rules;
+- define packetId, RECV/resend, duplicate/idempotency and TIMING_DATA SEQ/TIMING_DATA_REQ LogBook synchronization rules;
 - adopt the existing multi-node composition/isolation baseline and verify it as Step-7 input;
 - receive/apply node-scoped synthetic/public reference data;
 - derive StagePassageList and StageRanking from explicit local/reference inputs;
@@ -989,7 +989,7 @@ backoffice test environment while preserving local operation during outages.
 - send committed LogBook data again from an explicitly requested sequence after upstream outage/recovery, without maintaining a second durable outbox;
 - add an **EngineeringApiBackofficeConnector** for ST-2 that is composed as a normal backoffice connector but uses existing IF-03 HTTP/JSON for inbound engineering messages and the IF-03 WebSocket event stream for outbound/status observation;
 - carry transport-neutral structured UpstreamData through IF-03 rather than tunnelling RabbitMQ/proprietary wire payloads as opaque strings;
-- use the SI-02 Backend pane to inject reference/start-time data, inspect outbound TimingData, control acknowledgement and force reconnect/error cases while reusing the existing API/Event connections;
+- use the SI-02 Backend pane to inject reference/start-time data, inspect UP_PACKET/DN_PACKET traffic, control RECV/resend and force reconnect/error cases while reusing the existing API/Event connections;
 - qualify the production-shaped RabbitMQ connector only after semantic/synchronization rules are stable;
 - give the **same SI-02 Backend Simulator** a RabbitMQ transport so it can act as the external backend peer through the broker instead of requiring a separate test program;
 - use a hosted RabbitMQ service such as CloudAMQP for the external ST-3 integration run, with both SI-01 and SI-02 connected to the broker and credentials supplied outside the repository;
@@ -1019,13 +1019,13 @@ backoffice test environment while preserving local operation during outages.
 | --- | --- |
 | `D01` | Promote IF-06 UpstreamData semantic contract and public JSON reference representation |
 | `D02` | Define reference-data, TeamID, StagePassageList and StageRanking ownership/semantics |
-| `D03` | Define source-head, acknowledgement, REQ and LogBook synchronization semantics |
+| `D03` | Define packet delivery plus TIMING_DATA sequence/replay semantics |
 | `D04` | Align backoffice transport SDD plus Engineering API connector / hosted RabbitMQ verification topology |
 | `A01` | Adopt and qualify the existing multi-node composition baseline |
 | `V01` | Requalify multi-node addressing, isolation, persistence and recovery |
 | `A02` | Implement node-scoped reference-data ingress and TeamID interpretation |
 | `A03` | Implement StagePassageList and StageRanking using the promoted reference-data model |
-| `A04` | Implement transport-independent TIMING_DATA SYNC/REQ LogBook synchronization |
+| `A04` | Implement transport-independent SEQ/TIMING_DATA_REQ LogBook synchronization and DN_PACKET/RECV delivery |
 | `A05` | Implement EngineeringApiBackofficeConnector plus SI-02 Backend pane |
 | `V02` | Verify reference-data, derived timing and synchronization through the Engineering API backoffice connector |
 | `A06` | Implement/qualify SI-01 RabbitMQ connector plus SI-02 RabbitMQ backend-peer transport |
@@ -1033,18 +1033,21 @@ backoffice test environment while preserving local operation during outages.
 
 ### Current actual
 
-A04 is completed in the Java implementation through issue #491 / PR #509. Each
-TimingNode consumes one node-scoped `UpstreamStream`; TIMING_DATA SYNC advertises
-the committed LogBook head, inbound RACE_DATA SYNC requests the first missing sequence,
-and inbound TIMING_DATA REQ sends the original committed records again in batches of
-at most 256 records using a captured source head. There is no second durable outbox and no application-level
-UpstreamMessageRouter.
+The current Java implementation contains the earlier draft IF-06 synchronization model
+introduced through issue #491 / PR #509 and later ownership refactors. That implementation
+uses flat SYNC/ACK/REQ messages and a separately sequenced RACE_DATA stream.
 
-The follow-up Java refactor #510 / #511 keeps that behaviour but separates ownership:
-`UpstreamMessagePort` performs dispatch and TimingNode-lane admission,
-`UpstreamDataSync` owns RACE_DATA synchronization, `LogBookSync` owns TIMING_DATA
-head/REQ/batch synchronization and `UpstreamHeartbeat` owns heartbeat state. `UpstreamStream` is an
-I/O Messaging contract rather than Domain data.
+The promoted IF-06 packet design now supersedes that draft before the interface is
+released: the target model uses UP_PACKET/DN_PACKET with packetId,
+RECV/stop-and-wait for normal downstream delivery, SEQ/TIMING_DATA_REQ for the durable
+TimingData LogBook sequence, and no independent RACE_DATA replay sequence. The existing
+Java implementation must therefore be migrated in a follow-up implementation change;
+the documentation change does not claim that migration is already complete.
+
+The useful implementation ownership from the earlier work remains: one node-scoped
+`UpstreamStream`, LogBook-backed bounded TimingData replay and node-scoped heartbeat
+processing. Their protocol state objects/names are revised as part of the packet-model
+migration rather than preserving the old SYNC/ACK/REQ semantics.
 
 ### Planning order
 

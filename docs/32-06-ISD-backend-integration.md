@@ -26,6 +26,9 @@ The concrete public/default JSON representation is defined in
 implement the same semantic contract behind the UpstreamData representation/codec
 boundary.
 
+The project-wide odd/even maturity convention for integer JSON `v` fields is guidance
+owned by `12-GPD-documentation-guide.md`; IF-06 does not redefine that convention.
+
 IF-06 does not define RabbitMQ queues/exchanges, HTTP routes, WebSocket event names,
 Java classes, provider discovery or private deployment protocol details.
 
@@ -74,31 +77,50 @@ UpstreamData family, not by the selected transport.
 
 ## Interface model
 
+
 ### UpstreamData
 
 UpstreamData is the common semantic boundary between application behaviour and
-backend transports. The public/reference representation uses **one message model
-in both directions**. A TimingData/log-record value is carried *inside* a
-TIMING_DATA message as payload, rather than being a separate wire-message format.
-PING requests/answers, reference-data and synchronization exchanges use the
-same message model with their respective message types and payloads. A deployment-specific adapter may encode
-the inbound and outbound wire directions differently, without changing the
-shared semantic UpstreamData model.
+backend transports. The current packet-oriented contract separates delivery from
+message meaning:
 
-The current semantic families are:
+- `UP_PACKET` carries one semantic message from SI-01 to the Central System;
+- `DN_PACKET` carries one semantic message from the Central System to SI-01.
 
-| Family | Typical direction | Purpose |
+Both packet directions have a `packetId`. The packet identifier is delivery identity
+and must not be confused with the IF-05/LogBook TimingData sequence. The public/default
+representation includes packet identifiers in both directions because they make traces,
+logs and engineering inspection unambiguous. In the current contract only a positive
+`DN_PACKET.packetId` participates in `RECV`/resend handling. A normal
+`UP_PACKET.packetId` is not itself acknowledged.
+
+Each packet also carries a ``, separate from `packetId`. It describes the
+producer's packet/state generation rather than delivery order:
+
+- an **even**  denotes stable state;
+- an **odd**  denotes unstable/in-transition state.
+
+ is not acknowledged by RECV, is not a replay cursor and does not replace
+the TIMING_DATA/LogBook sequence. Delivery retry keeps the same packetId and the same
+. The exact producer-side transition that moves a generation from stable to
+unstable and back to stable is owned by the packet/state producer and shall not be
+inferred from packetId parity.
+
+The current semantic message families carried by those packets are:
+
+| Message | Typical direction | Purpose |
 | --- | --- | --- |
-| TimingData transfer | SI-01 -> Central System | transfer committed TimingData records using their existing LogBook/IF-05 sequence |
-| RaceData transfer | Central System -> SI-01 | transfer ordered incremental race-state changes using a Central-owned source sequence |
-| SYNC | bidirectional | advertise the current source head of one ordered stream |
-| ACK | SI-01 -> Central System | acknowledge contiguously applied RaceData through a sequence number |
-| REQ | bidirectional | request retransmission of TIMING_DATA or RACE_DATA from a sequence number |
-| Ping request / answer | bidirectional | one PING family with REQ/ANS op, optional HB heartbeat mode and optional absolute UTC message time; mode absence denotes a manual check |
-| Status | bidirectional | expose upstream/source synchronization and connector health relevant to integration |
+| `TIMING_DATA` | SI-01 -> Central System | transfer committed TimingData records using their existing LogBook/IF-05 sequence |
+| `TIMING_DATA_REQ` | Central System -> SI-01 | request TimingData beginning at one IF-05/LogBook sequence |
+| `SEQ` | bidirectional | request, answer or notify the current TIMING_DATA position |
+| `RACE_DATA` | Central System -> SI-01 | deliver current race-state changes; no independent replay sequence is created |
+| `RECV` | SI-01 -> Central System | confirm the last successfully processed normal downstream packet or request a full downstream state resend |
+| `PING` | bidirectional | immediate REQ/ANS liveness exchange without normal RECV handling |
+| `STATUS` | bidirectional | expose upstream and connector health relevant to integration |
 
-The public RaceData and synchronization semantics are defined below. Their
-representations must remain compatible with the common requirements in this ISD.
+A deployment-specific adapter may encode the two packet directions differently while
+preserving these semantics. Concrete private framing, field widths and legacy message
+codes are outside this public contract.
 
 ### TimingData relationship
 
@@ -117,138 +139,137 @@ contained records retain their individual IF-05 identity and ordering. A larger
 replay is split into multiple ordered TIMING_DATA messages; batching never creates
 another TimingData sequence.
 
+
 ### RaceData relationship
 
-`RACE_DATA` is the ordered Central System -> SI-01 stream for live race-state
-changes owned by one addressed TimingNode. It is **not** a complete snapshot and
-does not carry a separate revision number.
+`RACE_DATA` carries Central-owned live race-state changes for one addressed TimingNode.
+It is **not** a durable historical stream and does not have a second source sequence.
+The containing `DN_PACKET.packetId` provides delivery identity; it does not become a
+RaceData revision or a TimingData sequence.
 
-Each RACE_DATA message carries the addressed `NodeId`, one message-level
-`LocationId` and one positive source `seq`. The LocationId identifies the WP
-context for which Central created that message; individual team/stage-start changes
-remain keyed by RegistrationId and do not repeat LocationId. The Central System
-allocates the RACE_DATA sequence monotonically starting at 1 for the NodeId. SI-01
-keeps the highest contiguously applied RaceData sequence for each TimingNode.
+Each RACE_DATA message carries one message-level `LocationId`. The LocationId identifies
+the WP context for which Central created that message; individual team/stage-start
+changes remain keyed by RegistrationId and do not repeat LocationId.
 
-The current v1 RaceData payload can contain one or more incremental change sections:
+The current RaceData payload can contain one or more incremental change sections:
 
 - `teamAssignments` changes the live RegistrationId -> TeamId assignment;
 - `stageStartTimes` changes RegistrationId-scoped stage-start definitions.
 
-Each change uses an explicit operation such as `SET` or `DEL`. One RACE_DATA
-message carries **1..16 changes total** across all supported sections. A larger
-logical update is split into multiple consecutively sequenced RACE_DATA messages.
-Absence of a section means no change to that part of RaceData. Receiving a RACE_DATA
-message therefore never implies that omitted state must be cleared.
+Each change uses an explicit operation such as `SET` or `DEL`. One RACE_DATA message
+carries **1..16 changes total** across all supported sections. Absence of a section means
+no change to that part of RaceData.
 
-The reserve mapping is keyed by RegistrationId rather than physical TagId because
-stable EventData already resolves both reserve tags, for example
-`TT-R-0001-1/2 -> R0001`. RaceData supplies only the live
-`R0001 -> TeamId` assignment. A RegistrationId that already resolves to a
-stable TeamId through EventData shall not be remapped by RaceData.
+The reserve mapping is keyed by RegistrationId rather than physical TagId because stable
+EventData already resolves physical tags to the registration identity. RaceData supplies
+only the live RegistrationId -> TeamId assignment. A RegistrationId that already resolves
+to a stable TeamId through EventData shall not be remapped by RaceData.
 
-A RACE_DATA message is validated as one ordered unit before its sequence advances:
+Normal Central-to-node delivery uses stop-and-wait semantics. For each TimingNode, Central
+keeps at most one positive-ID DN_PACKET outstanding. It does not send the next normal
+positive-ID DN_PACKET until the current one has been confirmed by RECV. If confirmation
+is not received, Central may resend the **same packet with the same packetId and semantic
+content**.
 
-- `seq = lastApplied + 1`: validate and apply all changes; only after successful
-  application advance `lastApplied` and send ACK for that sequence;
-- `seq <= lastApplied`: do not apply the changes again; the receiver may repeat
-  its current cumulative ACK;
-- `seq > lastApplied + 1`: a gap exists; do not apply the out-of-order message and
-  request RACE_DATA again from `lastApplied + 1`.
+SI-01 applies a new RACE_DATA packet only after the complete message has validated. It
+then confirms the containing downstream packet with RECV. If that RECV is lost and the
+same DN_PACKET is received again, SI-01 must not apply the same changes twice; it repeats
+the confirmation for the already processed packet.
 
-This makes loss detectable without repeatedly sending the full race state. If SI-01
-does not persist RaceData across a restart, it starts with RaceData sequence 0 and
-can rebuild state by requesting RACE_DATA from sequence 1.
+Central therefore does not need a retained history of old RACE_DATA packets. It keeps its
+current race state plus the exact outstanding downstream packet needed for retry. Changes
+to Central state while a packet is outstanding make later output dirty; they do not mutate
+the outstanding packet. After the outstanding packet is confirmed, Central can construct
+the next packet from its current state.
 
-### Data synchronization
+A full downstream state resend is explicitly requested with RECV position 0. Central then
+rebuilds the applicable current downstream state rather than replaying a historical
+RACE_DATA sequence. Exact snapshot segmentation is a representation/design concern, but
+a state change during that resend must not rewrite an already sent packet.
 
-Synchronization uses the **existing source sequence of each stream**. IF-06 does not
-create one generic delivery sequence over all message types.
 
-The two ordered streams are:
+### TimingData sequence and replay
 
-- `TIMING_DATA`: SI-01 -> Central System, ordered by the existing IF-05/LogBook
-  `seqNr` for one NodeId;
-- `RACE_DATA`: Central System -> SI-01, ordered by the Central-owned RACE_DATA
-  `seq` for one NodeId.
+Application-data synchronization in the current baseline applies only to
+`TIMING_DATA`. The authoritative sequence is the existing IF-05/LogBook sequence for
+one NodeId; IF-06 does not create another TimingData source sequence.
 
-`SYNC` advertises the sender's current source head for one stream. Sequence 0 means
-that source currently has no records/messages for the addressed TimingNode.
+`SEQ` exchanges the current TIMING_DATA position and has three operations:
 
-The receiving peer compares that source head with its own highest contiguous received
-or applied sequence. When it is behind, it sends `REQ` for that stream from the first
-missing sequence:
+- `REQ`: ask the peer for its current TIMING_DATA position;
+- `ANS`: answer a preceding REQ with `seq = N`;
+- `NTF`: proactively notify the peer that the sender's current position is `seq = N`.
 
-- Central System -> SI-01: `REQ(stream=TIMING_DATA, fromSeq=N)` requests LogBook
-  TimingData beginning at IF-05 `seqNr=N`;
-- SI-01 -> Central System: `REQ(stream=RACE_DATA, fromSeq=N)` requests Central
-  RaceData beginning at RACE_DATA `seq=N`.
+The meaning of the position follows the direction:
 
-`fromSeq=1` therefore means “send the complete retained stream from its beginning”.
-A deployment-specific legacy codec may map this semantic request to an older special
-wire value such as a RECV/package-id value of `0000`; that legacy sentinel is not
-the public source sequence itself.
+- SI-01 reports its current LogBook/IF-05 source head;
+- Central reports the highest contiguous TIMING_DATA sequence it has accepted/processed.
 
-For RaceData, `ACK(stream=RACE_DATA, seq=N)` confirms that SI-01 has successfully
-applied the stream contiguously through N. ACK is sent only after semantic application;
-transport/session delivery acknowledgement is not a substitute. A sequence gap causes
-REQ rather than advancement of the ACK point.
+Sequence 0 means that side currently has no TIMING_DATA position. REQ itself carries no
+sequence. ANS and NTF carry the current sequence.
 
-For TimingData, the LogBook remains the authoritative replay source. SI-01 may publish
-newly committed records proactively, but only after the connection's SYNC/REQ handoff has
-completed. After each SI-01 `SYNC(stream=TIMING_DATA)`, Central System sends
-`REQ(stream=TIMING_DATA, fromSeq=centralHead+1)` even when its contiguous receive head
-already equals the advertised SI-01 source head. That REQ is the replay-to-live handoff
-barrier.
+Either peer may send `SEQ REQ`. This allows Central to ask how many committed LogBook
+records currently exist and allows SI-01 to ask how far Central has processed. SI-01 may
+also send `SEQ NTF` when its LogBook head advances.
 
-When SI-01 handles the TIMING_DATA REQ it captures its current LogBook source head and
-replays from `fromSeq` through that captured head. Records committed after the captured
-head shall not be interleaved into that replay; they may be sent proactively only after
-the requested replay range has completed. A record committed after SYNC but before REQ is
-therefore included in the captured replay range. When `fromSeq` is exactly one greater
-than the captured head, the replay range is empty and the handoff completes immediately.
+Actual record replay is a separate `TIMING_DATA_REQ` operation. Central sends
+`TIMING_DATA_REQ(fromSeq=N)` to request retained TimingData beginning at IF-05 sequence
+N. SI-01 answers with one or more bounded TIMING_DATA messages containing the original
+records and identities.
 
-Loss does not require a second durable outbox: after reconnect or a fresh SYNC/REQ
-handoff, Central System can request any retained TimingData sequence again from LogBook.
-Retransmission preserves the original IF-05 record identity and content. Public v1 does
-not introduce TIMING_DATA ACK; RACE_DATA remains the stream that requires semantic ACK.
+The LogBook remains the replay source. After a fresh connection/sequence exchange,
+Central sends TIMING_DATA_REQ from its next expected sequence even when it is already
+caught up. That request is the replay-to-live handoff barrier. When SI-01 handles it,
+SI-01 captures its current LogBook head and replays from `fromSeq` through that captured
+head. Records committed after the captured head are sent only after that replay range has
+completed. When `fromSeq` is exactly one greater than the captured head, the replay
+range is empty and the handoff completes immediately.
 
-PING, ACK, REQ and SYNC are control messages. They do not consume TimingData `seqNr`
-or RaceData `seq` values themselves.
+Loss does not require a second durable TimingData outbox. Central can request retained
+TimingData again from the LogBook. Retransmission preserves the original IF-05 record
+identity and content.
+
+RACE_DATA is deliberately not synchronized by SEQ. Its recovery uses DN_PACKET delivery,
+RECV/resend and, when the node no longer trusts its downstream state, an explicit full
+state resend request.
+
 
 ### PING request / answer lifecycle
 
-`PING` is one bidirectional UpstreamData message family used to verify that the
-configured upstream connection remains operational. A PING exchange has:
+`PING` is one bidirectional semantic message used to verify that the configured
+upstream connection remains operational. A PING exchange has:
 
 - **op** (required): `REQ` initiates a check; `ANS` responds to it;
 - **mode** (optional): `HB` marks an automatically scheduled heartbeat; when
   `mode` is absent, the request is an explicitly initiated/manual check.
 
-A receiver of a valid PING `op = REQ` replies with one PING `op = ANS`. The
-answer preserves the request's `mode`, including its absence for a manual
-request. This applies in both directions: SI-01 may initiate a request and
-receive the backend's answer, and SI-01 also answers requests received from
-the backend. There is no separate PONG message type in the default model.
-A request/correlation identifier is not part of the mandatory IF-06 semantic
-contract; an implementation may use one to associate answers with requests.
+A receiver of a valid PING `op = REQ` replies immediately with one PING
+`op = ANS`. The answer preserves the request's `mode`, including its absence for
+a manual request. This applies in both directions.
+
+PING is deliberately outside normal downstream confirmation. A packet carrying PING
+uses packetId 0 and is not followed by RECV. A PING packet carries no other semantic
+message. The PING answer also uses packetId 0. This keeps liveness response independent
+from a normal positive-ID DN_PACKET that may still be awaiting confirmation.
+
+There is no separate PONG message type in the default model. A request/correlation
+identifier is not part of the mandatory semantic contract; a representation may expose
+one for engineering visibility.
 
 For each active upstream connector initiated by SI-01:
 
 - when the connector first reaches its operational **CONNECTED** state, SI-01 sends one
-  **heartbeat** PING immediately;
-- while that connection remains operational, SI-01 sends another **heartbeat** PING every **30 seconds**;
+  heartbeat PING immediately;
+- while that connection remains operational, SI-01 sends another heartbeat PING every
+  **30 seconds**;
 - when the connector leaves the operational connected state, periodic PING generation
   stops;
 - after a later reconnect, a new cycle begins with another immediate PING followed by
   the 30-second period.
 
-A **manual** PING may be explicitly initiated by either party; it does not change,
-reset or replace SI-01's scheduled heartbeat cycle.
-
-PING REQUEST/ANSWER is connection/upstream activity. It is **not TimingData**,
-does not consume a TimingData sequence number and does not create or modify a
-LogBook record.
+A manual PING may be initiated by either party and does not reset the heartbeat cycle.
+PING is not TimingData, does not consume a TimingData sequence and does not create or
+modify a LogBook record.
 
 The timeout/failure policy for an unanswered PING is intentionally not fixed yet. A
 transport may also have a lower-level keepalive mechanism, but that does not replace the
@@ -261,16 +282,16 @@ Operations use stable semantic identifiers independent from transport.
 | Operation | Direction | Meaning |
 | --- | --- | --- |
 | `IF06-OP-01 DELIVER_TIMING_DATA` | SI-01 -> Central System | deliver committed TimingData without changing IF-05 identity/order |
-| `IF06-OP-02 APPLY_RACE_DATA` | Central System -> SI-01 | validate and apply one ordered incremental RaceData message |
-| `IF06-OP-03 SYNC` | bidirectional | advertise one source stream's current head sequence |
+| `IF06-OP-02 APPLY_RACE_DATA` | Central System -> SI-01 | validate and apply current RaceData carried by one downstream packet |
+| `IF06-OP-03 TIMING_DATA_SEQUENCE` | bidirectional | request, answer or notify the current TIMING_DATA sequence position |
 | `IF06-OP-04 STATUS` | bidirectional | exchange/observe integration status |
 | `IF06-OP-05 PING_REQUEST` | bidirectional | initiate PING with op REQ and optional HB mode |
 | `IF06-OP-06 PING_ANSWER` | bidirectional | answer a PING request with op ANS, retaining the request's optional mode |
-| `IF06-OP-07 ACK` | SI-01 -> Central System | acknowledge contiguously applied RACE_DATA through sequence N |
-| `IF06-OP-08 REQ` | bidirectional | request TIMING_DATA or RACE_DATA retransmission from sequence N |
+| `IF06-OP-07 RECV` | SI-01 -> Central System | confirm the last processed normal DN_PACKET or request full downstream state resend |
+| `IF06-OP-08 REQUEST_TIMING_DATA` | Central System -> SI-01 | request retained TimingData beginning at sequence N |
 
-These identifiers describe semantic interaction. A concrete transport may map them
-to messages, routes, topics, requests or events without changing their meaning.
+These identifiers describe semantic interaction. A concrete transport may map them to
+messages, routes, topics, requests or events without changing their meaning.
 
 ## Semantic operations
 
@@ -286,7 +307,7 @@ Required behaviour:
 - preserve each record's IF-05 semantic values and record key;
 - preserve source ordering;
 - permit retransmission for synchronization;
-- never imply that transport delivery rewrites local committed data.
+- never imply that packet delivery rewrites local committed data.
 
 ### IF06-OP-02 APPLY_RACE_DATA
 
@@ -294,49 +315,55 @@ Input:
 
 - addressed TimingNode;
 - message-level LocationId identifying the WP context;
-- positive Central-owned RACE_DATA `seq`;
-- **1..16** incremental RaceData changes total across all change sections.
+- **1..16** current RaceData changes total across all change sections;
+- containing DN_PACKET delivery identity.
 
 Outcome:
 
-- next expected sequence and all changes valid: apply the message as one ordered unit,
-  advance the contiguous RaceData sequence and emit ACK;
-- duplicate/already-applied sequence: do not apply again; cumulative ACK may be repeated;
-- sequence gap: do not apply the message and issue REQ RACE_DATA from the first missing
-  sequence;
-- semantically invalid change: do not advance the sequence and expose a diagnosable
-  rejection/conflict.
+- a new valid packet: apply all changes as one unit, then confirm the containing
+  downstream packet with RECV;
+- a resend of an already processed packet: do not apply again; repeat RECV;
+- invalid semantic content: do not advance the accepted downstream packet position and
+  expose a diagnosable rejection/conflict.
 
-### IF06-OP-03 SYNC
+RACE_DATA itself has no source sequence and no historical replay obligation.
 
-This bidirectional operation advertises one source stream's current head for an
-addressed TimingNode:
+### IF06-OP-03 TIMING_DATA_SEQUENCE
 
-- `stream = TIMING_DATA`: the TimingNode's current LogBook/IF-05 source head;
-- `stream = RACE_DATA`: the Central System's current RaceData source head.
+This bidirectional operation uses the SEQ message:
 
-Sequence 0 means no data currently exists in that source stream. A receiver that is
-behind requests the missing range with IF06-OP-08 REQ. SYNC itself does not replay
-payloads and does not consume either source sequence.
+- `op = REQ`: ask the peer for its current TIMING_DATA position;
+- `op = ANS, seq = N`: answer a request;
+- `op = NTF, seq = N`: notify a new/current position without a request.
 
-### IF06-OP-07 ACK
+For SI-01, N is its LogBook/IF-05 source head. For Central, N is the highest contiguous
+TIMING_DATA sequence it has accepted/processed. Sequence 0 means no position yet.
 
-ACK confirms semantic application of an ordered source stream. In public v1 the
-required use is SI-01 acknowledging RACE_DATA. The ACK carries the addressed NodeId,
-`stream = RACE_DATA` and the highest contiguous sequence successfully applied.
+### IF06-OP-07 RECV
 
-### IF06-OP-08 REQ
+RECV refers to downstream delivery, not to TimingData source identity. A positive value
+confirms the last normal DN_PACKET that SI-01 has successfully processed. Central keeps
+at most one positive-ID downstream packet outstanding and resends that exact packet when
+confirmation is absent.
 
-REQ is bidirectional and carries:
+If SI-01 observes that the current downstream delivery cannot be advanced because an
+earlier packet is still missing, it reports the last successfully processed downstream
+packet. Under normal stop-and-wait delivery Central never sends packet N+1 before N is
+confirmed.
+
+RECV position 0 is not acknowledgement of a normal packet. It requests a full resend of
+the current Central-owned downstream state.
+
+### IF06-OP-08 REQUEST_TIMING_DATA
+
+TIMING_DATA_REQ carries:
 
 - addressed TimingNode;
-- `stream = TIMING_DATA | RACE_DATA`;
 - `fromSeq >= 1`.
 
-Central System uses TIMING_DATA REQ to request LogBook records beginning at IF-05
-sequence `fromSeq`. SI-01 uses RACE_DATA REQ to request Central messages beginning
-at RaceData sequence `fromSeq`. `fromSeq=1` means resend the retained stream from
-its beginning.
+Central uses it to request LogBook TimingData beginning at IF-05 sequence `fromSeq`.
+The request does not create another source sequence. SI-01 serves the range from retained
+LogBook data in bounded TIMING_DATA messages.
 
 ### IF06-OP-04 STATUS
 
@@ -463,19 +490,19 @@ TimingData record key or source sequence.
 :status: D  
 
 IF-06 shall support Central System-to-SI-01 RACE_DATA messages with explicit NodeId,
-message-level LocationId, positive ordered source sequence and incremental race-state
-changes. LocationId supplies the WP context for the whole message while individual
-changes remain RegistrationId-scoped. RaceData source ordering shall be independent
-from TimingData source ordering.
+message-level LocationId and incremental race-state changes. LocationId supplies the WP
+context for the whole message while individual changes remain RegistrationId-scoped.
+RACE_DATA shall not create an independent historical source sequence.
 :::
 
 :::{ifreq} Explicit reference-data outcome  
 :id: IF06-REQ-005  
 :status: D  
 
-A RACE_DATA message shall have an observable applied, duplicate, gap or rejected
-outcome. SI-01 shall acknowledge only contiguously applied RaceData and shall expose
-enough reason/status information to diagnose a gap or invalid change.
+A RACE_DATA message shall be validated and applied before SI-01 confirms its containing
+DN_PACKET with RECV. A resend of an already processed DN_PACKET shall not apply the same
+RaceData twice. Invalid content shall not advance the accepted downstream packet
+position and shall remain diagnosable.
 :::
 
 :::{ifreq} Synchronization preserves source identity  
@@ -501,10 +528,10 @@ remain separately representable.
 :status: D  
 
 The public/reference implementation shall provide a versioned JSON representation of
-UpstreamData suitable for development, engineering and integration verification. The
-same UpstreamData message structure shall be used in both directions; committed
-TimingData records shall be nested in a TIMING_DATA message payload rather than
-being transmitted as standalone legacy log-line messages.
+UpstreamData suitable for development, engineering and integration verification. It
+shall represent the two directions explicitly as UP_PACKET and DN_PACKET, each with a
+packetId for traceability. Committed TimingData records shall be nested in a TIMING_DATA
+message payload rather than being transmitted as standalone legacy log-line messages.
 :::
 
 :::{ifreq} Alternative representation support  
@@ -525,25 +552,25 @@ backend connectors/transports. Selecting another transport shall not redefine Ti
 reference-data or synchronization semantics.
 :::
 
-:::{ifreq} Synchronize by contiguous TimingData source sequence  
+:::{ifreq} Exchange the TimingData sequence position  
 :id: IF06-REQ-017  
 :status: D  
 
-For one NodeId, SYNC shall advertise the current source head of one ordered stream.
-TIMING_DATA uses the TimingNode's existing IF-05/LogBook sequence and RACE_DATA uses
-the Central System's RaceData source sequence. Sequence 0 shall mean that the selected
-source stream currently contains no data. A receiver behind that head shall use REQ
-from its first missing sequence.
+For one NodeId, SEQ shall exchange only the TIMING_DATA position. SEQ REQ asks the peer
+for its current position; SEQ ANS returns that position; SEQ NTF reports it without a
+request. SI-01's position is its current IF-05/LogBook source head. Central's position
+is the highest contiguous TIMING_DATA sequence it has accepted/processed. Sequence 0
+means no position yet.
 :::
 
-:::{ifreq} Keep transport acknowledgement separate from semantic acknowledgement  
+:::{ifreq} Separate packet identity from TimingData synchronization  
 :id: IF06-REQ-018  
 :status: D  
 
-Transport/session delivery success shall not replace source-sequence synchronization.
-For RACE_DATA, only successful ordered semantic application advances the ACK point.
-For TIMING_DATA, retained LogBook records remain replayable until the Central System
-no longer requests them during source synchronization.
+Both public/default packet directions shall carry packet identity for traceability.
+A positive DN_PACKET packetId shall participate in RECV/resend handling; an UP_PACKET
+packetId shall not itself require acknowledgement in the current baseline. Packet
+identity shall not replace or advance the IF-05/LogBook TIMING_DATA sequence.
 :::
 
 :::{ifreq} Make TimingData retransmission idempotent by record identity  
@@ -556,29 +583,30 @@ idempotent. Re-receiving the same record key with different semantic content sha
 be treated as a synchronization conflict and shall not silently overwrite data.
 :::
 
-:::{ifreq} Reconcile reference-data freshness through SYNC state  
+:::{ifreq} Request retained TimingData by source sequence  
 :id: IF06-REQ-020  
 :status: D  
 
-IF-06 shall support bidirectional REQ by source sequence. Central System shall be able
-to request TIMING_DATA from an IF-05/LogBook sequence and SI-01 shall be able to request
-RACE_DATA from a Central source sequence. A request from sequence 1 shall mean replay
-from the retained beginning of that stream.
+Central System shall be able to request TIMING_DATA beginning at an inclusive
+IF-05/LogBook sequence with TIMING_DATA_REQ. A request from sequence 1 means replay
+from the retained beginning of the LogBook. RACE_DATA shall not use this replay
+mechanism.
 :::
 
-:::{ifreq} Re-establish synchronization after connection changes  
+:::{ifreq} Re-establish TimingData synchronization after connection changes  
 :id: IF06-REQ-021  
 :status: D  
 
-When an upstream semantic connection is established or re-established, the peers
-shall exchange fresh SYNC source-head state for the applicable TimingNodes. For
-TIMING_DATA, Central System shall answer each fresh SI-01 source-head SYNC with REQ from
-its next expected sequence even when Central is already caught up. SI-01 shall capture
-its current LogBook head when handling that REQ, replay through that captured head, and
-shall not proactively send later committed TimingData until that replay handoff has
-completed. For RACE_DATA, a receiver that is behind shall request missing data with REQ.
-Progress remembered from an earlier transport/session shall not cause either source
-sequence to be skipped.
+When an upstream semantic connection is established or re-established, the peers shall
+refresh the applicable TIMING_DATA positions through SEQ. Central shall then send
+TIMING_DATA_REQ from its next expected sequence even when it is already caught up.
+SI-01 shall capture its current LogBook head when handling that request, replay through
+that captured head, and shall not proactively send later committed TimingData until
+that replay handoff has completed.
+
+RACE_DATA recovery shall not depend on a retained Central source sequence. When SI-01
+cannot trust its downstream state it may request a full resend of the current
+Central-owned downstream state through RECV position 0.
 :::
 
 :::{ifreq} Bound IF-06 data-message size  
@@ -587,20 +615,20 @@ sequence to be skipped.
 
 One TIMING_DATA message shall carry at most 16 TimingData records. One RACE_DATA
 message shall carry at most 16 incremental changes total across all supported change
-sections. A producer with more retained records or changes shall split them across
-multiple ordered messages without changing the underlying TimingData or RACE_DATA
-source sequences.
+sections. A producer with more retained TimingData shall split it without changing the
+underlying IF-05 sequence. Larger RaceData state delivery may require multiple confirmed
+DN_PACKET turns; it shall not create a RaceData source sequence.
 :::
 
-:::{ifreq} Ordered RaceData application and acknowledgement  
+:::{ifreq} Confirm downstream packets with stop-and-wait delivery  
 :id: IF06-REQ-014  
 :status: D  
 
-Each node-scoped RACE_DATA message shall carry a positive Central-owned source sequence.
-SI-01 shall apply only the next expected sequence, advance its contiguous RaceData
-position only after successful application, and then acknowledge that applied sequence.
-A duplicate shall not be applied twice. A sequence gap shall not be skipped and shall
-cause a RACE_DATA request from the first missing sequence.
+For one TimingNode, Central shall keep at most one normal positive-ID DN_PACKET
+unconfirmed. It shall not send the next normal positive-ID DN_PACKET until RECV confirms
+the current one. If confirmation is absent, Central may resend the exact same packet
+with the same packetId and semantic content. SI-01 shall not apply a resent already
+processed packet twice.
 :::
 
 :::{ifreq} Separate stable EventData from live RaceData  
@@ -631,13 +659,14 @@ DEL removes the current definition. Elapsed-time and race-time-zone interpretati
 belong to SI-01 domain behaviour, not to transport or codec layers.
 :::
 
+
 :::{ifreq} Immediate upstream PING on connect  
 :id: IF06-REQ-011  
 :status: D  
 
 When a configured upstream connector reaches its operational connected state, SI-01
-shall send one PING UpstreamData message with `op = REQ` and
-`mode = HB` immediately.
+shall send one PING message with `op = REQ` and `mode = HB` immediately
+in a packet with packetId 0. PING packets shall not use RECV.
 :::
 
 :::{ifreq} Periodic upstream PING while connected  
@@ -676,9 +705,13 @@ not consume TimingData sequence identity or create TimingData/LogBook records.
 
 ## Open points
 
-- Exact operational retry/backoff timing for repeated REQ/ACK when a peer remains
-  unavailable; source ordering and replay semantics are defined while connector timing
-  remains an implementation concern.
+- Exact producer-side rules for advancing  around a multi-packet state
+  mutation/snapshot; the parity meaning is fixed (even stable, odd unstable), but the
+  transition boundary still needs to be made explicit in the implementation design.
+
+- Exact retry/backoff timing for an unconfirmed normal DN_PACKET; stop-and-wait
+  identity/resend semantics are defined while connector timing remains an implementation
+  concern.
 - Whether all status is exchanged as UpstreamData or some connector diagnostics remain
   local-only implementation status.
 - Timeout/health policy for missing or late PING ANSWER messages.

@@ -182,7 +182,7 @@ normal LAN/Wi-Fi IP path may carry IF-03.
 
 ### **Timing Point Application** (SI-01) ↔ backend
 
-The **Timing Point Application** (SI-01) exchanges ordered RaceData, timing records, control/synchronization and status information with the upstream **Central System** through the system-owned **IF-06 Backend Integration** semantic interface. `TimingData` remains the canonical timing-record model from IF-05; **UpstreamData** is the small transport-independent semantic message layer carrying TIMING_DATA, RACE_DATA and control families such as SYNC, ACK, REQ and PING. Concrete transport/session technology and deployment-specific wire routing remain implementation/integration concerns unless they change the external system contract.
+The **Timing Point Application** (SI-01) exchanges RaceData, timing records, control/synchronization and status information with the upstream **Central System** through the system-owned **IF-06 Backend Integration** semantic interface. `TimingData` remains the canonical timing-record model from IF-05; **UpstreamData** uses directional UP_PACKET/DN_PACKET delivery and semantic messages such as TIMING_DATA, TIMING_DATA_REQ, SEQ, RACE_DATA, RECV and PING. Concrete transport/session technology and deployment-specific wire routing remain implementation/integration concerns unless they change the external system contract.
 
 ### **Timing Point Application** (SI-01) ↔ field devices
 
@@ -203,7 +203,7 @@ This catalogue identifies system-owned boundaries before all individual IDDs are
 | **IF-03 API** | SI-02 / automated test tooling ↔ SI-01 | machine-readable network API; current design HTTP/JSON + WebSocket | General remote query/control/diagnostics/test API | `32-03-ISD-application-control-status.md` + `33-03-IDD-api-http-websocket.md` |
 | **IF-04 Web Interface** | Operator/browser ↔ SI-01 | browser-facing HTTP + WebSocket; one binding per TimingNode | Browser-based TimingNode status and control | `32-04-ISD-web-interface.md` |
 | **IF-05 TimingData Interchange** | SI-01 / engineering & test tools / compatible data consumers | append-only file / record interchange | Canonical timing-record semantics, identity, ordering, versioning and reference encoding | `32-05-ISD-timingdata-interchange.md` + `33-05-IDD-timingdata-interchange.md` |
-| **IF-06 Backend Integration** | SI-01 ↔ Central System | UpstreamData semantics over configured upstream connector | TimingData/RaceData transfer, SYNC/ACK/REQ, PING request/answer and status | `32-06-ISD-backend-integration.md` + public/default `33-06-IDD-upstreamdata-json.md`; deployment-specific wire details may remain private |
+| **IF-06 Backend Integration** | SI-01 ↔ Central System | UpstreamData semantics over configured upstream connector | packetized TimingData/RaceData transfer, SEQ/TIMING_DATA_REQ, RECV/resend, PING request/answer and status | `32-06-ISD-backend-integration.md` + public/default `33-06-IDD-upstreamdata-json.md`; deployment-specific wire details may remain private |
 | **IF-07 RFID Integration** | SI-01 ↔ RFID subsystem | hardware/protocol adapter | RFID observations, lifecycle and health | device/semantic contract candidate |
 | **IF-08 CAN Device Integration** | SI-01 ↔ CAN bus/devices | CAN | CAN discovery/state, DisplayRev1Can and keypad interaction | system/device ISD candidate |
 | **IF-09 Smart Display V2** | DisplayRev2Wifi → SI-01 service | mDNS discovery + IP session; direct or LAN/Wi-Fi deployment | Discover SI-01 and consume timing/status/reference data; smart display owns render/sync | system ISD candidate |

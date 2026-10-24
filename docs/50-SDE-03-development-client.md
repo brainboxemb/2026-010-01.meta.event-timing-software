@@ -296,7 +296,7 @@ No HTTP injection route and no second SI-02 WebSocket service is used.
 
 For ST-3, the same simulator model later receives a RabbitMQ Central-System transport.
 RabbitMQ queue/channel/broker mechanics do not leak into the simulator's RaceData,
-ACK/REQ/SYNC or PING state.
+RECV/SEQ or PING state.
 
 ## Current UI baseline
 
@@ -317,7 +317,7 @@ The layout is composed through BentoFX docking leaves:
 | Registrations | Interpreted current/open location data (or operator-selected All) |
 | LogBook | Committed source history, sequence and raw-record inspection |
 | Raw Data / Events | Unmodified API JSON and received WebSocket event JSON |
-| Backend | Central System Simulator controls/state: per-node RaceData head, send changes, ACK/REQ/SYNC/PING, TimingData replay and raw UpstreamData |
+| Backend | Central System Simulator controls/state: packetId/RECV delivery, send RaceData changes, SEQ/PING, TimingData replay requests and raw UpstreamData |
 | Device Log / Terminal / Client Log | Independent device diagnostics, shell and local client diagnostics |
 
 Permanent tabs are not closable. The standard BentoFX `≡` menu owns tab

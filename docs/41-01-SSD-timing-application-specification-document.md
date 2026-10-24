@@ -438,10 +438,11 @@ state remains owned by the smart display.
 :depends_on: IF06-REQ-004, IF06-REQ-005  
 
 SI-01 shall accept decoded semantic RACE_DATA from a configured upstream boundary,
-resolve the addressed TimingNode, validate source ordering and apply accepted changes
-only to that TimingNode's live race state. Applied/duplicate/gap/rejected outcome,
-ACK/REQ behavior and enough source-sequence state to diagnose synchronization shall
-be observable.
+resolve the addressed TimingNode, validate the complete change set and apply accepted
+changes only to that TimingNode's live race state. RACE_DATA shall be processed within
+the containing DN_PACKET delivery contract: a new valid packet is applied before RECV,
+and a resend of an already processed packet shall not apply the same changes twice.
+packetId and rejection/error state shall be observable.
 :::
 
 :::{req} Transport-independent upstream synchronization  
@@ -450,10 +451,12 @@ be observable.
 :specifies: UC-011  
 :depends_on: SI01-REQ-042, SI01-REQ-045, IF06-REQ-001, IF06-REQ-002, IF06-REQ-003, IF06-REQ-010  
 
-SI-01 shall expose committed TimingNode-scoped outbound TimingData and control
-messages to configured upstream connectors through transport-independent semantic
-UpstreamData while preserving source identity and source ordering. Concrete connector
-routing shall not redefine TimingNode identity or registration semantics.
+SI-01 shall expose committed TimingNode-scoped outbound TimingData and protocol
+messages to configured upstream connectors through transport-independent UpstreamData
+packets while preserving TimingData source identity and ordering. The public/default
+packet model shall keep packetId and semantic message content separate.
+Concrete connector routing shall not redefine TimingNode identity or registration
+semantics.
 :::
 
 :::{req} Preserve replayability across upstream outage  
@@ -462,22 +465,25 @@ routing shall not redefine TimingNode identity or registration semantics.
 :specifies: UC-011, UC-012  
 :depends_on: SI01-REQ-064, IF06-REQ-006, IF06-REQ-007  
 
-Loss of a configured upstream transport shall not discard locally committed
-TimingData or corrupt the applied RaceData sequence. After transport recovery,
-source-head SYNC and REQ shall allow either receiver to recover missing retained
-stream data without inventing or reusing source sequence identity.
+Loss of a configured upstream transport shall not discard locally committed TimingData
+or corrupt current RaceData state. After transport recovery, TIMING_DATA positions shall
+be refreshed through SEQ and Central may request missing retained records through
+TIMING_DATA_REQ. Downstream Central-owned state shall recover through DN_PACKET
+RECV/resend and, when required, a full current-state resend rather than a retained
+RACE_DATA source history.
 :::
 
-:::{req} Advertise TimingData source head from the LogBook  
+:::{req} Exchange TimingData sequence position  
 :id: SI01-REQ-081  
 :status: D  
 :specifies: UC-011, UC-012  
 :depends_on: SI01-REQ-042, SI01-REQ-064, SI01-REQ-065, IF06-REQ-017  
 
-For each TimingNode, SI-01 shall be able to advertise through SYNC the current
-TIMING_DATA source head equal to the last committed LogBook/IF-05 sequence, or 0
-when the LogBook is empty. This advertisement shall not allocate another sequence
-or imply that the Central System has already received that record.
+For each TimingNode, SI-01 shall support SEQ REQ/ANS/NTF for TIMING_DATA position.
+Its own reported position is the last committed LogBook/IF-05 sequence, or 0 when the
+LogBook is empty. SI-01 shall answer a peer SEQ REQ and may notify a new LogBook head
+with SEQ NTF. SI-01 shall also be able to request Central's highest contiguous processed
+TIMING_DATA sequence. None of these operations allocate another source sequence.
 :::
 
 :::{req} Serve TimingData requests from the retained LogBook  
@@ -486,10 +492,10 @@ or imply that the Central System has already received that record.
 :specifies: UC-011, UC-012  
 :depends_on: SI01-REQ-081, IF06-REQ-019, IF06-REQ-020  
 
-When the Central System sends `REQ(stream=TIMING_DATA, fromSeq=N)`, SI-01 shall
-replay retained committed TimingData from LogBook sequence N in source order using
-each record's original NodeId, sequence and semantic content. A request from
-sequence 1 shall represent replay from the retained beginning of the LogBook.
+When the Central System sends `TIMING_DATA_REQ(fromSeq=N)`, SI-01 shall replay
+retained committed TimingData from LogBook sequence N in source order using each
+record's original NodeId, sequence and semantic content. A request from sequence 1 shall
+represent replay from the retained beginning of the LogBook.
 :::
 
 :::{req} Rebuild TimingData pending work without a second payload history  
@@ -504,29 +510,29 @@ to represent an outbound outbox. Loss of an upstream delivery is recovered by th
 Central System requesting the required LogBook sequence again.
 :::
 
-:::{req} Expose diagnosable source synchronization state  
+:::{req} Expose diagnosable packet and TimingData synchronization state  
 :id: SI01-REQ-084  
 :status: D  
-:depends_on: SI01-REQ-081, SI01-REQ-078, IF06-REQ-017, IF06-REQ-020  
+:depends_on: SI01-REQ-081, SI01-REQ-078, IF06-REQ-017, IF06-REQ-018  
 
-For each TimingNode, SI-01 shall expose at least the current TIMING_DATA LogBook head
-and the highest contiguously applied RACE_DATA sequence. Synchronization status shall
-distinguish normal ordered state, a detected RaceData gap and semantic rejection/error.
-Transport connection state shall remain separately observable.
+For each TimingNode, SI-01 shall expose at least the current TIMING_DATA LogBook head,
+the known Central processed TIMING_DATA position, the last accepted downstream packet
+identity, plus any outstanding/rejected packet state
+needed for diagnosis. Transport connection state shall remain separately observable.
 :::
 
-:::{req} Re-establish both ordered streams on connect and reconnect  
+:::{req} Re-establish packet delivery and TimingData synchronization on reconnect  
 :id: SI01-REQ-085  
 :status: D  
 :specifies: UC-011, UC-012  
 :depends_on: SI01-REQ-081, SI01-REQ-082, SI01-REQ-078, IF06-REQ-021  
 
 When a configured upstream connection becomes operational or reconnects, SI-01 shall
-advertise its current TIMING_DATA source head and process the Central System's current
-RACE_DATA source head. If SI-01 is behind the advertised RaceData head, it shall issue
-`REQ(stream=RACE_DATA, fromSeq=lastApplied+1)`. If the Central System is behind the
-advertised TimingData head, it can recover through its TIMING_DATA REQ. An earlier
-transport session shall not cause either source sequence to be skipped.
+refresh the TIMING_DATA positions through SEQ and shall serve any resulting
+TIMING_DATA_REQ from the LogBook. RACE_DATA shall not use a source-head replay
+sequence. If SI-01 cannot trust its current downstream Central-owned state, it shall be
+able to request a full current-state resend through RECV position 0. An earlier transport
+session shall not cause TimingData sequence recovery to be skipped.
 :::
 
 :::{req} Resolve TeamId without rewriting TimingData  
@@ -544,20 +550,19 @@ RaceData updates shall not rewrite committed RegistrationId or TimingData sequen
 identity.
 :::
 
-:::{req} Apply ordered incremental RaceData and acknowledge it  
+:::{req} Apply RaceData once and confirm downstream delivery  
 :id: SI01-REQ-078  
 :status: D  
 :specifies: UC-010, UC-012  
 :depends_on: SI01-REQ-063, SI01-REQ-077, IF06-REQ-014, IF06-REQ-015  
 
-For each TimingNode, SI-01 shall maintain the highest contiguously applied RACE_DATA
-source sequence, initially 0 when no live RaceData state has been applied. SI-01 shall
-apply only `seq = lastApplied + 1` and shall validate/apply all changes in that
-message before advancing the sequence and emitting ACK for the applied sequence.
+For each TimingNode, SI-01 shall validate and apply a new RACE_DATA change set as one
+semantic unit before confirming its containing normal DN_PACKET with RECV. A resend of
+an already processed packet shall not apply the same RACE_DATA changes again and shall
+repeat the applicable RECV. Invalid changes shall not advance the accepted downstream
+packet position.
 
-A duplicate/already-applied sequence shall not reapply its changes. A sequence greater
-than `lastApplied + 1` shall not be applied; SI-01 shall request RACE_DATA again from
-`lastApplied + 1`. Invalid changes shall not advance or acknowledge the sequence.
+RACE_DATA shall not maintain an independent source sequence or historical replay cursor.
 :::
 
 :::{req} Apply RaceData stage-start-time changes  
@@ -566,7 +571,7 @@ than `lastApplied + 1` shall not be applied; SI-01 shall request RACE_DATA again
 :specifies: UC-010  
 :depends_on: SI01-REQ-078, IF06-REQ-016  
 
-Within an accepted ordered RACE_DATA message, SI-01 shall apply StageStartTimes
+Within an accepted RACE_DATA message, SI-01 shall apply StageStartTimes
 changes by TeamId. SET shall create/replace the current start definition and DEL
 shall remove it. A SET definition shall contain local race time-of-day and may
 contain an explicit local date. A start-time change may be valid before the
@@ -785,7 +790,7 @@ UpstreamData routing boundary as other upstream connectors.
 
 The RabbitMQ upstream connector shall support automated or repeatable external
 integration testing against a test broker for source-specific inbound/outbound
-routing, connection recovery, consumer restoration and resumed SYNC/ACK/REQ replay. The public test fixture shall not embed production credentials, private
+routing, connection recovery, consumer restoration, DN_PACKET/RECV resend and resumed TIMING_DATA SEQ/TIMING_DATA_REQ replay. The public test fixture shall not embed production credentials, private
 topology or deployment-specific message representations.
 :::
 
@@ -956,18 +961,18 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-061 | UC-006 | passive CAN display adapter |
 | SI01-REQ-062 | UC-007 | smart-display network boundary |
 | SI01-REQ-063 | UC-010 + IF06-REQ-004/005 | UpstreamData reference-data ingress |
-| SI01-REQ-064/065 | UC-011/012 + IF06-REQ-001/002/003/006/007/010 | transport-independent UpstreamData sync + outage recovery |
+| SI01-REQ-064/065 | UC-011/012 + IF06-REQ-001/002/003/006/007/010 | transport-independent packet handling + outage recovery |
 | SI01-REQ-075 | IF06-REQ-011/012/013 | immediate + 30-second heartbeat PING REQUEST with PING ANSWER handling |
 | SI01-REQ-076 | IF06-REQ-013 | answer inbound PING REQUEST with optional-mode-preserving PING ANSWER |
 | SI01-REQ-077 | UC-010 + IF06-REQ-015 | stable EventData TeamId first; TeamAssignments fallback only |
-| SI01-REQ-078 | UC-010/012 + IF06-REQ-014/015 | ordered RACE_DATA sequence, apply and ACK |
+| SI01-REQ-078 | UC-010/012 + IF06-REQ-014/015 | idempotent RACE_DATA apply + DN_PACKET RECV |
 | SI01-REQ-079 | UC-010 + IF06-REQ-016 | incremental stage-start SET/DEL inside RACE_DATA |
 | SI01-REQ-080 | SI01-REQ-042/077/079 | derived StageTiming without TimingData mutation |
-| SI01-REQ-081 | UC-011/012 + IF06-REQ-017 | advertise TimingData LogBook source head |
-| SI01-REQ-082 | UC-011/012 + IF06-REQ-019/020 | serve TIMING_DATA REQ from LogBook |
+| SI01-REQ-081 | UC-011/012 + IF06-REQ-017 | TIMING_DATA SEQ REQ/ANS/NTF positions |
+| SI01-REQ-082 | UC-011/012 + IF06-REQ-019/020 | serve TIMING_DATA_REQ from LogBook |
 | SI01-REQ-083 | UC-012/013 + SI01-REQ-042 | LogBook is replay payload source; no duplicate durable outbox history |
-| SI01-REQ-084 | IF06-REQ-017/020 + SI01-REQ-078/081 | observable TimingData head and RaceData applied sequence |
-| SI01-REQ-085 | UC-011/012 + IF06-REQ-021 | fresh source-head SYNC/REQ after reconnect |
+| SI01-REQ-084 | IF06-REQ-017/018 + SI01-REQ-078/081 | observable TimingData positions + downstream packet state |
+| SI01-REQ-085 | UC-011/012 + IF06-REQ-021 | fresh SEQ/TIMING_DATA_REQ plus downstream-state recovery after reconnect |
 | SI01-REQ-086 | UC-001/002/009/020/021 + SI01-REQ-026/046 | result-bearing operation failure logging |
 | SI01-REQ-066 | UC-015 | simulation composition through production paths |
 | SI01-REQ-067 | UC-016 | public-contract test stubs |
@@ -1428,8 +1433,8 @@ receives the mutable LogBook.
 
 One `Upstream` responsibility belongs to each TimingSystem. It contains one
 `NodeUpstream` per TimingNode and owns the semantic protocol state that must remain
-node-scoped: RACE_DATA ordering/ACK/REQ, TIMING_DATA synchronization/replay and
-PING/heartbeat state.
+node-scoped: downstream DN_PACKET/RECV delivery,
+TIMING_DATA SEQ/replay and PING/heartbeat state.
 
 Each `NodeUpstream` consumes one bidirectional non-blocking `UpstreamStream`
 provided by Messaging. The stream hides transport topology: a WebSocket connector may
@@ -1446,7 +1451,7 @@ earlier message that is still awaiting node or LogBook work.
 
 One `NodeUpstream` belongs to one TimingNode within the TimingSystem-owned
 `Upstream` component. It owns that node's semantic upstream protocol ordering:
-RaceData synchronization and ACK/REQ state, TimingData source-head/replay
+downstream packet duplicate/RECV state, TimingData SEQ/TIMING_DATA_REQ replay
 coordination, and heartbeat request/answer state.
 
 NodeUpstream exchanges semantic UpstreamData only through its bidirectional
@@ -1517,7 +1522,7 @@ worker.
 :id: StageStartTimes  
 
 `StageStartTimes` is passive TimingNode-local live race state containing the
-current `TeamId -> TimingTimestamp` values produced by ordered RACE_DATA SET/DEL
+current `TeamId -> TimingTimestamp` values produced by accepted RACE_DATA SET/DEL
 changes. A stage-start timestamp may contain time-of-day only, local date/time, or
 an already absolute time. The state object owns data only; it never invents a
 missing date or time zone. The TimingNode execution boundary owns mutation/order
@@ -1527,7 +1532,7 @@ and RegisteredTeams owns passage/elapsed-time interpretation.
 :::{arch} TeamAssignments
 :id: TeamAssignments
 
-`TeamAssignments` is passive TimingNode-local live state populated by ordered
+`TeamAssignments` is passive TimingNode-local live state populated by accepted
 RACE_DATA messages. It maps `RegistrationId -> TeamId` where live assignment data
 is needed and never overrides a stable TeamId supplied by EventData. SET/DEL
 mutations occur on the owning TimingNode execution boundary and never rewrite

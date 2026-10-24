@@ -8,15 +8,17 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Replace the draft IF-06 flat SYNC/ACK/REQ stream model with explicit UP_PACKET/DN_PACKET delivery: both directions expose packetId for tracing, normal downstream packets use RECV/stop-and-wait resend, PING uses packetId 0 without RECV, TIMING_DATA alone retains durable SEQ/TIMING_DATA_REQ replay, and RACE_DATA no longer has its own source-sequence history. Record the shared project convention that integer JSON `v` values use odd numbers for development/unstable representations and even numbers for stable/released representations.
+
 - Extend DR-09 with the stable `Upstream received:` INFO boundary after successful IF-06 decode, using the same compact semantic summaries as queued/sent logging while keeping semantic processing failures as separate WARN facts.
 
 - Clarify SI-01 Java logging rule DR-09 with stable operational INFO prefixes for registration, LogBook persistence and upstream session/delivery boundaries; require transport logs to follow the actual message/batch boundary and avoid routine full protocol-payload logging at any normal runtime level.
 
 - Define optional absolute UTC `PING.data.time` as the creation/send time of that specific PING message. Reference producers populate it, ANS creates its own time instead of echoing REQ time, and readers remain compatible with PING messages that omit the field.
 
-- Define the IF-06 TIMING_DATA replay-to-live handoff: Central answers every fresh TIMING_DATA source-head SYNC with REQ from its next expected sequence, SI-01 captures and replays through the LogBook head observed at that REQ before proactive live forwarding resumes, and public v1 adds no TIMING_DATA ACK.
+- Define the IF-06 TIMING_DATA replay-to-live handoff: SEQ exchanges LogBook/processed positions, Central uses TIMING_DATA_REQ from its next expected sequence, and SI-01 captures and replays through the LogBook head observed at that request before proactive live forwarding resumes.
 
-- Align IF-06 ordered-stream semantics with the current Java contract: use compact RegistrationIds (`A0001` / `R0001`), require message-level `LocationId` on RACE_DATA, keep individual RaceData changes RegistrationId-scoped, and bound public/default TIMING_DATA and RACE_DATA messages to 16 records/changes respectively.
+- Align IF-06 data semantics with compact RegistrationIds (`A0001` / `R0001`), message-level `LocationId` on RACE_DATA, RegistrationId-scoped changes, and bounds of 16 TIMING_DATA records or 16 RACE_DATA changes per semantic message.
 
 - Correct SI-01 stage-start semantics to match IF-06: preserve missing date knowledge in compact UTC longs (`HHmmsscc` vs `yyyyMMddHHmmsscc`), source civil-time zone from `TimeSource`/`ClockTimeSource`, centralize rollover in `StageTiming`, and resolve time-only elapsed only for a unique result below 12 hours.
 
