@@ -1433,8 +1433,8 @@ receives the mutable LogBook.
 
 One `Upstream` responsibility belongs to each TimingSystem. It contains one
 `NodeUpstream` per TimingNode and owns the semantic protocol state that must remain
-node-scoped: RACE_DATA ordering/ACK/REQ, TIMING_DATA synchronization/replay and
-PING/heartbeat state.
+node-scoped: downstream DN_PACKET/RECV delivery, packetVersion state,
+TIMING_DATA SEQ/replay and PING/heartbeat state.
 
 Each `NodeUpstream` consumes one bidirectional non-blocking `UpstreamStream`
 provided by Messaging. The stream hides transport topology: a WebSocket connector may
@@ -1451,8 +1451,8 @@ earlier message that is still awaiting node or LogBook work.
 
 One `NodeUpstream` belongs to one TimingNode within the TimingSystem-owned
 `Upstream` component. It owns that node's semantic upstream protocol ordering:
-RaceData synchronization and ACK/REQ state, TimingData source-head/replay
-coordination, and heartbeat request/answer state.
+downstream packet duplicate/RECV state, packetVersion observation, TimingData
+SEQ/TIMING_DATA_REQ replay coordination, and heartbeat request/answer state.
 
 NodeUpstream exchanges semantic UpstreamData only through its bidirectional
 node-scoped `UpstreamStream`. It does not know whether the active connector uses
@@ -1522,7 +1522,7 @@ worker.
 :id: StageStartTimes  
 
 `StageStartTimes` is passive TimingNode-local live race state containing the
-current `TeamId -> TimingTimestamp` values produced by ordered RACE_DATA SET/DEL
+current `TeamId -> TimingTimestamp` values produced by accepted RACE_DATA SET/DEL
 changes. A stage-start timestamp may contain time-of-day only, local date/time, or
 an already absolute time. The state object owns data only; it never invents a
 missing date or time zone. The TimingNode execution boundary owns mutation/order
@@ -1532,7 +1532,7 @@ and RegisteredTeams owns passage/elapsed-time interpretation.
 :::{arch} TeamAssignments
 :id: TeamAssignments
 
-`TeamAssignments` is passive TimingNode-local live state populated by ordered
+`TeamAssignments` is passive TimingNode-local live state populated by accepted
 RACE_DATA messages. It maps `RegistrationId -> TeamId` where live assignment data
 is needed and never overrides a stable TeamId supplied by EventData. SET/DEL
 mutations occur on the owning TimingNode execution boundary and never rewrite
