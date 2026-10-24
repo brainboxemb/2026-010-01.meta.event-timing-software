@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="1110" viewBox="0 0 1360 1110">
+<defs>
+<marker id="seq-filled-arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+<path d="M0,0 L0,6 L9,3 z" fill="#5f6368"/>
+</marker>
+<marker id="seq-open-arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+<path d="M0,0 L9,3 L0,6" fill="none" stroke="#5f6368" stroke-width="1.5"/>
+</marker>
+</defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="30.0" y="38.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#202124">Figure SDD01-TD09 — Lifecycle-history failure does not roll back runtime state</text>
+<text x="30.0" y="68.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">The persistence failure is reported separately. It does not change the already applied OPEN runtime state.</text>
+<rect x="0.0" y="100.0" width="190.0" height="58.0" fill="#f5f5f5" stroke="#666666" stroke-width="2"/>
+<text x="95.0" y="129.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">Operator / Development Client</text>
+<line data-sequence-lifeline="client" x1="95.0" y1="158.0" x2="95.0" y2="741.3" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="5 5"/>
+<rect x="585.0" y="100.0" width="190.0" height="58.0" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+<text x="680.0" y="129.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">Application / TimingNodeProxy</text>
+<line data-sequence-lifeline="api" x1="680.0" y1="158.0" x2="680.0" y2="741.3" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="5 5"/>
+<rect x="1170.0" y="100.0" width="190.0" height="58.0" fill="#fffaf0" stroke="#d6b656" stroke-width="2"/>
+<text x="1265.0" y="129.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">TimingNode</text>
+<line data-sequence-lifeline="node" x1="1265.0" y1="158.0" x2="1265.0" y2="741.3" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="5 5"/>
+<rect data-sequence-activation="0" x="674.0" y="195.0" width="12.0" height="244.6" fill="#dae8fc" stroke="#6c8ebf" stroke-width="1.4"/>
+<rect data-sequence-activation="1" x="1259.0" y="247.0" width="12.0" height="140.6" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<rect data-sequence-activation="2" x="1263.0" y="315.6" width="12.0" height="356.6" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<rect data-sequence-activation="3" x="674.0" y="540.3" width="12.0" height="176.0" fill="#dae8fc" stroke="#6c8ebf" stroke-width="1.4"/>
+<rect data-sequence-activation="4" x="1263.0" y="592.3" width="12.0" height="72.0" fill="#fffaf0" stroke="#d6b656" stroke-width="1.4"/>
+<line data-sequence-message="1" x1="95.0" y1="205.0" x2="674.0" y2="205.0" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="384.5" y="193.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">OPEN</text>
+<line data-sequence-message="2" x1="686.0" y1="257.0" x2="1259.0" y2="257.0" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="972.5" y="245.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">open(locationId)</text>
+<path data-sequence-message="3" data-sequence-self-message="true" d="M 1275.0 325.6 H 1317.0 V 349.6 H 1275.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="1283.0" y="305.3" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">admission lock: state =</text>
+<text x="1283.0" y="322.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">OPEN + submit NODE_OPEN</text>
+<line data-sequence-message="4" x1="1263.0" y1="377.6" x2="686.0" y2="377.6" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#seq-open-arrow)"/>
+<text x="974.5" y="365.6" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">OpenResult.OPENED</text>
+<line data-sequence-message="5" x1="674.0" y1="429.6" x2="95.0" y2="429.6" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#seq-open-arrow)"/>
+<text x="384.5" y="417.6" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">OPENED</text>
+<path data-sequence-message="6" data-sequence-self-message="true" d="M 1275.0 498.3 H 1317.0 V 522.3 H 1275.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-open-arrow)"/>
+<text x="1283.0" y="478.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">LogBook persistence later</text>
+<text x="1283.0" y="494.6" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">fails; report problem</text>
+<line data-sequence-message="7" x1="95.0" y1="550.3" x2="674.0" y2="550.3" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="384.5" y="538.3" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">STATUS</text>
+<line data-sequence-message="8" x1="686.0" y1="602.3" x2="1263.0" y2="602.3" stroke="#5f6368" stroke-width="2" marker-end="url(#seq-filled-arrow)"/>
+<text x="974.5" y="590.3" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">status()</text>
+<line data-sequence-message="9" x1="1263.0" y1="654.3" x2="686.0" y2="654.3" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#seq-open-arrow)"/>
+<text x="974.5" y="642.3" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">TimingNodeStatus.OPEN</text>
+<line data-sequence-message="10" x1="674.0" y1="706.3" x2="95.0" y2="706.3" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#seq-open-arrow)"/>
+<text x="384.5" y="694.3" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="13" font-weight="normal" fill="#202124">OPEN</text>
+</svg>

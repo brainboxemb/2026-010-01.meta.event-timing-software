@@ -1,0 +1,3843 @@
+<!-- Generated review/output copy. Edit the source document, not this copy. -->
+
+# Java component, package and artifact detailed design
+
+Status: working draft / focused detailed design
+
+Software item: **SI-01 — Timing Point Application**
+
+## Purpose
+
+This SDD describes the **Java implementation** of the SI-01 design: Maven
+modules, packages, classes/interfaces, composition, queues/threads and provider
+loading.
+
+## Terms and abbreviations
+
+- **SDD** — Software Design Description
+- **SSD** — Software Specification Document
+- **SI** — Software Item
+- **JAR** — Java archive
+- **Maven** — Java build and dependency tool
+
+
+## Relationship to other documents
+
+This SDD refines the SI-01 SSD and SDD-01 into concrete Java structure. Applicable
+ISDs/IDDs remain the external contract; this document selects Java mechanisms that
+realise those decisions. The Java implementation and component tests are downstream.
+
+`44-01-GPD-java-design-rules.md` collects recurring non-normative Java implementation
+and review checks derived from this design. It supports code review but does not override
+this SDD or introduce product behaviour.
+
+The SSD says what the architecture must do. SDD-01 describes the LogBook/data
+flow. IDDs such as IF-05 define external/file contracts. This document picks the
+Java mechanisms that implement those decisions.
+
+## Why this SDD exists
+
+This detail is separate because module/package choices directly affect the Java
+repository, dependencies and what can be reused by other applications.
+
+The central rule is:
+
+> **An architecture layer or Java package is not automatically a Maven artifact.**
+
+Keep these concepts distinct:
+
+1. **Architecture responsibility** — semantic ownership and dependency direction, defined by the SSD architecture.
+2. **Java package** — cohesive source organisation and enforceable dependency discipline.
+3. **Maven artifact** — reusable library or deployable application with a concrete consumer/lifecycle reason to exist.
+4. **Application composition** — assembly of application-core code and selected implementations into an executable.
+5. **Contract/port** — semantic boundary placed with the responsibility that owns its meaning.
+
+A separate artifact is justified only by a real consumer, reuse, dependency, lifecycle, deployment, ownership, public/private, release or versioning boundary.
+
+## Maven reactor
+
+The current reactor has two reusable artifacts plus one executable application.
+The shared TimingData library artifact is justified by the independent SI-01 and
+Development Client consumers. It intentionally remains one artifact containing the
+semantic contracts, default/reference profile, codec and factory/provider; these
+responsibilities are not split into separate API/default JARs:
+
+```text
+reactor/
+├── pom.xml                    timing-point-parent
+├── shared/
+│   └── timing-data/
+│       └── pom.xml            event-timing-data.jar
+├── core/
+│   └── pom.xml                timing-point-core.jar
+└── app/
+    └── pom.xml                timing-point-app.jar
+```
+
+Working coordinates:
+
+```text
+groupId: io.github.brainboxemb.eventtiming
+
+parent:          timing-point-parent
+TimingData:      event-timing-data
+core:            timing-point-core
+executable:      timing-point-app
+```
+
+The root POM only groups/configures the build; it is not a runtime component.
+
+The `core/` Maven module is the reusable **application core of SI-01**. It contains
+the main application, domain, presentation, I/O, infrastructure, runtime and
+Platform implementation that is shared by executable compositions. The name
+`core` is an artifact/source boundary only: it does **not** reintroduce a
+separate Core architecture layer in Figure SI01-01. The executable `app/`
+module stays deliberately thin and adds the launcher, concrete runtime-provider
+selection and packaging needed to run that core.
+
+The Maven `groupId` remains the **event-timing software-system/product-family** coordinate. SI-01 Java code is more specific: the reusable application core and default executable live under `io.github.brainboxemb.eventtiming.timingpoint`. `TimingPoint` names the local software/deployment role; it does **not** replace the internal `TimingNode` domain aggregate. One Timing Point Application process may host 1..N TimingSystems and therefore multiple TimingNodes.
+
+## Package direction
+
+The current Java structure should grow from real code, not from the architecture
+diagram.
+
+Likely top-level packages are:
+
+```text
+io.github.brainboxemb.eventtiming/timingpoint/
+  application/
+  domain/
+  platform/
+    execution/
+    events/
+    environment/
+  presentation/
+    interfaces/
+      api/
+      console/
+      shell/
+      web/
+    common/
+      terminal/
+  io/
+    devices/
+      antenna/
+      display/
+      keypad/
+      beeper/
+    devicenetworks/
+      can/
+      network/
+    messaging/
+    storage/
+  infra/
+    configuration/
+    setting/
+    logging/
+    loggingserver/
+  runtime/
+    config/
+```
+
+Presentation subpackages are organised by **functional interface first**. Console, Remote Shell, Web and API are separate presentation interfaces. The intended Web topology is one configured Web endpoint/binding per TimingNode (1..N), each with its own presentation port and a `TimingNodeId` reference. HTTP/WebSocket are implementation transports inside a functional interface, not global presentation categories. The primary API classes stay directly at `presentation.interfaces.api` while that component is small; a one-class `http`, `websocket` or `messages` package would hide the component overview without adding a useful boundary. `presentation.common.terminal` contains only terminal handling genuinely shared by Console and Remote Shell; `presentation.common` is not a generic dumping ground.
+
+These are source-organisation boundaries, not automatically Maven modules.
+
+Use these rules:
+
+- create a class only when current behaviour needs it;
+- keep small enums with the object that owns them until reuse justifies a
+  separate type;
+- do not create marker classes to represent layers;
+- place a type by what it means, not by which layer happens to call it;
+- keep primary component/capability classes visible at that component package
+  root so opening the package gives a useful architecture overview;
+- do not introduce a subpackage merely to classify one class by transport,
+  message shape or implementation role;
+- use a deeper subpackage for a cohesive supporting family when it materially
+  improves navigation, or when multiple real sub-capabilities need their own
+  namespace;
+- preserve Java encapsulation when choosing package boundaries: subpackages do
+  not share package-private access, so do not split implementation helpers only
+  to make a tree look tidy if that would force a wider API;
+- use capability-oriented subpackages when a domain concept has a main object plus
+  closely related value/supporting types; keep that small group together rather
+  than introducing generic `helper`, `model` or single-type `identity`
+  subpackages;
+- reserve `platform` for small JDK-only reusable primitives and execution-environment abstractions, including bounded/serial execution and typed local events;
+- reserve `infra` for concrete cross-cutting support such as `BuildIdentity`, logging, diagnostics, configuration, shared Setting mechanics and extension adapters;
+- reserve `runtime` for concrete application composition, the running application container and lifecycle;
+- use `io` for external hardware, messaging and storage adapters.
+
+The shared EventData artifact has its own package root:
+
+```text
+shared/event-data/
+  io.github.brainboxemb.eventtiming.eventdata/
+    EventData.java
+    TagId.java
+    TeamId.java
+    EventDataProvider.java
+    defaultprofile/
+      DefaultEventData.java
+      DefaultEventDataProvider.java
+```
+
+The common EventData API is intentionally independent of SI-01 runtime classes
+and JavaFX so both the Timing Point Application and engineering tools can consume
+the same event-profile semantics. Event-specific provider JARs may supply
+alternative EventData profiles through the normal typed extension mechanism.
+Runtime discovery treats `EventDataProvider` as a typed provider family parallel
+to `TimingDataProvider`; neither provider API depends on the other. Live race state
+such as `TeamAssignments` and `StageStartTimes` remains separate TimingNode-local
+mutable state and is not part of the shared EventData artifact.
+
+The shared TimingData artifact has its own package root:
+
+```text
+shared/timing-data/
+  io.github.brainboxemb.eventtiming.timingdata/
+    TimingData.java
+      AutomaticRegistration
+      ManualRegistration
+      ManualTimeSource
+      RecordKey
+    LocationId.java
+    RegistrationId.java
+    TimingTimestamp.java
+    TimingDataFactory.java
+      Context
+    TimingDataCodec.java
+      CodecException
+    TimingDataProvider.java
+    defaultprofile/
+      DefaultTimingDataFactory.java
+      DefaultTimingDataCodec.java
+      private automatic/manual default value implementations
+```
+
+The Step-7 UpstreamData capability follows the same shared-capability direction:
+
+```text
+shared/upstream-data/
+  io.github.brainboxemb.eventtiming.upstreamdata/
+    UpstreamData.java
+    UpstreamDataCodec.java
+    UpstreamDataProvider.java
+    defaultprofile/
+      DefaultUpstreamDataCodec.java        public/reference JSON
+      DefaultUpstreamDataProvider.java
+      public/reference UpstreamData values
+```
+
+`UpstreamData` is not a replacement TimingData hierarchy. Message variants that carry
+TimingData hold/use the existing shared `TimingData` contract so NodeId + sequence and
+record semantics stay IF-05-owned. The shared UpstreamData artifact may therefore depend
+on the shared TimingData artifact; the reverse dependency is forbidden.
+
+`TimingDataFactory.Context` is the one immutable value-only construction context for
+fields shared by every TimingData variant. Do not mirror the semantic type tree
+with `AutomaticRegistrationContext`, `ManualRegistrationContext` or nested
+per-variant context types.
+
+The TimingNode implementation is grouped as:
+
+```text
+application/
+  ApplicationId.java
+  ApplicationConductor.java        application lifecycle / TimingSystem activation order
+  ConfigurationControl.java        configuration query/update use-cases
+infra/
+  lifecycle/
+    AbstractConductor.java          reusable TimingSystem-coordinator lifecycle template
+    LifecycleComponent.java        hidden internal component lifecycle base
+    ComponentLifecycleManager.java  ordered activation, rollback and reverse deactivation
+  setting/
+    Setting.java                   passive requested/applied tracking (manager-owned)
+  extension/
+    ExtensionRegistry.java          typed provider discovery/selection
+  configuration/
+    ReadOnlyConfiguration.java     startup/current value + change observation
+    DynamicConfiguration.java      validated runtime override/clear primitive
+    ConfigurationChange.java       immutable typed change notification
+    ConfigurationUpdateResult.java APPLIED/NO_CHANGE/INVALID/RESTART_REQUIRED
+
+runtime/
+  configuration/
+    ApplicationConfiguration.java  concrete running configuration tree
+    TimingNodeConfiguration.java   node-local runtime configuration branch
+
+domain/
+  system/
+    TimingSystem.java                   TimingSystem component; contains TimingNodes and uses system I/O
+    TimingSystemConductor.java          TimingSystem coordination and TimingNode lifecycle
+  node/
+    TimingNode.java                     top-level facade / composition / lifecycle
+    logbook/
+      LogBook.java                      Data Lane component facade + command/query/event boundary
+      LogBookAccessor.java              intentional external/internal access boundary
+      LogBookDataLane.java              LogBook-specific ordered execution/wait adapter
+      LogBookOperations.java            state-changing operations + TimingData commit/load
+      LogBookState.java                 passive node/logbook facts + committed-TimingData owner
+      LogBookData.java                  passive committed TimingData records
+      persistence/
+        TimingDataPersistence.java      TimingData load/append domain port
+        DefaultTimingDataPersistence.java codec/node/sequence mapping to I/O storage
+    service/
+      NodeService.java                  Task Lane processing + lifecycle/status coordination
+      state/
+        NodeState.java                  retained live/derived node data + boundary implementation
+        NodeStateAccessor.java          read-only ordered/catch-up-aware state boundary
+        NodeStateTestControl.java       engineering/test mutation boundary
+        DataTask.java                   bounded active-WP TimingData catch-up from LogBook
+        StateQuery.java                 ordered result-bearing state read task
+domain/
+  system/
+    upstream/
+      Upstream.java                     TimingSystem-owned upstream protocol group
+      node/
+        NodeUpstream.java               one node-scoped semantic protocol owner
+        RaceDataSync.java               RaceData sequence/ACK/REQ/SYNC state
+        TimingDataSync.java             TimingData head/replay state
+        Heartbeat.java                  node-scoped PING protocol state
+    racedata/
+      RaceDataState.java                Task Lane-owned transactional RACE_DATA state
+      TeamAssignments.java              package-private RegistrationId -> TeamId state
+      StageStartTimes.java              package-private compact UTC stage starts
+    processing/
+      TagProcessor.java                 registration-passage processing
+      TagObservationFilter.java         observation selection
+      RegistrationDuplicateFilter.java registration duplicate suppression
+      TagProcessingPolicy.java          compiled processing policy
+    registration/
+      package-info.java                 retained registration-state boundary and exclusions
+      ActiveRegistrations.java          compact chronological ADD rows for the open WP
+      RegisteredTeams.java              open-WP unique teams, full visit and + / - changes
+      StageTiming.java                   compact UTC normalization + elapsed/rollover rules
+io/
+  messaging/
+    UpstreamStream.java                 node-scoped non-blocking semantic mailbox
+    UnavailableUpstreamStream.java      no-transport default implementation
+  devices/
+    antenna/
+      AntennaId.java                    configured software identity of one antenna
+      AntennaInfo.java                  self-test identity/version result
+      TagObservation.java               TagId + RSSI + absolute/monotonic primitive times
+      model/
+        Antenna.java                    device/provider lifecycle + observation contract
+        SimulatedAntenna.java           built-in reference/simulation implementation
+      manager/
+        AntennaManager.java             lifecycle/status + control state machine
+        AntennaSet.java                 composition-time antenna set + multiplex configuration
+        ManagedAntenna.java             direct one-antenna operations + runtime status
+        AntennaManagerTypes.java        manager/status value types
+        task/
+          SelfTestTask.java             complete startup self-test round
+          InventoryTask.java            enable/disable/multiplex inventory state machine
+          AntennaShutdownTask.java      cooperative device shutdown
+          AntennaTaskResult.java        task completion success/failure value
+    power/
+      PowerDevice.java                  external power-device contract
+      SimulatedPowerDevice.java         deterministic simulated power device
+    display/
+      DisplayProtocolProvider.java      typed protocol-extension provider contract
+      Rev1CanDisplay.java               passive CAN display support when implemented
+    keypad/                        only when device-specific code justifies it
+    beeper/                         transport-specific implementation only when justified
+
+  devicenetworks/
+    can/
+      CanNetworkController.java    CAN lifecycle, discovery and device state
+      CanProtocolProvider.java     typed protocol-extension provider contract
+    network/
+      NetworkDeviceService.java    bidirectional network-device boundary
+
+  messaging/
+    UpstreamGateway.java            resolves transport NodeId to fixed application ports
+    UpstreamStream.java             concrete node-scoped application port
+    UpstreamConnector.java          abstract transport base with input binding + lifecycle events
+    engineering/
+      EngineerApiConnector.java          IF-03 engineering transport/session adapter
+      UpstreamApiMessage.java            Engineering API / IF-06 routing adaptation
+    rabbitmq/
+      RabbitMqConnector.java             production-shaped upstream transport
+  storage/
+    AppendOnlyRecordStore.java             generic opaque-record storage contract
+    FileAppendOnlyRecordStore.java         LF framing • file append/recovery
+    # generic lower-layer storage mechanisms only as real needs appear
+
+platform/
+  execution/
+    ExecutionMetrics.java                    common bounded-admission/execution metrics
+    lanes/
+      SerialLane.java                        bounded typed serial FIFO
+    tasks/
+      SerialTaskRunner.java                  direct cooperative task-step scheduling
+      YieldingTask.java                      one cooperative step contract
+      AbstractTask.java                      reusable run/wake/cancel lifecycle
+      TaskStep.java                          AGAIN / AFTER / AWAIT / DONE continuation
+  events/
+    Event.java                            owner-side typed emit primitive
+    EventSource.java                      subscription-only consumer view
+  environment/
+    PlatformEnvironment.java              raw wall-clock + monotonic-clock + OS boundary
+    MonotonicClock.java                   elapsed-time source
+    SystemMonotonicClock.java             JVM monotonic implementation
+  time/
+    TimeSource.java                       shared Instant + configured civil-time zone contract
+    ClockTimeSource.java                  Clock-backed time/zone implementation
+  metrics/
+    RuntimeObservation.java               explicit on-demand JVM/GC/thread observation
+```
+
+The names above record ownership/direction, not a requirement to create empty
+types early. Lower layers expose generic contracts that do not import higher
+layers. TimingData-specific persistence semantics stay in Domain and use the
+generic `io.storage.AppendOnlyRecordStore`; the file implementation remains
+completely unaware of TimingData, TimingNode and Domain types.
+The architecture distinguishes two logical serial responsibilities **per TimingNode**:
+a **Data Lane** for ordered lifecycle/registration commits, LogBook persistence and
+ORDERED LogBook reads, and a **Task Lane** for live RaceData, derived timing state,
+heartbeat and upstream protocol state.
+
+The Data Lane is a typed `SerialLane<TimingNodeDataItem>`. The Task Lane is a
+`SerialTaskRunner`. Both use the **same Runtime-owned single-worker
+`timingNodeExecutor`**, but they keep independent bounded admission state.
+
+`SerialLane<T>` owns one bounded `ArrayBlockingQueue`, one fixed queue worker and
+`maxItemsPerRun` batching. The backing executor sees only that worker, never one
+executor task per domain item. `SerialTaskRunner` does not wrap task runs in another
+`SerialLane`: it submits each eligible cooperative task step directly to the supplied
+single-thread `ScheduledExecutorService` and bounds how many of its own steps may be
+pending there. `AGAIN` submits a new step at the executor queue back; `AFTER` and
+`AWAIT` keep no pending-step slot while waiting.
+
+Each TagProcessor owns exactly one `SerialLane<TagObservation>` for bounded antenna
+ingress. The same Runtime-owned single-thread `tagProcessorScheduledExecutor` backs
+that lane and runs the processor's JDK scheduled filter/housekeeping callbacks directly.
+Because both paths use the same physical thread, TagProcessor mutable state remains
+serialized without a second scheduled-lane wrapper or timer-item queue.
+
+The Task Lane cannot read or mutate Data Lane-owned collections directly.
+Cross-lane commands, reads and immutable replies must be non-blocking and bounded.
+A cooperative task that needs Data Lane work queues it, returns `TaskStep.await(...)`,
+and is re-admitted only after the asynchronous completion becomes ready. It must never
+block the shared worker on `Future.get()`.
+
+```text
+RuntimeExecutors
+
+timingNodeExecutor — ScheduledThreadPoolExecutor, 1 physical worker
+  ├── TimingNode A: Data Lane -> SerialLane<TimingNodeDataItem>
+  ├── TimingNode A: Task Lane -> SerialTaskRunner
+  ├── TimingNode B: Data Lane -> SerialLane<TimingNodeDataItem>
+  └── TimingNode B: Task Lane -> SerialTaskRunner
+
+tagProcessorScheduledExecutor — ScheduledThreadPoolExecutor, 1 physical worker
+  ├── TimingNode A: SerialLane<TagObservation>
+  ├── TimingNode A: direct filter/housekeeping scheduled callbacks
+  ├── TimingNode B: SerialLane<TagObservation>
+  └── TimingNode B: direct filter/housekeeping scheduled callbacks
+
+timingSystemConductorExecutor — ScheduledThreadPoolExecutor, 1 physical worker
+  └── one SerialTaskRunner per TimingSystemConductor
+
+sharedIoScheduledExecutor — ScheduledThreadPoolExecutor, 1 physical worker baseline
+  ├── one SerialTaskRunner per AntennaManager
+  └── bounded scheduled I/O/simulation work as composed
+```
+
+Runtime owns physical workers. Components own their logical queues/tasks and mutable
+state. A single physical worker cannot execute two lane/task turns concurrently, so
+slow durable persistence can temporarily delay Task Lane work that shares the node
+executor. Physical parallelism remains measurement-driven rather than derived from
+node or CPU count.
+
+### TimingSystem upstream decomposition
+
+Upstream protocol handling belongs to the TimingSystem-level `Upstream` component, with
+one `NodeUpstream` per TimingNode. Transport remains in I/O and node state remains in
+TimingNode/NodeService:
+
+```text
+I/O Messaging
+  Connector (1..N)
+        |
+        v
+  UpstreamGateway
+        |
+        +--> UpstreamStream A <--> NodeUpstream A
+        +--> UpstreamStream B <--> NodeUpstream B
+
+NodeUpstream A
+  ├── RaceDataSync
+  ├── TimingDataSync
+  └── Heartbeat
+        |
+        +--> NodeService A for node-state changes
+        +--> LogBookAccessor A for retained TimingData replay
+```
+
+The ownership rule is responsibility-based:
+
+- `UpstreamGateway` resolves NodeId only on the transport-to-application ingress path.
+  It selects one already composed node-scoped `UpstreamStream` application port and
+  hands the unchanged encoded payload to that port.
+- `UpstreamStream` is the fixed application port for one NodeUpstream. The NodeId and
+  connector binding are resolved once during composition; normal `read()`,
+  `send(...)` and availability checks do not route through the gateway again.
+- Generic Messaging has no `UpstreamMessage(NodeId, payload)` envelope. Routing
+  identity is command context at the connector/gateway boundary, not data duplicated
+  inside every application-side message.
+- `UpstreamConnector` is an abstract shared transport base. It owns one fixed internal
+  gateway-input reference plus public `CONNECTED`/`DISCONNECTED` EventSource ports whose
+  payload is the producing connector object. Concrete connectors implement only transport-
+  specific availability, session/framing and send behavior.
+- Runtime composition constructs all node-scoped `UpstreamStream` values first from their
+  fixed NodeId + connector bindings, then constructs one complete `UpstreamGateway` from
+  that connector and the complete NodeId-to-stream routing map. Runtime operation does not
+  create, register or replace application ports.
+- Inbound transport admission is intentionally not an event because it returns
+  ACCEPTED/UNKNOWN_NODE/INPUT_FULL. The connector forwards `NodeId + encodedMessage`
+  through its fixed Messaging-internal gateway input; that setup mechanism is not public
+  application API.
+- `NodeUpstream` owns the `UpstreamDataCodec`, semantic protocol ordering,
+  validation and heartbeat cadence/state. Only one decoded inbound semantic message
+  operation is active per node.
+- `UpstreamData` is one node-scoped immutable semantic base with small concrete
+  message values: `TimingDataTransfer`, `RaceData`, `Sync`, `Ack`, `Req`
+  and `Ping`. The public semantic type is the stored value itself; there is no
+  subtype-interface plus hidden implementation-object hierarchy.
+- `DefaultUpstreamData` is only the reference-profile factory/convenience layer.
+  It does not own an alternative runtime representation.
+- `UpstreamStream.CONNECTED` and `DATA_AVAILABLE` are typed local events whose
+  payload is the producing stream object. NodeId is not repeated because fixed
+  composition already identifies the node.
+- `NodeUpstream` exposes ordinary semantic input methods for connection-available
+  and data-available facts; it does not expose composition-only EventInput objects.
+- The owning `TimingSystem` installs each fixed `UpstreamStream -> NodeUpstream`
+  subscription before activation, using the node mapping already resolved by Runtime.
+- `RaceDataSync` owns RaceData sequence/gap/ACK state. Node changes are applied through
+  the node service boundary before ACK.
+- `TimingDataSync` owns source-head and retained replay coordination through
+  LogBookAccessor.
+- `Heartbeat` owns node-scoped PING request/answer state; NodeUpstream schedules the
+  protocol cadence on its Runtime-owned scheduler.
+- RabbitMQ queue/exchange topology and WebSocket mechanics stay below the stream and
+  never leak into Domain.
+
+These project types exist to realize the SSD execution model; they are not justification
+for reimplementing JDK executor internals.
+
+### Cooperative task execution
+
+<a id="DD-CooperativeExecution"></a>
+
+**DD-CooperativeExecution — Cooperative execution and TimingSystem coordination**
+
+Detailed Java design for cooperative task execution and the TimingSystem-scoped
+coordination pattern used by `domain.system.TimingSystemConductor`.
+
+Both coordinators are labeled **Conductor** in Figure SI01-01, one in the
+Application layer and one inside TimingSystem. Their Java implementations are
+`application.ApplicationConductor` and `domain.system.TimingSystemConductor`.
+
+Some operations consist of several ordered steps. One step must stay short enough to
+release the shared worker; an elapsed-time wait or asynchronous dependency must not hold
+that worker. `SerialTaskRunner` provides that execution policy while concrete work
+implements `YieldingTask`.
+
+```text
+YieldingTask.runStep()
+        |
+        v
+    TaskStep
+ /      |       |       \
+AGAIN AFTER(t) AWAIT(c) DONE
+  |      |       |       |
+  |      |       |       +--> complete this run
+  |      |       +----------> completion callback; later re-admit
+  |      +------------------> JDK timer; later re-admit
+  +-------------------------> submit next step at executor queue back
+```
+
+`SerialTaskRunner` owns runner-local bounded pending-step admission plus a reference to
+the Runtime-owned single-thread `ScheduledExecutorService`. One submitted `TaskRun` step
+executes exactly one `runStep()`. `AGAIN` submits the same run's next step at the executor
+queue back. `AFTER(delay)` uses the JDK scheduler as a timer and submits the next step only
+after the delay. `AWAIT(completion)` registers an asynchronous completion callback and
+submits the next step only when that dependency finishes. `DONE` completes the run.
+
+There is no task-specific serial-lane layer between a cooperative task and the JDK
+scheduler. Delays and asynchronous waits control **when** a `TaskRun` becomes eligible
+again and consume no runner pending-step slot while waiting.
+
+`AbstractTask` is the reusable lifecycle owner for recurring state machines. A concrete
+task still owns its operation state; the base class only owns run/wake mechanics:
+
+```text
+event/request/completion
+        |
+        v
+ AbstractTask.wake(SerialTaskRunner)
+        |
+        +-- no run active ----> resetForRun() + SerialTaskRunner.runTask(...)
+        |
+        +-- run active -------> remember one pending wake
+
+run completes
+        |
+        +-- success + wake pending --> start one fresh current-state run
+        +-- otherwise ---------------> idle
+```
+
+Repeated wakes during one run therefore coalesce into one follow-up run. Cancellation drops
+the pending wake and cancels the current run. The concrete `runStep()` reads current state;
+event payloads are not replayed as an implicit queue of state-machine transitions.
+
+The responsibilities are:
+
+```text
+YieldingTask
+  one cooperative step contract
+  component/operation state remains in the concrete task
+
+TaskStep
+  continuation decision: AGAIN / AFTER(delay) / AWAIT(completion) / DONE
+
+AbstractTask
+  reusable run lifecycle, wake coalescing, cancellation and completion hook
+
+SerialTaskRunner
+  bounded cooperative pending-step admission directly on one JDK scheduler
+  JDK-timer and asynchronous-completion continuation
+  optional caller-side bounded wait support
+
+SerialLane<T>
+  one typed bounded FIFO, one fixed queue worker, batching and metrics
+
+RuntimeExecutors
+  physical role-executor creation, sharing and lifecycle
+```
+
+Antenna control is a concrete consumer. `AntennaManager` owns a reusable main
+`AbstractTask` plus reusable `SelfTestTask`, `InventoryTask` and
+`AntennaShutdownTask`. Inventory requests and child-task completions wake the main task;
+the later step derives the next transition from current manager/device state.
+
+`InventoryTask` drives requested inventory state to applied device state and owns power
+preparation, initialization, direct-antenna start/stop and multiplex rotation:
+
+```text
+InventoryTask
+  POWER_ON
+      |
+      +-- AFTER(powerStabilization)
+      v
+  INITIALIZE
+      |
+      +-- AGAIN
+      v
+  START_DIRECT / START_GROUP
+      |
+      +-- AFTER(inventoryInterval) when multiplexing
+      v
+  SWITCH / DONE
+```
+
+Each `TimingSystemConductor` owns a `MainTask extends AbstractTask` executed by its
+`SerialTaskRunner`. `TimingNode.PROPERTIES.CHANGED` only wakes that task. The later run
+reads every TimingNode's current functional state, derives
+`inventoryRequired = any node OPEN`, and calls the optional
+`AntennaManager.setInventoryRequired(boolean)`.
+
+The call records desired inventory state without waiting for hardware. Repeating the same
+value is idempotent and does not become an implicit retry. Explicit repeated engineering
+requests remain separate retry attempts owned by AntennaManager.
+
+The cooperative model is optional. A component that only needs typed FIFO item processing
+uses a normal `SerialLane<T>`. A TimingNode Data Lane is such a lane. Its Task Lane uses
+`SerialTaskRunner` because startup and upstream work can yield or await another lane.
+Delayed/cooperative capability is composed only where it has a concrete responsibility.
+
+A device/provider implementation may itself use the same pattern when its protocol requires
+multiple commands, waits or retries. That state machine remains inside the device boundary.
+No parent may block a shared worker while waiting for work that still requires that worker or
+the same serial lane.
+
+This model realizes the SSD requirement for component-local ordered execution with a small,
+measurement-driven number of physical workers. It does not change component ownership or add
+parallel execution within one serial lane.
+
+
+— — —
+
+- **Type:** Detailed Design
+- **Elaborates:** [`AbstractTask`](41-01-SSD-timing-application-specification-document.md#AbstractTask), [`PlatformExecution`](41-01-SSD-timing-application-specification-document.md#PlatformExecution), [`SerialTaskRunner`](41-01-SSD-timing-application-specification-document.md#SerialTaskRunner), [`TaskStep`](41-01-SSD-timing-application-specification-document.md#TaskStep), [`TimingSystemConductor`](41-01-SSD-timing-application-specification-document.md#TimingSystemConductor), [`YieldingTask`](41-01-SSD-timing-application-specification-document.md#YieldingTask)
+
+---
+
+
+### EventData and TagProcessor realization
+
+<a id="DD-EventTagProcessing"></a>
+
+**DD-EventTagProcessing — EventData and TagProcessor realization**
+
+Detailed Java realization of EventData-backed tag resolution, TagProcessor
+filtering/passage state and the boundary into TimingNode registration work.
+
+The Java design consumes the shared `event-data` capability beside the shared
+TimingData capability. `EventData` owns the stable event-profile identity
+relationships needed to resolve TagId, RegistrationId and TeamId. The top-level
+`TimingApplicationRuntime.create(...)` API does not accept loose tag or team
+mapper dependencies.
+
+The default/reference profile performs normal identity translation
+algorithmically rather than materialising thousands of map entries:
+
+- `TT-A-NNNN-1` and `TT-A-NNNN-2` resolve to `RT-A-NNNN`;
+- `TT-R-NNNN-1` and `TT-R-NNNN-2` resolve to `RT-R-NNNN`;
+- `RT-A-NNNN` resolves to TeamId `NNNN`;
+- reserve `RT-R-NNNN` resolves to TeamId only when reserve-assignment data is
+  available;
+- `NNNN` is `0001` through `9999`; `0000` is invalid.
+
+The generic EventData API continues to expose semantic values rather than making
+TagProcessor understand this concrete string format. The intended shared API shape is:
+
+```text
+RegistrationId registrationIdFor(TagId tagId)
+List<TagId> tagIdsFor(RegistrationId registrationId)
+TeamId teamIdFor(RegistrationId registrationId)
+RegistrationId registrationIdFor(TeamId teamId)
+```
+
+A missing stable mapping is represented explicitly by the API contract. In the
+default/reference profile, normal RegistrationId/TeamId conversion is
+algorithmic while reserve RegistrationId/TeamId conversion has no stable
+EventData answer until assignment data exists. Runtime TeamId resolution may layer TimingNode `TeamAssignments` on top of
+EventData without changing TagProcessor's TagId-to-RegistrationId responsibility.
+
+The provider/antenna implementation may decode or decrypt proprietary source
+bytes, but after that boundary generic code uses the shared `eventdata.TagId`.
+`TagObservation` therefore carries TagId, RSSI, absolute UTC epoch milliseconds and
+process-local monotonic nanoseconds. The absolute value may later become TimingData;
+the monotonic value is used only for elapsed passage rules. Generic tag processing does
+not reconstruct a `TimingTimestamp` wrapper.
+
+TagProcessor resolves each observation through EventData and keeps its
+`TagObservationFilter` keyed by RegistrationId. The existing registration-keyed
+filtering model is retained rather than creating independent per-tag filters.
+
+The burst/passsage state is extended with per-TagId statistics and the selected
+observation identity. A package-level immutable diagnostic snapshot exposes this
+state read-only for Presentation/engineering use. The snapshot is diagnostic;
+it is not persisted as TimingData and cannot mutate TagProcessor state.
+
+The duplicate filter remains keyed by RegistrationId. Once TimingNode accepts a
+registration, every TagId resolving to that RegistrationId is suppressed by the
+same duplicate window.
+
+`RACE_DATA` is the ordered upstream message stream, not a mutable domain object.
+Its incremental changes are applied on the Task Lane to passive state such as
+`TeamAssignments` and `StageStartTimes`. EventData remains the owner of stable
+TagId/RegistrationId/TeamId profile semantics; TeamAssignments owns only live
+RegistrationId-to-TeamId overrides where EventData has no stable TeamId.
+
+`TimingNode` remains the visible Domain component boundary used by higher layers,
+but it is a composition/lifecycle facade rather than a queue implementation.
+It composes `LogBook`, `NodeService`, its node-local `TagProcessor` and one
+`SerialTaskRunner`.
+
+`LogBook` owns Data Lane command/query execution, durable TimingData commit, load status
+and post-commit publication. Normal Data Lane items use
+`TimingNodeDataLane -> SerialLane<TimingNodeDataItem>`. Persisted-data loading is **not**
+a Data Lane item: `TimingNode.MainTask` calls `LogBook.loadPersistedData()` as its
+startup step on the shared node worker.
+
+NodeService owns Task Lane input processing, lifecycle and LogBook-status coordination.
+Its MainTask handles only LogBook availability. `NodeState` owns the retained live and
+derived node data and directly implements both the read-only `NodeStateAccessor` and the
+separate engineering/test `NodeStateTestControl`. Normal consumers receive only the
+read-only accessor; engineering composition receives the test control explicitly.
+`DataTask` owns bounded active-WP TimingData catch-up and `StateQuery` owns
+result-bearing ordered state reads. `RaceDataState`, `ActiveRegistrations` and
+`RegisteredTeams` keep their specialized data responsibilities behind NodeState rather
+than becoming fields on TimingNode. Other node-owned cooperative tasks use the same runner
+and therefore the same bounded TaskRun FIFO.
+
+TagProcessor owns one `SerialLane<TagObservation>`. Runtime supplies the same
+single-thread `ScheduledExecutorService` both as that lane's backing executor and as the
+processor's direct timer/execution facility for policy changes, passage expiry and duplicate
+housekeeping. No second scheduled lane or observation queue is layered around it.
+
+TimingNode itself owns functional OPEN/CLOSED state, current LocationId and its internal
+startup/execution readiness. A LogBook load failure remains LogBook health; it does not
+make the TimingNode execution path itself ERROR and does not replace functional state.
+
+A production `TimingNode` is always constructed as a complete capability.
+`TimingDataPersistence`, `TimingDataFactory`, the injected absolute-time supplier,
+EventData/tag-processing configuration and both execution lanes are constructor dependencies; there is no
+lifecycle-only or partially configured production node. The only non-public construction
+seam exists for deterministic TimingNode execution-boundary tests and is documented as
+test-only in code.
+
+TimingNode extends `LifecycleComponent`; the base class owns the generic active/inactive
+lifecycle fact. TimingNode therefore does not keep a second `active` field. Its protected
+activation hook first starts the node `SerialTaskRunner`, then uses
+`ComponentLifecycleManager` to activate `NodeService`, `LogBook` and `TagProcessor`.
+LogBook activation starts normal Data Lane admission; TagProcessor activation starts its
+observation `SerialLane`. TimingNode then admits `MainTask` and returns without waiting
+for persisted-data loading. No public TimingNode activate/deactivate API is exposed.
+
+When a public component operation must reject an inactive lifecycle, the reusable
+`failIfInactive()` guard belongs to `LifecycleComponent` together with the active/inactive
+fact. A concrete component supplies the failure factory; TimingNode uses an ordinary
+`IllegalStateException` because inactive lifecycle is not a second domain-result state.
+The lifecycle package therefore remains independent from TimingNode-specific failure types.
+
+Functional state is immediately available as CLOSED with no LocationId. Persisted
+TimingData loading runs asynchronously in `TimingNode.MainTask` on the shared node
+worker and rebuilds LogBookData outside the Data Lane item queue. Loading never defines
+or reconstructs functional OPEN/CLOSED state. A load failure remains LogBook health
+and does not by itself make the TimingNode execution path ERROR.
+
+LogBook queries expose two explicit consistency modes:
+
+```text
+CURRENT
+  latest safely published completed snapshot; no lane queue/wait/timeout
+
+ORDERED
+  execute on the Data Lane after earlier queued LogBook work
+```
+
+The one-argument LogBook query remains ORDERED. A caller chooses CURRENT only
+when that LogBookQuery explicitly supports it. Status and the published LogBook
+head support CURRENT; count and record/range reads remain ORDERED. Task-owned state reads use `NodeStateAccessor` and execute on the NodeService Task Lane.
+
+State-changing TimingData commands still execute on the Data Lane. After durable append and
+in-memory commit, LogBook publishes one immutable committed-TimingData fact through
+`NEW_DATA_ENTRY`.
+
+TimingNode owns functional OPEN/CLOSED state and current LocationId as separate
+`Property<T>` values in one `PropertyContainer`. `open()` and `close()` set the
+typed properties and then call `PropertyContainer.update()`. The container compares
+against its previous baseline and publishes one `PropertyUpdate` containing all
+properties that changed in that logical update.
+
+Lifecycle deactivation resets the transient values to CLOSED/no-location and calls
+`PropertyContainer.sync()`, so teardown does not emit a normal runtime state-change
+event. LogBook load/commit failures remain owned by LogBook/diagnostic behaviour and
+do not create a second TimingNode health-state model.
+
+The runtime transition and lifecycle-record submission share the same short
+TimingNode state/admission lock used by automatic-registration admission. The
+transition is applied first, then the corresponding NODE_OPEN/NODE_CLOSE command
+is submitted to LogBook before the lock is released. A registration admitted
+before CLOSE is therefore already queued before NODE_CLOSE; a later registration
+sees CLOSED and is rejected. Antenna inventory may stop asynchronously after
+CLOSED without requiring a CLOSING state or a second registration-block flag.
+
+TimingNode republishes LogBook `NEW_DATA_ENTRY` as the node-level
+`TIMING_DATA_COMMITTED` event, but that event reports only committed TimingData.
+Queue rejection or later NODE_OPEN/NODE_CLOSE record persistence failure does not reverse
+current functional TimingNode state. A direct LogBook lifecycle command or persisted
+TimingData load likewise does not mutate functional OPEN/CLOSED state or LocationId.
+LogBook owns committed TimingData and recovery state; TimingNode owns its separate
+functional runtime state.
+
+State-changing `process(command)` remains non-reentrant: a command may not synchronously
+re-enter the same Data Lane behind itself. ORDERED queries are different. If the caller is
+already executing on the Data Lane, earlier queued work has already run before the current
+turn, so the query reads the ordered state directly without queueing or waiting again.
+CURRENT reads do not enter the lane. Bounded visitors remain short/non-blocking and must not
+start reentrant state-changing LogBook commands.
+
+`TimingNodeTypes` is only a Java source-code grouping for TimingNode values:
+`FunctionalState`, the implementation-internal `OperationalState`, and the
+`OpenResult` / `CloseResult` values. It has no runtime state, lifecycle or
+architectural responsibility and therefore does not appear as another component in
+Figure SI01-01. `LogBookStatus` remains LogBook-owned and is not folded into `TimingNodeTypes.OperationalState`.
+
+
+— — —
+
+- **Type:** Detailed Design
+- **Elaborates:** [`EventData`](41-01-SSD-timing-application-specification-document.md#EventData), [`TagProcessor`](41-01-SSD-timing-application-specification-document.md#TagProcessor)
+
+---
+
+
+<a id="DD-PresentationAccess"></a>
+
+**DD-PresentationAccess — Presentation-facing application access**
+
+Detailed Application-layer design for PresentationGateway and its node-scoped
+TimingNodeProxy boundary. Presentation transports remain outside this boundary.
+The application `PresentationGateway` is composed with the complete set of
+currently composed `TimingNode` instances. It creates one
+`TimingNodeProxy` per node, indexes those proxies by application-wide
+`NodeId`, and does not expose a separate single-node production mode.
+Presentation tests use complete test fixtures rather than a second construction
+path.
+
+`PresentationGateway` is an Application-layer component named for the adjacent
+Presentation side whose traffic it mediates. Gateway names describe the side of
+the architectural boundary, not the owning package/layer. `PresentationGateway`
+is entirely in-process: external Console, shell, Web and API endpoints terminate
+at their Presentation adapters, and only those adapters carry external port
+notation in Figure SI01-01. `UpstreamGateway` follows the same directional naming
+principle on the I/O/upstream boundary, but owns external transport/integration
+rather than presentation-facing application operations.
+
+Node-scoped presentation access is exposed through `TimingNodeProxy`.
+`PresentationGateway` owns application-wide presentation information such as
+build identity and capabilities; a proxy gives an adapter explicit TimingNode
+context for node status, commands, queries and events. The architectural composition
+contains **one TimingNodeProxy per composed TimingNode (1..N)**. The default executable currently has one because the executable still composes one TimingNode. A proxy is
+an Application-layer boundary object, not a second owner of TimingNode state.
+
+Functional state publication remains owned by TimingNode. LogBook publishes one
+committed TimingData fact after durable commit and publishes its failures separately.
+TimingNode republishes the committed data as `TIMING_DATA_COMMITTED`;
+NODE_OPEN/NODE_CLOSE TimingData records never drive functional state.
+
+`TimingNodeProxy.status()` returns one client-facing `TimingNodeStatus` containing
+NodeId, LocationId and `CLOSED`/`OPEN` state. IF-03 maps those values directly to
+`id`, `locId` and `state`.
+
+The Domain boundary stays small. `TimingNode` owns OPEN/CLOSED state and
+`LocationId`, exposes OPEN/CLOSE directly, exposes the LogBook through
+`LogBookAccessor`, and provides one synchronous `processLocked(Supplier<R>)`
+scope for application work that must stay ordered with OPEN/CLOSE. The Supplier runs
+on the caller thread while the TimingNode operation lock is held. The method does not
+queue work and is not a commit/rollback transaction.
+
+Runtime composition supplies `TimingNodeProxy` with the shared immutable `EventData`,
+the node's `NodeStateAccessor`, the engineering-only `NodeStateTestControl` and
+`LogBookAccessor` directly. The proxy does not depend on `NodeService`, and neither
+`TimingNode` nor `NodeService` proxies EventData reference-data lookups. A team-based
+presentation command combines the current `TimingNode.locationId()` with
+`EventData.registrationIdFor(locationId, teamId)` at the application boundary.
+
+State-sensitive presentation writes build the concrete typed LogBook command inside that
+locked scope so the OPEN check and current LocationId cannot change between the check and
+the ordered LogBook commit. Meaningful deferred work is named before it is passed to the
+boundary:
+
+```java
+Supplier<CommandResult> addRegistration = () -> {
+    CommandResult result;
+    if (node.functionalState() != FunctionalState.OPEN) {
+        result = CommandResult.nodeNotOpen();
+    } else {
+        LogBookCommand<TimingData> command =
+                LogBookCommands.commitManualRegistration(
+                        node.locationId(),
+                        registrationId,
+                        time,
+                        timeSource);
+        TimingData timingData = logBook.process(command);
+        result = CommandResult.committed(timingData);
+    }
+    return result;
+};
+
+CommandResult result =
+        node.processLocked(addRegistration);
+```
+
+A revocation already carries the original LocationId and registration values supplied by
+the interpreting layer. It therefore does not gain an OPEN requirement or substitute the
+current LocationId. It still uses the same `processLocked(...)` scope so
+presentation-triggered LogBook writes do not overlap an OPEN/CLOSE operation. This keeps
+TimingNode compact when more append-only ADD/REV record families are introduced; the node
+does not need one public method per TimingData record type.
+
+LogBook reads remain direct through `LogBookAccessor`. They do not need the TimingNode
+operation lock merely because they read history:
+
+```java
+LogBookAccessor logBook = node.logBook();
+
+LogBookStatus status = logBook.status();
+```
+
+Presentation adapters use the node-scoped Application boundary:
+
+```java
+TimingNodeProxy node =
+        presentationGateway.timingNode(nodeId);
+
+node.open(locationId);
+node.addManualRegistration(
+        registrationId,
+        time,
+        ManualTimeSource.OPERATOR_ENTERED);
+node.STATUS_CHANGED.subscribe(statusListener);
+node.NEW_DATA_ENTRY.subscribe(timingDataListener);
+```
+
+`process(command)` is the result-bearing LogBook path: the caller waits for the
+processed domain result. `execute(command)` is the fire-and-forget LogBook path: it
+returns after the command is queued and deliberately does not wait for the later domain
+result. Because this path has no caller result, LogBook owns queue-rejection handling:
+it records the rejection as a LogBook diagnostic and does not push lane-specific
+`RejectedExecutionException` handling into TimingNode callers. RFID/TagProcessor-style
+ingress uses this form so a device callback cannot be held up by persistence, LogBook work
+or another queued TimingNode operation.
+
+`query(query, consistency)` makes the read contract explicit. CURRENT returns a safely
+published immutable read model without entering the node lane; ORDERED executes after
+earlier queued node work on that lane. The one-argument `query(query)` preserves ORDERED
+semantics. Query definitions declare supported consistency modes, so mutable LogBook reads
+cannot accidentally be requested as CURRENT. An ORDERED query invoked from the Data Lane
+reads directly because its ordering requirement is already satisfied; callers outside the
+lane queue the query and wait for its ordered result. State-changing commands remain
+non-reentrant. Typed command/query objects are local operation descriptions, not another
+component, central dispatcher or generic message bus.
+
+`ApplicationId`, internal `TimingSystemId` and functional
+`TimingNodeId` are separate Java identities. `TimingSystemId` distinguishes
+multiple hosted/simulated systems locally; it is not automatically serialized
+into TimingData or exposed as an upstream address.
+
+
+— — —
+
+- **Type:** Detailed Design
+- **Elaborates:** [`PresentationGateway`](41-01-SSD-timing-application-specification-document.md#PresentationGateway), [`TimingNodeProxy`](41-01-SSD-timing-application-specification-document.md#TimingNodeProxy)
+
+---
+
+
+<a id="DD-TimingTimeComposition"></a>
+
+**DD-TimingTimeComposition — Timing-time composition**
+
+Detailed composition of raw platform time and the shared semantic TimeSource
+used by Domain and I/O timestamp producers.
+The raw absolute wall clock and monotonic elapsed-time source come from
+`PlatformEnvironment`. Runtime composes a `platform.time.TimeSource` from the
+absolute Clock and passes that timing source to components that attach or interpret
+event time. TimeSource exposes both the absolute `Instant` and the configured civil-time
+`ZoneId`. The current baseline implementation is `ClockTimeSource`, which exposes the
+zone carried by its injected Clock; Runtime may therefore re-zone or replace that Clock
+without changing Domain consumers. Lightweight/custom TimeSource implementations default
+their civil-time zone explicitly to UTC.
+
+TimeSource ownership is deliberately not encoded as TimingSystem or TimingNode
+API. Composition decides its sharing scope. The current single-node Runtime has
+one source; a later TimingSystem composition may pass one shared source to all
+TimingNodes and timestamp-producing I/O providers in that system. This preserves
+one corrected timing basis without creating another raw platform clock.
+
+
+— — —
+
+- **Type:** Detailed Design
+- **Elaborates:** [`ClockTimeSource`](41-01-SSD-timing-application-specification-document.md#ClockTimeSource), [`PlatformEnvironment`](41-01-SSD-timing-application-specification-document.md#PlatformEnvironment), [`PlatformTime`](41-01-SSD-timing-application-specification-document.md#PlatformTime), [`RuntimeTimeSources`](41-01-SSD-timing-application-specification-document.md#RuntimeTimeSources), [`TimeSource`](41-01-SSD-timing-application-specification-document.md#TimeSource)
+
+---
+
+
+<a id="DD-IOComposition"></a>
+
+**DD-IOComposition — I/O composition and network-device boundary**
+
+Detailed composition of per-TimingSystem I/O ownership and the
+CanNetworkController / NetworkDeviceService boundary.
+
+The I/O package structure is logical; executable composition is per
+`TimingSystem`. Hosting 1..N TimingSystems therefore normally constructs 1..N
+corresponding I/O compositions, each with its own configured Storage, Devices,
+Messaging and DeviceNetworks objects. Explicit lower-level multiplexing may share
+a physical resource, but the owning TimingSystem contexts stay separate.
+
+`CanNetworkController` owns CAN-network lifecycle/discovery and CAN-device
+communication. `NetworkDeviceService` owns the general bidirectional
+network-device boundary. It may expose application data outward and accept
+device-originated messages/events inward.
+
+The high-level architecture deliberately stops there. Service discovery,
+connection/listener/session handling and protocol framing are lower-level design
+concerns below `NetworkDeviceService`. Likewise, a smart-display/domain handler
+should not acquire socket, mDNS or transport knowledge merely because it is
+reached through this service. The smart display remains an external client and
+therefore does not require a `Rev2WifiDisplay` class inside SI-01 merely to
+mirror the hardware name.
+
+
+— — —
+
+- **Type:** Detailed Design
+- **Elaborates:** [`CanNetworkController`](41-01-SSD-timing-application-specification-document.md#CanNetworkController), [`NetworkDeviceService`](41-01-SSD-timing-application-specification-document.md#NetworkDeviceService), [`TimingSystem`](41-01-SSD-timing-application-specification-document.md#TimingSystem)
+
+---
+
+
+<a id="DD-DomainIntegration"></a>
+
+**DD-DomainIntegration — Domain data and upstream composition**
+
+Detailed Domain composition for LogBook/TimingData ownership, shared UpstreamData
+semantics and routing boundaries.
+
+`TimingNode` owns its active LogBook and node state. `TimingSystem` additionally owns
+one `Upstream` component with one `NodeUpstream` per TimingNode.
+
+`UpstreamData` carries semantic RaceData, TimingData, SYNC, ACK, REQ and PING
+messages. `NodeUpstream` owns the UpstreamData codec and is the first component that
+turns an encoded message into that semantic hierarchy.
+
+Generic Messaging resolves routing once at its transport ingress. A connector supplies
+`NodeId + encodedMessage` to the gateway's explicit ConnectorPort. `UpstreamGateway`
+uses NodeId to choose one fixed node-scoped `UpstreamStream` application port and
+does not inspect the encoded payload.
+
+The resulting `UpstreamStream` owns that fixed application binding. NodeUpstream reads
+and sends encoded messages directly through the stream without passing NodeId back to
+the gateway on every operation. `CONNECTED` and `DATA_AVAILABLE` are typed local
+events carrying the producing stream object itself. Connector CONNECTED/DISCONNECTED
+facts use the same subject/observer pattern.
+
+Engineering-specific IF-03/IF-06 adaptation lives below
+`io.messaging.engineering`: `UpstreamApiMessage` extracts the IF-06 NodeId needed
+for connector-to-gateway routing while preserving the complete encoded message.
+`EngineerApiConnector` owns the WebSocket session and bounded transport delivery only.
+Heartbeat cadence remains part of NodeUpstream's IF-06 protocol behavior.
+
+A connector may be a full-duplex Engineering WebSocket or a RabbitMQ transport with
+asymmetric consumer/publisher resources; that difference is hidden below
+UpstreamStream.
+
+NodeUpstream preserves semantic message order and delegates node-state mutation through
+NodeService. TimingData replay uses LogBookAccessor asynchronously and never exposes
+mutable LogBook state. Send/retry/session mechanics remain outside node data
+transactions.
+
+
+— — —
+
+- **Type:** Detailed Design
+- **Elaborates:** [`TimingSystem`](41-01-SSD-timing-application-specification-document.md#TimingSystem), [`TimingSystemUpstream`](41-01-SSD-timing-application-specification-document.md#TimingSystemUpstream), [`UpstreamData`](41-01-SSD-timing-application-specification-document.md#UpstreamData), [`UpstreamGateway`](41-01-SSD-timing-application-specification-document.md#UpstreamGateway), [`UpstreamStream`](41-01-SSD-timing-application-specification-document.md#UpstreamStream)
+
+---
+
+
+## Contract placement
+
+<a id="DD-DependencyPlacement"></a>
+
+**DD-DependencyPlacement — Contract and internal dependency placement**
+
+Detailed placement rules for semantic contracts, implementation dependencies
+and the allowed direction between SI-01 packages.
+
+Place contracts with the responsibility that owns their meaning:
+
+```text
+presentation
+  functional client interfaces / transport mapping / wire messages
+
+application
+  commands, queries, application-level ports and authoritative running
+  configuration semantics
+
+domain / shared semantic artifacts
+  domain model, semantic ports, TimingData and UpstreamData contracts/representation codecs
+
+io
+  hardware, messaging and storage adapters
+
+infra
+  concrete cross-cutting technical support, including logging, diagnostics,
+  configuration mapping and extension discovery
+
+runtime
+  concrete application composition, top-level running application and lifecycle
+
+platform
+  small JDK-only reusable primitives and execution-environment abstractions,
+  including serial execution and local typed events
+```
+
+Do not create one generic top-level `api` package merely to collect
+interfaces.
+
+## Internal dependency direction
+
+```text
+presentation --> application
+application  --> domain / I/O / platform
+domain       --> I/O / shared infra support / platform
+io           --> platform / JDK
+runtime      --> application / domain / presentation / I/O / infra / platform
+infra        --> owned support contracts + platform / JDK / selected support libraries
+platform     --> JDK and low-level environment only
+```
+
+The normal dependency direction follows the layer order and is intentionally
+easy to read from imports. I/O code does not import Application or Domain merely
+to reverse a dependency. Domain may call an I/O component directly when the
+domain behaviour requires it. In the current design,
+`domain.system.TimingSystemConductor` calls the optional `AntennaManager` through its
+semantic desired-inventory API. TimingSystem owns that composition relationship; AntennaManager
+retains all device mechanics and never depends on Domain.
+
+For example:
+
+```text
+LogBook
+  -> TimingDataPersistence
+       -> AppendOnlyRecordStore
+            <- FileAppendOnlyRecordStore selected by Runtime
+```
+
+Dependency direction is intentionally one-way:
+
+```text
+upstream / presentation / post-processing
+          |
+          v
+LogBookAccessor
+          ^
+          |
+LogBook
+  ├── LogBookDataLane -> SerialLane
+  ├── LogBookOperations -> LogBookState + TimingDataPersistence
+  ├── LogBookStatus -> published CURRENT Status
+  └── LogBookState -> LogBookData
+```
+
+`domain.node.logbook` must not import `domain.node.upstream`. A deployment that
+only commits/persists LogBookData therefore does not require an upstream
+component.
+
+The typed upstream boundaries mirror lane ownership rather than exposing
+mutable collaborators:
+
+- `LogBookAccessor` is the single intentional LogBook contract for both
+  internal and external consumers. `execute(command)` submits a command
+  without a caller result; `process(command)` and `process(query)` return a
+  result. Query processing may use CURRENT or ORDERED consistency without
+  changing that public result-bearing contract. `LogBookSync` processes
+  `timingDataHead()` and `timingDataRange(...)` through `LogBookQuery`;
+  mutable `LogBookData` remains Data Lane-owned.
+- `RaceDataState` validates a RACE_DATA change set against copies and installs
+`TeamAssignments` and `StageStartTimes` atomically on the Task Lane. The
+RACE_DATA ACK follows that successful Task Lane application; no Data Lane hop
+is required for RaceData. LogBook publishes `LogBookStatus.LOADED` after persisted TimingData has loaded and
+`LogBookStatus.ERROR` after load failure. NodeService.MainTask handles only that status.
+NodeState owns DataTask, which then chooses its own bounded `timingDataRange(...)` reads
+and yields between those reads while rebuilding Task Lane-owned active-WP state.
+Each later successful commit publishes only that committed TimingData record as a wake
+signal for DataTask. This is a data dependency, not a Task Lane lifecycle dependency.
+
+`LogBookData` remains passive and owns no event. This is deliberate: only
+`LogBook` knows that persistence succeeded and LogBookData visibility has
+crossed the commit boundary. Consumers such as upstream delivery,
+post-processing or presentation subscribe outward from that data boundary.
+Neither lane synchronously waits for work queued on the other lane.
+
+`AppendOnlyRecordStore` contains only opaque-record storage semantics.
+`DefaultTimingDataPersistence` owns TimingData codec, TimingNodeId and sequence
+validation. This keeps `io.storage` independent from Domain.
+Executable composition may depend on the complete supported application-core surface
+and selected external libraries.
+
+
+— — —
+
+- **Type:** Detailed Design
+
+---
+
+
+## Logging dependency placement
+
+<a id="DD-LoggingRuntime"></a>
+
+**DD-LoggingRuntime — Runtime logging infrastructure**
+
+Detailed Java design for reusable Logging ownership, retained/live sinks,
+LoggingServer and runtime logging-level control. Generic level intent is defined
+by Java design rule DR-09; domain-specific TimingData/LogBook event-to-level
+choices are defined in SDD-01 rather than repeated in this infrastructure section.
+
+Logging follows the same library-versus-executable composition boundary.
+
+```text
+timing-point-core.jar
+  -> slf4j-api only
+  -> io.github.brainboxemb.eventtiming.timingpoint.infra.logging
+       +-- Logging
+       +-- LoggingConfig / LoggingLevel / LoggingFileConfig
+       +-- LoggingControl
+       +-- ConsoleHandler
+       +-- TimestampedFileLogHandler + CompactLogFormatter
+  -> io.github.brainboxemb.eventtiming.timingpoint.infra.loggingserver
+       +-- LoggingServer
+       +-- LoggingServerConfig
+       +-- LiveLogHandler
+       +-- client-initiated live diagnostics + temporary level control
+
+timing-point-app.jar
+  -> selects exactly one SLF4J provider
+  -> default provider: slf4j-jdk14
+  -> delegates SLF4J records to java.util.logging
+  -> starts/stops core-provided Logging
+  -> independently starts/stops optional LoggingServer
+```
+
+Execution model:
+
+```text
+Domain / Application / I/O publisher thread
+        |
+        | SLF4J -> JUL LogRecord
+        | snapshot + non-blocking offer
+        v
+bounded AsyncLogHandler queue
+        |
+        | one Infrastructure-owned writer
+        v
+tp-inf-logging
+   +--> ConsoleHandler
+   +--> TimestampedFileLogHandler
+              |
+              +--> BufferedOutputStream
+              +--> periodic/batched flush
+```
+
+The default executable therefore never performs normal console or retained-file I/O on a
+TimingNode, TagProcessor, AntennaManager or Application coordination lane. Publisher-side
+work is limited to level filtering, creating/snapshotting the log record and bounded queue
+admission. Formatting and sink I/O happen on one daemon logging writer thread.
+
+The queue is deliberately bounded. Normal publication never waits for queue space. When it
+is full, lower-severity records may be discarded; an incoming WARN/ERROR may replace one
+queued lower-severity record. Dropped records are counted and the writer emits a warning
+summary when it can deliver again. Diagnostic loss is preferable to applying hidden timing
+backpressure.
+
+Accepted records preserve queue order. The retained file sink remains buffered and does not
+flush after every record. The logging writer flushes delegates periodically (baseline
+250 ms), immediately after WARN/ERROR, and during shutdown. File rotation also flushes/closes
+the old generation. `Logging.close()` removes new publication, drains all records already
+accepted by the queue, flushes delegates and only then closes the retained file.
+
+The baseline queue capacity is 4096 records. Queue capacity and flush interval are owned by
+`LoggingConfig`; the current executable uses the component defaults rather than adding
+IF-11 syntax prematurely. These values are implementation baselines and may later be made
+deployment-configurable if runtime characterization justifies it.
+
+Local-console prompt redraw is also owned by the existing `tp-inf-logging` writer.
+`ConsolePromptCoordinator` is passive: console formatting records a 150 ms quiet-period
+deadline, and the logging writer shortens its bounded poll wait when that deadline is due.
+There is no dedicated prompt scheduler/thread. Repeated log records simply move the deadline
+forward, so one prompt is redrawn after the burst becomes quiet.
+
+The optional `LoggingServer` remains separate. Its JUL handler performs only bounded
+in-memory admission; socket writes already execute on its own
+`tp-inf-live-log-writer` thread. It is therefore not routed through the retained
+console/file writer and a slow engineering client cannot block ordinary log publishers.
+
+Working rules:
+
+- application-core code may compile against the SLF4J API but must not force a concrete provider/backend on consumers;
+- provider-neutral deployment values stay component-owned: `LoggingConfig` contains `LoggingLevel` and `LoggingFileConfig`; optional `LoggingServerConfig` belongs to `LoggingServer`; runtime `Config` may reference both as composition data;
+- the executable application chooses and configures the provider/backend before `runtime.TimingApplicationRuntime.create(...)` starts normal application composition;
+- the default Java-8 application uses `slf4j-jdk14` so the provider delegates to JDK `java.util.logging` without introducing Logback;
+- concrete JUL backend/file lifecycle stays under `timingpoint.infra.logging`; the live diagnostics handler/socket lifecycle stays under `timingpoint.infra.loggingserver`; neither package defines domain/application contracts;
+- `infra.logging` must not depend on `infra.loggingserver` or `runtime.config`; the thin executable starts the two infrastructure components separately before handing control to runtime composition. `infra.loggingserver` may depend on the narrow public `Logging` runtime surface for current level control and record formatting, but the logging component does not construct or own the server;
+- `LoggingServerConfig` belongs to the `LoggingServer` component and carries its listener values (`bindAddress`, `port`); the default YAML loader maps the external `logging.live` syntax to that component-owned type;
+- `LoggingLevel` is a logging-domain value rather than `LoggingConfig.Level`, so live level control does not depend on an umbrella configuration class;
+- the core artifact owns that reusable implementation because it has no dependency on executable-specific YAML/resource loading and uses only JDK facilities plus component-owned logging configuration;
+- `Logging` is the primary runtime logging infrastructure component and owns backend setup, console/file handler composition, record formatting and the current global-level control;
+- `LoggingServer` is the separate externally reachable live-diagnostics component; it owns the live JUL handler plus logging-specific socket/protocol boundary, delegates temporary level changes to `Logging`, and is not a Presentation/IF-03 endpoint;
+- normal default console and retained-file output is dispatched through one bounded `AsyncLogHandler`; do not introduce per-component logging threads;
+- the retained file handler is a sink owned by the logging writer and must remain buffered between writer flushes; it must not flush on every application record;
+- queue overload is diagnostic loss, not control backpressure; the writer reports dropped-record summaries and prioritizes WARN/ERROR over queued lower-severity records when possible;
+- the default retained file sink uses the local wall-clock start/rotation timestamp as a human-readable filename, normally `yyyyMMdd-HHmmss.txt`; this timestamp is not treated as a unique or monotonic session identity;
+- Raspberry Pi startup must not assume that wall-clock time is already network-synchronised: the clock may repeat or move backwards across restarts, so retained log creation must use non-overwriting create semantics, add a collision suffix when necessary, and protect the active log from retention decisions regardless of timestamp ordering;
+- retained text records use the compact operator-facing form `HH:mm:ss.SSS - [LEVEL] - message - [sourceClass.sourceMethod]`; exception stack traces follow the record line when present;
+- `LoggingControl` owns the configured global level plus an optional temporary runtime override; applying an override changes the running logger threshold without mutating deployment configuration;
+- the optional diagnostic listener is a logging-specific engineering facility. The test client initiates its TCP connection, log delivery is best effort, and network failure must not be allowed to block ordinary log publishers;
+- the live diagnostics protocol is separate from the IF-03 status/event wire model;
+- another executable/private consumer may select another compatible provider without changing core/domain source;
+- exactly one provider should be present in a runtime composition;
+- provider/backend versions are pinned centrally by Maven dependency management rather than scattered through modules.
+
+This keeps provider selection replaceable at the executable boundary while allowing the reusable
+application core to provide the default JUL logging infrastructure and its configuration contract.
+
+
+— — —
+
+- **Type:** Detailed Design
+- **Elaborates:** [`Logging`](41-01-SSD-timing-application-specification-document.md#Logging), [`LoggingServer`](41-01-SSD-timing-application-specification-document.md#LoggingServer)
+
+---
+
+
+## Default executable application
+
+<a id="DD-ExecutableComposition"></a>
+
+**DD-ExecutableComposition — Executable and presentation composition**
+
+Detailed Java composition/lifecycle design for TimingApplicationRuntime,
+SimulationRuntime, PresentationRuntime and the built-in Console, RemoteShell and API adapters.
+
+`timing-point-app` is the executable consumer of the application-core library.
+
+Its executable package is deliberately thin:
+
+```text
+io.github.brainboxemb.eventtiming.timingpoint.app/
+  Main.java
+```
+
+The application core owns the reusable SI-01 runtime and supporting infrastructure:
+
+```text
+io.github.brainboxemb.eventtiming/timingpoint/
+  runtime/
+    Lifecycle.java
+    TimingApplicationRuntime.java
+    RuntimeExecutors.java
+    RuntimeTimeSources.java
+    simulation/
+      SimulationRuntime.java
+      SimulatedTagScenarioRunner.java
+    config/
+      Config.java
+      Presentation.java
+      Api.java
+      YamlLoader.java
+  infra/
+    BuildIdentity.java
+    EmbeddedBuildIdentityLoader.java
+    logging/
+      Logging.java
+      LoggingConfig.java
+      LoggingLevel.java
+      LoggingFileConfig.java
+      LoggingControl.java
+      TimestampedFileLogHandler.java
+      CompactLogFormatter.java
+    loggingserver/
+      LoggingServer.java
+      LoggingServerConfig.java
+      LiveLogHandler.java
+```
+
+`runtime/` owns knowledge of the concrete running application through
+`TimingApplicationRuntime`, execution-resource construction and the effective composition
+configuration. Figure SI01-01 shows this explicitly as the **Runtime** block.
+Runtime is not another business/domain layer; it is where the executable object graph is
+assembled.
+
+The executable composition must remain readable as one linear construct-system-wire-start flow.
+Runtime constructs and resolves; the constructed TimingSystem fixes its own stable
+inter-component event graph before activation.
+The Runtime composition root constructs 1..N `domain.system.TimingSystem`
+components from validated effective configuration. Each TimingSystem contains
+1..N TimingNodes and one `TimingSystemConductor`, and uses associated I/O
+components such as `AntennaManager`. Runtime resolves the concrete construction
+inputs and antenna-to-node mapping, then constructs the TimingSystem component.
+
+```text
+validated effective configuration
+  -> PlatformEnvironment / Runtime time / shared executors
+  -> construct TimingNodes, AntennaManager and TimingSystemConductor
+  -> construct domain.system.TimingSystem
+       -> connect TimingNode status to TimingSystemConductor
+       -> connect AntennaManager observations to TimingNode ingress
+       -> connect UpstreamStream events to matching NodeUpstream inputs
+  -> register TimingSystem with application.ApplicationConductor
+  -> start physical workers
+  -> application.ApplicationConductor.activate()   [application lifecycle boundary]
+       -> ComponentLifecycleManager activates TimingSystem
+            -> TimingSystem.onActivate()
+                 -> ComponentLifecycleManager activates AntennaManager
+                 -> ComponentLifecycleManager activates TimingSystemConductor
+                      -> ComponentLifecycleManager activates TimingNode(s)
+                           -> TimingNode.onActivate()
+                                -> set node execution readiness INIT
+                                -> start SerialTaskRunner
+                                -> activate NodeService, LogBook and TagProcessor
+                                     -> LogBook starts Data Lane admission
+                                     -> TagProcessor starts SerialLane<TagObservation>
+                                -> queue TimingNode.MainTask
+                                -> return without waiting for persisted-data load
+                      -> start system coordination SerialTaskRunner
+                      -> wake first control run
+  -> PresentationRuntime.activate()
+
+TimingNode current state:
+  -> functionalState starts CLOSED with no LocationId
+  -> open()/close() update functionalState + LocationId directly
+  -> NODE_OPEN/NODE_CLOSE TimingData records never drive current state
+  -> persisted TimingData is not replayed to reconstruct functional state
+
+TimingNode MainTask:
+  -> run LogBook.loadPersistedData() synchronously on the shared node worker
+  -> Data Lane items may be admitted meanwhile but cannot run on that same worker yet
+  -> rebuild/publish LogBook recovery state and INITIAL_DATA_LOADED
+  -> LogBook load failure remains a LogBook problem
+  -> yield once so queued NodeService derived-state rebuild work can run
+  -> mark the TimingNode execution path OK
+  -> only a MainTask/execution failure marks TimingNode execution ERROR
+
+system control run:
+  -> read functionalState of every TimingNode directly
+  -> calculate whether any node is OPEN
+  -> call AntennaManager.setInventoryRequired(...)
+  -> AntennaManager reconciles hardware asynchronously
+```
+
+Runtime owns object construction, mapping resolution and physical executor lifetime.
+It does not install stable inter-component event subscriptions itself. The
+`domain.system.TimingSystem` component contains its TimingNodes and
+`TimingSystemConductor`, uses its optional `AntennaManager` and system-owned Upstream,
+and fixes the system-level event connections before activation. Runtime prepares resolved
+construction and mapping data and registers the completed TimingSystem with
+`ApplicationConductor`. `ApplicationConductor` orchestrates activation,
+rollback and reverse deactivation across complete TimingSystems.
+`TimingSystemConductor` coordinates the TimingNodes and their Domain inventory
+decision.
+
+TimingSystem composes the optional AntennaManager and supplies it to
+TimingSystemConductor. The Conductor uses only `setInventoryRequired(boolean)`; it does not
+call power, initialize, start/stop inventory or multiplexing operations. AntennaManager may
+keep a private `Setting<Boolean>` for requested/applied state and retry revision bookkeeping,
+but that state is not a cross-component settings API. Runtime resolves the IF-11
+`io.devices.antennaManagers` binding by `timingSystemId`; at most one manager is composed
+for each TimingSystem. The manager still owns antenna power, self-test, initialization,
+multiplexing, recovery and shutdown mechanics.
+
+`TimingSystemConductor` uses its own `SerialTaskRunner`; all such logical lanes currently
+share the Runtime-owned `timingSystemConductorExecutor`.
+`TimingSystem` activates its AntennaManager before its TimingSystemConductor and
+deactivates them in reverse order. `ApplicationConductor` only orchestrates
+complete TimingSystems and does not need a coordination lane. TimingNode and
+TimingSystemConductor activation establish execution context and
+return without waiting for persisted TimingData loading. The TimingSystemConductor activation
+hook wakes the first normal reconciliation run. TimingNode functional state is already available as CLOSED/no-location while LogBook
+recovery may still be running. Recovery does not replace functional state and does not
+participate in the inventory calculation. Later committed TimingNode property changes emit
+PROPERTIES.CHANGED and wake another reconciliation; the later run still derives
+inventory only from current functional state.
+
+Tag events, upstream stream events and individual antenna commands do not pass through
+either Conductor. Runtime resolves configured mappings as pure construction/composition
+data. The owning `TimingSystem` installs each observation event link
+to the target `TimingNode` component boundary; TimingNode then delegates the
+observation to its internal TagProcessor. External system composition never
+reaches directly into the node's TagProcessor. Targets must belong to the same
+TimingSystem and one antenna may fan out to multiple nodes.
+
+The same ownership rule applies to upstream. Runtime constructs one NodeUpstream and one
+node-scoped UpstreamStream for each configured node. TimingSystem then installs the fixed
+stream event links to that NodeUpstream's ordinary input methods. Neither TimingNode nor
+NodeUpstream publishes a static composition-only EventInput for these system bindings.
+
+```java
+antennaManager.tagObservedEvent(antennaId)
+    .subscribe(timingNode::onTagObserved);
+
+stream.CONNECTED
+    .subscribe(ignored -> nodeUpstream.connectionAvailable());
+stream.DATA_AVAILABLE
+    .subscribe(ignored -> nodeUpstream.inputAvailable());
+```
+
+For current component properties, TimingNode uses the generic
+`Property<T>` + `PropertyContainer` mechanism. Functional state and LocationId are
+separate strongly typed properties. After the owner changes one or more values it calls
+`PropertyContainer.update()`; the container detects changed properties and emits one
+`PropertyUpdate` through its normal `EventSource<PropertyUpdate>`.
+Related values such as OPEN + LocationId therefore arrive in one update message.
+
+Other semantic facts still use named `EventSource` ports such as
+`TIMING_DATA_COMMITTED` and `NEW_DATA_ENTRY`. Method-based event
+access remains only where an abstraction contract requires dispatch. The antenna boundary
+may still use `tagObservedEvent(AntennaId)` because the selected AntennaId determines the
+source instance. `TagObservation` remains the
+immutable event value and does not need an `AntennaId` field merely for routing because
+the configured source identity is already known at the subscription point.
+
+`runtime.simulation.SimulationRuntime` is an explicit simulator composition entry point.
+It selects simulated installations/mappings through the same `TimingApplicationRuntime.create(...)`
+path; it
+does not introduce a simulated domain path or bypass TagProcessor/TimingNode.
+
+The running application's configuration is not the same object as the startup YAML/runtime mapper DTO. Runtime owns the concrete `ApplicationConfiguration` tree because that tree describes the composed executable and its current effective settings. Infrastructure owns the reusable typed configuration-value mechanics. the Application layer owns the configuration query/update use-cases over that runtime tree and exposes only a narrow control interface toward Presentation. Domain, Presentation and I/O consumers do not receive writable access to the runtime tree merely because they need one configured value.
+
+The executable artifact remains deliberately thin. Its launcher/input adapter stays under `...eventtiming.app`; reusable logging remains Infrastructure support. Main selects the config file, supplies process console streams and installs the JVM shutdown hook, but does not construct or order concrete Presentation adapters. Runtime composition owns `PresentationRuntime`, which creates the configured HTTP/WebSocket/remote-shell/local-console adapters and participates in normal activate/deactivate ordering. The IF-11 YAML mapper stays with `runtime.config` because it knows the concrete runtime configuration schema.
+
+```text
+timing-point-core.jar
+  io.github.brainboxemb.eventtiming.timingpoint.infra/
+    BuildIdentity.java
+    EmbeddedBuildIdentityLoader.java
+    configuration/
+      ReadOnlyConfiguration.java
+      DynamicConfiguration.java
+      ConfigurationChange.java
+      ConfigurationUpdateResult.java
+      DefaultDynamicConfiguration.java
+      FixedConfiguration.java
+    property/
+      Property.java
+      PropertyContainer.java
+      PropertyUpdate.java
+
+  io.github.brainboxemb.eventtiming.timingpoint.application/
+    ApplicationConductor.java
+    ConfigurationControl.java
+
+  io.github.brainboxemb.eventtiming.timingpoint.domain.system/
+    TimingSystem.java
+    TimingSystemConductor.java
+
+  io.github.brainboxemb.eventtiming.timingpoint.runtime/
+    TimingApplicationRuntime.java
+    RuntimeExecutors.java
+    RuntimeTimeSources.java
+    PresentationRuntime.java
+    ShutdownSignal.java
+    simulation/
+      SimulationRuntime.java
+      SimulatedTagScenarioRunner.java
+    configuration/
+      ApplicationConfiguration.java
+      TimingNodeConfiguration.java
+    config/
+      Config.java
+      Presentation.java
+      Api.java
+      YamlLoader.java
+
+timing-point-app.jar
+  io.github.brainboxemb.eventtiming.timingpoint.app/
+    Main.java
+```
+
+`timing-point-core.jar` contains the JUL-based default logging infrastructure but still does **not** select an SLF4J provider. Provider selection remains an executable-composition concern: the default app contributes `slf4j-jdk14` at runtime, while another consumer may choose another compatible composition and omit the default `Logging` component.
+
+The executable startup/configuration flow is:
+
+```text
+main()
+  -> core EmbeddedBuildIdentityLoader
+       -> executable-provided filtered build resource
+  -> configuration resolution
+       -> selected built-in application-profile defaults
+       -> selected platform defaults
+       -> selected operating-mode defaults
+       -> explicit IF-11 YAML deployment overrides
+       -> secret resolution
+       -> validated effective startup runtime Config
+  -> core runtime configuration-tree resolution
+       -> compiled component defaults
+       -> apply resolved IF-11 startup overrides
+       -> create runtime ApplicationConfiguration tree
+  -> Logging
+       -> configure JUL level + console/file handlers
+  -> optional LoggingServer
+       -> attach live handler + diagnostics listener
+       -> use Logging for current level / common formatting
+  -> core runtime.TimingApplicationRuntime.create(...)
+       -> create PlatformEnvironment
+       -> create RuntimeExecutors and RuntimeTimeSources
+       -> create one TimeSource for the current timing context
+       -> construct reusable application/domain/I/O objects
+       -> construct and wire each domain.system.TimingSystemConductor
+       -> construct application.ApplicationConductor for application lifecycle
+       -> construct configured PresentationRuntime adapters
+       -> return composed TimingApplicationRuntime
+  -> TimingApplicationRuntime.activate()
+       -> RuntimeExecutors.start()
+       -> application.ApplicationConductor.activate()   [root boundary]
+            -> ComponentLifecycleManager activates TimingSystem
+                 -> TimingSystem.onActivate()
+                      -> ComponentLifecycleManager activates AntennaManager
+                      -> ComponentLifecycleManager activates TimingSystemConductor
+                           -> ComponentLifecycleManager activates TimingNode(s)
+       -> PresentationRuntime.activate()
+  -> executable waits for shutdown request and owns JVM shutdown-hook handling
+```
+
+The current `runtime.config.YamlLoader` implements only the explicit
+YAML subset already needed by the running application. `runtime.config.Config`
+is a startup/composition input and is not the authoritative mutable configuration
+object of the running process. Profile/platform/mode
+resolution is part of the configuration architecture but is not yet implemented; the architecture does not
+require a new public Java type for each source before that behaviour is
+implemented.
+
+`BuildIdentity` and runtime `Config` are different inputs. Build identity is artifact provenance; application configuration is deployment composition defined by IF-11. The executable embeds deterministic provenance fields (`application`, `version`, exact `revision`, `sourceRef`, `buildOrigin`, `dirty`, `apiVersion`). Wall-clock build time, CI run/build id and actor/user are not embedded because they are per-run metadata rather than stable build inputs/context.
+
+Reusable application behaviour should not migrate into the executable merely because the architectural responsibility is called `application`. When a reusable application-core runtime object becomes justified by real shared behaviour, executables should **compose** that object rather than extend a `BaseApplication` hierarchy.
+
+The application core uses one explicit runtime composition boundary. There is no builder layered on top of another bootstrap object. `runtime.TimingApplicationRuntime.create(...)` constructs and wires the current graph. Runtime owns composition, physical execution resources and outer Presentation lifecycle. `application.ApplicationConductor` owns application-component lifecycle order. Each `domain.system.TimingSystemConductor` owns the TimingNodes and coordinated operational behaviour of one TimingSystem.
+
+
+— — —
+
+- **Type:** Detailed Design
+- **Elaborates:** [`Api`](41-01-SSD-timing-application-specification-document.md#Api), [`Console`](41-01-SSD-timing-application-specification-document.md#Console), [`PresentationRuntime`](41-01-SSD-timing-application-specification-document.md#PresentationRuntime), [`RemoteShell`](41-01-SSD-timing-application-specification-document.md#RemoteShell), [`SharedTerminalHandler`](41-01-SSD-timing-application-specification-document.md#SharedTerminalHandler), [`TimingApplicationRuntime`](41-01-SSD-timing-application-specification-document.md#TimingApplicationRuntime)
+
+---
+
+
+### Running configuration model
+
+<a id="DD-RunningConfiguration"></a>
+
+**DD-RunningConfiguration — Running configuration model**
+
+Detailed design for ApplicationConfiguration, reusable typed Configuration
+values and presentation-facing ConfigurationControl use-cases.
+
+The configuration design has three deliberately separate ownership levels:
+
+```text
+Infrastructure
+  typed configuration-value mechanics
+
+Runtime
+  concrete ApplicationConfiguration tree for this executable
+
+Application
+  query/update use-cases over that tree
+```
+
+Infrastructure provides the reusable value contracts. They contain no knowledge of
+TimingNode, TagProcessor, YAML paths or API routes:
+
+```java
+interface ReadOnlyConfiguration<T> {
+    T startupValue();
+    T currentValue();
+    boolean overridden();
+    EventSource<ConfigurationChange<T>> changes();
+}
+
+interface DynamicConfiguration<T> extends ReadOnlyConfiguration<T> {
+    ConfigurationUpdateResult override(T value);
+    ConfigurationUpdateResult clearOverride();
+}
+```
+
+A successful update replaces one immutable typed value atomically and emits one
+typed `ConfigurationChange<T>`. Validation happens before replacement. `NO_CHANGE`
+does not emit a change. `INVALID` and `RESTART_REQUIRED` leave the current value
+unchanged.
+
+Runtime owns `ApplicationConfiguration` and its concrete branches such as
+`TimingNodeConfiguration`. This is the authoritative configuration tree of the
+currently composed process. It is not a generic key/value map and it is not the
+external IF-11/YAML DTO.
+
+IF-11 TimingData storage is resolved during Runtime configuration/composition.
+The single-TimingNode `io.storage.timingData.path` shorthand expands to one
+node binding; the multi-node `io.storage.timingData.nodes` form resolves each
+application-wide `NodeId` to exactly one validated filesystem path before
+TimingNode persistence is constructed. Runtime passes the resolved target to the
+existing persistence implementation; this does not introduce a generic storage
+registry or make storage part of TimingNode domain state.
+
+Application owns `ConfigurationControl`: the use-case boundary for querying current
+configuration and requesting runtime changes. Runtime composition supplies the
+node-scoped `DynamicConfiguration<TagProcessingPolicy>` views when constructing this
+control; Presentation never receives those Infrastructure objects or the concrete
+`ApplicationConfiguration` tree directly.
+
+`ConfigurationControl` returns Presentation-safe startup/current policy projections,
+runtime-mutability metadata and semantic `APPLIED`, `NO_CHANGE`, `INVALID` or
+`RESTART_REQUIRED` update outcomes. Partial TagProcessing SET requests are serialized
+by this control and are built from the current effective policy, so omitted fields retain
+the value from the preceding accepted update rather than reverting to startup defaults.
+An applied change emits one post-fact application `Change` event; no-change, invalid
+and restart-required requests do not emit that event.
+
+Normal components receive only the narrow Infrastructure read-only view they need.
+For TagProcessor that value is immutable `TagProcessingPolicy`. A runtime update
+that changes `observationQueueCapacity` is rejected atomically as
+`RESTART_REQUIRED`; the dynamic duration/cadence subset is not partially applied.
+TagProcessor reads `currentValue()` when making policy decisions. Its change
+subscription is used only for mechanics that need explicit re-registration, such
+as replacing the fixed-delay housekeeping cadence.
+
+Runtime composition creates the concrete configuration tree from compiled component
+defaults plus resolved IF-11 startup overrides. Clearing a runtime override restores
+the resolved startup value; restart reconstructs the tree from those startup sources.
+
+The default IF-11 file syntax is YAML and its parser/mapping stays beside the effective runtime configuration model. `runtime.config.YamlLoader` maps external YAML into `runtime.config.Config`; it is not a generic Infrastructure YAML utility. As profile support is implemented, configuration support resolves built-in profile/platform/mode defaults plus explicit deployment YAML before runtime composition starts.
+
+The resolver responsibility must remain data/composition oriented:
+
+- application profiles are data/default templates, not Java subclasses;
+- do not introduce profile-specific Application subclasses or a
+  profile-specific domain hierarchy;
+- profile defaults may select topology/cardinality and capability defaults;
+- platform defaults may select environment-specific values;
+- operating-mode defaults may replace real providers with simulated providers;
+- explicit IF-11 deployment values have highest non-secret precedence;
+- `runtime.TimingApplicationRuntime.create(...)` consumes only the resolved/validated runtime `Config` and contains no profile-name switches.
+
+SnakeYAML is therefore an application-core implementation dependency; the IF-11 contract
+remains independent of SnakeYAML APIs and another input adapter may construct the
+same typed effective runtime `Config` without YAML.
+
+Build-identity interpretation is reusable for the same reason. The application core owns
+`BuildIdentity` and `EmbeddedBuildIdentityLoader`. The concrete executable still owns
+the filtered `event-timing-build.properties` resource and build-time provenance injection,
+because those values identify that executable artifact. The core loader only interprets
+the classpath resource and has no dependency on `app.Main` or another app class.
+
+The implemented presentation structure is:
+
+```text
+presentation/
+  interfaces/
+    console/
+      LocalConsole
+    shell/
+      RemoteShellServer
+    api/
+      HttpEndpoint
+      WebSocketEndpoint
+      WebSocketOutboundDelivery
+      MessageWriter
+  common/
+    terminal/
+      TerminalSession
+```
+
+Console and remote shell are separate presentation interfaces. They share the
+line-oriented command parsing and text presentation in
+`presentation.common.terminal.TerminalSession`; both call the same
+`PresentationGateway` application boundary and shutdown callback. The current shared
+terminal command baseline is:
+
+```text
+help
+version
+status
+node [id]
+open <locationId>
+close
+auto-reg <registrationId> <time>
+config
+config tag-processing set <field=value>...
+config tag-processing clear
+log
+log T|D|I|W|E
+quit
+exit
+```
+
+These are Presentation commands, not a second Domain/Application semantic contract.
+Each terminal session has one selected TimingNode. `node [id]` shows or changes
+that selection; `open`, `close` and `auto-reg` delegate to the selected
+`TimingNodeProxy`. Configuration
+commands delegate to `ConfigurationControl`. `log` reads/changes the temporary
+global log level through `LoggingLevelControl`; the single-letter forms map to
+TRACE, DEBUG, INFO, WARN and ERROR. LocalConsole and RemoteShell therefore
+cannot drift into separate implementations of node or configuration behaviour.
+
+Console, Remote Shell and API are baseline Timing Point Application capabilities.
+Application profiles do not add/remove or redefine their command/status semantics.
+Concrete network listener bindings remain deployment configuration, so a listener
+may still be explicitly left unbound/disabled without creating another profile.
+
+The functional **API** currently contains:
+
+```text
+HttpEndpoint
+  +-- GET  /api/v1/version
+  +-- GET  /api/v1/status
+  +-- GET  /api/v1/configuration
+  +-- POST /api/v1/node/{nodeId}/configuration/tag-processing
+                    |
+                    +--> PresentationGateway
+                           +--> TimingNodeProxy
+                           +--> ConfigurationControl
+
+WebSocketEndpoint
+  +-- WS /api/v1/events
+  +-- STATUS_SNAPSHOT on connect/reconnect
+  +-- STATUS_CHANGED only for real status changes
+  +-- TIMING_DATA_COMMITTED after committed TimingData
+  +-- CONFIGURATION_CHANGED only after an applied runtime configuration change
+```
+
+`MessageWriter` owns the IF-03 wire/JSON representation shared by the Remote
+API HTTP and WebSocket transports. It is not application/control logic and therefore
+does not live in the application layer or in global presentation common code.
+
+The local class names deliberately omit the `Api` prefix because the enclosing `presentation.interfaces.api` package already supplies that functional context. `Endpoint` is used rather than `Server` for the transport-facing classes; in particular, `HttpServer` is avoided because the implementation uses `com.sun.net.httpserver.HttpServer` internally.
+
+The WebSocket transport uses `Java-WebSocket 1.6.0` in the reusable
+application core and keeps the JDK HTTP transport unchanged rather than replacing
+both transports with a larger combined stack.
+
+`WebSocketOutboundDelivery` owns only per-client transport backlog bookkeeping.
+`WebSocketEndpoint` still owns connection/event semantics. The delivery helper does not
+buffer event values itself: it counts sends while the Java-WebSocket connection still
+reports buffered data. After 32 such sends without an observed full drain, it refuses the
+next event and requests close code 1013. This bounds application-driven growth of the
+library's otherwise unbounded outbound queue without blocking, retrying or moving
+backpressure onto TimingNode. Reconnect recovery uses `STATUS_SNAPSHOT` plus LogBook queries.
+
+`WebSocketEndpoint` sends the complete current IF-03 status for
+`STATUS_SNAPSHOT` and `STATUS_CHANGED`. Functional-status and operational-health
+events both trigger a new complete response. Building that response reads only the
+safely published current values exposed by `TimingNodeProxy`; it does not enter or
+wait on a Data Lane.
+
+A browser-based engineering client, if added, should consume the API like any other external client. It does not require a separate SI-01 `presentation.web` package.
+
+Manual inspection is provided by an independent development tool:
+
+```text
+test-client/
+  TestClientApplication      plain Java launcher
+          |
+          v
+  TestClientFxApplication    JavaFX development view
+          |
+          +-- ApiClient          HTTP/JSON client
+          +-- ApiEventClient       Java 17 WebSocket client
+          +-- RemoteShellClient          A05 raw TCP shell client
+          |
+          v
+        SI-01
+```
+
+`test-client/` is a standalone Java-17 application and does not depend on
+`timing-point-core` or `timing-point-app` implementation code. It may,
+however, depend on the separately reusable `event-timing-data` artifact because
+TimingData codec/provider reuse is now a real cross-executable requirement. This
+preserves the external-client boundary while allowing SI-01 and the Development
+Client to exercise the exact same public or proprietary TimingData translator.
+
+The Development Client remains development/test support rather than a product
+software item. Its desktop/runtime/workbench choices are owned by the
+Engineering Client environment and do not change SI-01 design authority.
+
+The shared Presentation-facing application boundary remains small:
+`PresentationGateway.version()` returns build identity,
+`PresentationGateway.timingNode(nodeId)` resolves one node-scoped
+`TimingNodeProxy`, `PresentationGateway.timingNodes()` exposes the composed
+proxy set for application-wide status/event wiring, and
+`PresentationGateway.configuration()` returns the application-owned
+`ConfigurationControl`. A simulation-capable engineering composition may additionally
+provide the optional Application-layer `SimulationControl`; normal production
+composition does not gain a simulated-device dependency merely because IF-03 can expose
+engineering operations. The proxy obtains current node status through the TimingNode
+query/ownership boundary; the configuration control operates on Runtime-supplied typed
+configuration views. Presentation adapters therefore do not read node-owned fields or
+the concrete Runtime configuration tree directly.
+
+
+— — —
+
+- **Type:** Detailed Design
+- **Elaborates:** [`ApplicationConfiguration`](41-01-SSD-timing-application-specification-document.md#ApplicationConfiguration), [`Configuration`](41-01-SSD-timing-application-specification-document.md#Configuration), [`ConfigurationControl`](41-01-SSD-timing-application-specification-document.md#ConfigurationControl)
+
+---
+
+
+## Antenna input and tag-processing implementation
+
+<a id="DD-AntennaRuntime"></a>
+
+**DD-AntennaRuntime — Antenna runtime and device control**
+
+Detailed Java design for AntennaManager, Antenna implementations, optional
+PowerDevice control, inventory lifecycle and SimulatedAntenna behaviour.
+
+The Java antenna boundary separates device lifecycle from decoded observation processing.
+
+### Antenna and manager
+
+`Antenna` represents one configured logical antenna/device capability. It owns the
+decoded observation event and provider-specific device/session mechanics needed for
+startup self-test, initialization and inventory control.
+
+The application-facing and device-facing lifecycle words are kept distinct. TimingNode
+uses `OPEN` / `CLOSED`; antenna/provider cleanup uses `shutdown()` rather than
+`close()` so device cleanup is not confused with TimingNode state.
+
+Illustrative provider shape:
+
+```java
+interface Antenna {
+    AntennaInfo selfTest();
+
+    void initialize();
+
+    void startInventory();
+
+    void stopInventory();
+
+    boolean inventoryRunning();
+
+    void shutdown();
+
+    EventSource<TagObservation> tagObservedEvent();
+}
+```
+
+`selfTest()` is the startup device check and has PASS/FAIL semantics at manager level.
+It may return decoded identity/version information for diagnostics, but SI-01 does not
+model a parallel antenna status model merely to represent startup progress.
+`initialize()` prepares the provider for normal use. `startInventory()` and
+`stopInventory()` control observation delivery. `shutdown()` releases provider
+resources and remains valid when initialization did not complete successfully.
+
+#### Coordination ownership
+
+TimingSystem behaviour and I/O device mechanics are separate:
+
+```text
+application.ApplicationConductor
+      |
+      +--> AntennaManager lifecycle
+      |
+      +--> domain.system.TimingSystemConductor lifecycle
+              |
+              +--> TimingNode lifecycle (1..N)
+              |
+              +--> node states -> shared inventory demand
+                            |
+                            v
+                      AntennaManager
+                      inventory / device mechanics
+      |
+      +--> AntennaSet
+      |       +--> ManagedAntenna(s)
+      |               +--> Antenna
+      |               +--> optional PowerDevice
+      |
+      +--> reusable SelfTestTask
+      +--> reusable InventoryTask
+      +--> reusable AntennaShutdownTask
+```
+
+`domain.system.TimingSystemConductor` calls
+`AntennaManager.setInventoryRequired(anyNodeOpen)` on its system's optional manager.
+It does not issue device-mechanism commands such as power-on, initialize,
+power-cycle or antenna switching. `domain.system.TimingSystem` owns the lifecycle
+ordering between the AntennaManager and the system Conductor.
+
+`AntennaManager` is the single controller for the configured 1..N antenna capability of
+one TimingSystem. It owns lifecycle/status, the requested/applied inventory setting and
+one explicit manager control state machine. It owns the three reusable task objects
+directly. The physical multi-step sequences live in those task classes under `manager/task`.
+The task classes work directly on manager-owned `ManagedAntenna` objects; there is no
+second task-facing antenna interface.
+
+AntennaManager may keep one private `Setting<Boolean>` for inventory reconciliation:
+
+```text
+requestedValue
+appliedValue
+changePending = requestedValue != appliedValue
+requestRevision = identity of the latest explicit request
+```
+
+`Setting` is passive bookkeeping and owns no executor, lifecycle, retry policy or device
+action. A single inventory demand does not justify a shared setting key, grouped transaction
+or setting-change event.
+`AntennaManager` calls `markApplied(value)` only after the corresponding task has
+completed successfully. A
+newer request may therefore arrive while an older transition is executing; once the older
+transition completes, `changePending` still exposes whether another transition is needed.
+
+Device objects and configuration remain separate concepts. `Antenna` and
+`PowerDevice` are device objects. `AntennaSet` is the composition-time collection that
+binds those device objects to stable `AntennaId` values and stores the optional external
+power stabilization value. Multiplex membership and switch interval are configured once at
+set level. There is deliberately no per-antenna `AntennaInstallation` value.
+
+Activating `AntennaManager` starts one reusable `SelfTestTask` for the complete antenna
+set. The manager does not contain the per-antenna self-test sequence and does not wait for
+provider I/O. The task performs one physical action per turn, releases the shared worker
+during real stabilization waits and publishes one completion event when the complete round
+finishes. Presentation startup can therefore continue while self-test is in progress.
+
+#### Temporary Windows development default
+
+Until the normal runtime mapper composes the full IF-11 antenna configuration, the Windows
+development platform uses one explicit fallback so AntennaManager is exercised by the
+normal executable:
+
+```text
+PlatformEnvironment = WINDOWS
+and no explicit antenna composition available yet
+        |
+        v
+1 -> built-in SimulatedAntenna
+        + optional SimulatedPowerDevice
+        |
+        v
+normal AntennaManager
+        |
+        v
+asynchronous self-test + inventory intent
+```
+
+This fallback is a development/platform default, not a silent physical-reader substitute.
+Startup logging must state clearly that the Windows default selected a simulated antenna
+and that no physical RFID reader is in use. On non-Windows platforms, no antenna
+configuration continues to mean no AntennaManager.
+
+Operating-system identity is exposed once through `PlatformEnvironment`; Runtime and
+Application code must not scatter direct `System.getProperty("os.name")` checks.
+
+Explicit IF-11 antenna configuration takes precedence as soon as that mapper/composition
+path is implemented. The fallback does not redefine the IF-11 antenna schema or provider
+selection rules.
+
+#### Startup self-test
+
+Startup self-test is one manager-owned cooperative task:
+
+```text
+ComponentLifecycleManager
+        |
+        v
+AntennaManager.onActivate()
+        |
+        v
+SelfTestTask
+
+for each ManagedAntenna:
+    POWER_ON
+       |
+       +-- AFTER(stabilization)
+       v
+    provider selfTest
+       |
+       +-- AGAIN
+       v
+    POWER_OFF
+       |
+       v
+next antenna
+
+round complete
+       |
+       v
+selfTestCompletedEvent(result)
+       |
+       v
+AntennaManager
+
+self-test round complete -> manager ready for later control
+individual PASS/FAIL results remain diagnostic
+```
+
+The configured stabilization interval is an actual physical wait and therefore uses
+`AFTER(delay)`. The task owns the round and its execution handle. `AntennaManager`
+subscribes once to the task completion event; it does not keep the task Future or duplicate
+the per-antenna progress state. The current provider call may still be synchronous within
+one task turn. A future provider may use callbacks, bounded polling or its own internal
+execution without changing the manager contract.
+
+Startup self-test result and normal operating state remain separate. The antenna operation
+state is limited to the lifecycle needed for normal control:
+
+```text
+INACTIVE -> PREPARING -> READY -> INVENTORY
+                              |
+                              +--> stop -> READY
+
+shutdown -> INACTIVE
+```
+
+After a successful self-test with external power removed, the antenna is therefore
+self-test PASS + `INACTIVE`, not artificially `READY`.
+
+#### TimingNode-driven inventory actions
+
+SI01-REQ-053 uses one system-scoped inventory demand:
+
+```text
+TimingNode A/B/... PROPERTIES.CHANGED
+       |
+       v
+wake domain.system.TimingSystemConductor control task
+       |
+       v
+read node.functionalState() for all nodes
+       |
+       v
+inventoryRequired = any node OPEN
+       |
+       v
+AntennaManager.setInventoryRequired(inventoryRequired)
+       |
+       v
+AntennaManager wakes and reconciles desired versus applied state
+       |
+       v
+InventoryTask -> managed antennas / optional power
+```
+
+An unchanged desired value does not schedule a new attempt.
+Explicit repeated `requestEnableInventory()` / `requestDisableInventory()`
+calls are separate retry attempts. AntennaManager owns all physical
+mechanics: self-test, power, initialization, multiplexing and shutdown.
+Runtime separately wires antenna observations to configured TimingNode
+TagProcessors. Per-antenna commands and individual cycling are future
+roadmap features; internal multiplex rotation already works.
+
+#### Failure and recovery ownership
+
+While inventory remains required, a runtime device failure does not change the application
+intent. AntennaManager owns any recovery/reinitialization process needed to restore the
+requested state:
+
+```text
+inventory enable remains requested
+        |
+        v
+runtime antenna/provider failure
+        |
+        v
+AntennaManager records failure
+        |
+        +--> stop/clean up failed operation
+        +--> optional power cycle
+        +--> stabilization / self-test or readiness check as required
+        +--> reinitialize
+        +--> resume inventory when usable
+```
+
+Conductor does not micromanage that recovery sequence and does not need to resend the same
+OPEN-derived intent after every provider failure. The exact automatic retry trigger,
+retry limit, delay/backoff and terminal-failure policy remain an open detailed-design
+decision and must be tied to an explicit requirement before implementation adds that
+policy.
+
+#### Execution and delayed device work
+
+AntennaManager owns one `SerialTaskRunner` backed by Runtime's
+`sharedIoScheduledExecutor`. The runner executes the manager's reusable main task and
+child tasks. Delayed task steps use the JDK scheduler as a timer and submit the same task run's next
+eligible step directly to that scheduler. Waiting consumes no runner pending-step slot.
+This adds no per-manager physical thread or second logical queue.
+
+```text
+Runtime-owned sharedIoScheduledExecutor
+                 |
+                 v
+         SerialTaskRunner
+          AntennaManager
+                 |
+          +------+------+------+
+          |             |      |
+          v             v      v
+   SelfTestTask   InventoryTask AntennaShutdownTask
+          \             |      /
+           \            v     /
+              ManagedAntenna(s)
+                 |
+                 +--> Antenna
+                 +--> optional PowerDevice
+```
+
+Each cooperative task executes one logical step per turn and returns `AGAIN`,
+`AFTER(delay)`, `AWAIT(completion)` or `DONE`. `AGAIN` yields by submitting the next step at the back of the
+executor queue. `AFTER(delay)` uses a timer registration and does not occupy the physical
+worker while waiting. `AWAIT` releases the worker until an asynchronous dependency
+completes.
+
+For antenna control, one task turn corresponds to at most one direct physical device
+action. `AntennaManager` owns one reusable self-test task, one reusable inventory task and
+one reusable shutdown task directly.
+
+Representative state machines are:
+
+```text
+SelfTestTask
+  POWER_ON -> AFTER(stabilization) -> SELF_TEST -> POWER_OFF -> next antenna -> event
+
+InventoryTask
+  requested OFF:
+    STOP_INVENTORY -> POWER_OFF -> applied=false
+
+  requested ON:
+    POWER_ON -> AFTER(stabilization) -> INITIALIZE -> START_INVENTORY
+    -> applied=true
+
+  multiplex while requested ON:
+    WAIT(interval) -> STOP_CURRENT -> START_NEXT -> WAIT(interval)
+```
+
+The inventory task re-reads the requested `Setting<Boolean>` on each turn. A changed
+request therefore changes the next direction of the same long-lived state machine rather
+than causing a second inventory controller or a new enable/disable task object to be
+constructed.
+
+A synchronous provider method such as `selfTest()`, `initialize()`,
+`startInventory()` or `stopInventory()` still occupies the worker for the duration of
+that call. Cooperative scheduling cannot make a blocking provider API non-blocking. A real
+provider must therefore either use bounded device/protocol I/O for such a step or expose
+staged readiness/completion mechanics that its own cooperative state machine can use.
+
+The generic manager runner does not justify a second timeout thread merely to interrupt an
+unknown future provider implementation. Exact provider-operation timeout/cancellation
+semantics are deferred until a real antenna provider establishes what its serial/network
+API can guarantee. Whatever mechanism is chosen must not block the shared worker waiting
+for work that still needs that same worker or serial lane to execute.
+
+A concrete antenna/provider implementation may itself use cooperative tasks when one
+device operation consists of multiple protocol commands, waits, retries or readiness
+checks. If isolation requires a device-specific logical lane, that lane may still use the
+same Runtime-owned physical I/O worker. This preserves ordering/isolation without creating
+one operating-system thread per antenna.
+
+Concrete `Antenna` construction is passive. Creating and wiring a provider object must
+not start inventory or hidden background activity.
+
+#### External power
+
+External power switching is optional and modelled as a separate `PowerDevice`.
+Composition may bind an antenna to a power device plus a stabilization duration. The
+manager task can then order power-on before self-test/initialize, yield for stabilization,
+and power-off when the antenna is no longer required.
+
+`PowerDevice` remains separate from `Antenna`. A physical reader may be powered through
+a relay board, GPIO-controlled supply or another installation component unrelated to the
+reader vendor protocol. A provider that owns its power mechanism internally may omit the
+external device.
+
+#### Multiplex switching
+
+One AntennaManager supports zero or one inventory mutual-exclusion group. Antennas outside
+that group operate independently. The group contains 2..N configured antennas that may
+not inventory simultaneously.
+
+SI01-REQ-054 requires only this behaviour:
+
+```text
+inventory group required
+        |
+        v
+start first available member
+
+every configured interval:
+        current member inventory OFF
+                    |
+                    v
+        next healthy member inventory ON
+                    |
+                    +--> failed/unavailable member: skip
+```
+
+At most one healthy group member inventories at a time. A failed member is skipped without
+stopping healthy members.
+
+The switch is fail-safe when stopping the currently active member fails. Because that
+reader may still be inventorying, `AntennaSwitchTask` must **not** start another group
+member. The failed stop is recorded on the current antenna and normal
+recovery/diagnostics handle the fault; mutual exclusion takes priority over continuing
+round-robin rotation.
+
+There is deliberately no separate switching controller. `AntennaSwitchTask` owns the
+small amount of switch-local state: phase, current/next selection and interval wait. It is
+one reusable state-machine object owned directly by `AntennaManager` and reset
+before a new switching run.
+
+The task does not own startup self-test, power preparation, antenna initialization,
+manager-wide status, requested/applied inventory state or generic scheduling mechanics.
+Those remain with their existing owners.
+
+The public/reference baseline remains the known two-antenna group with a 500 ms interval.
+The number of configured antennas does not by itself justify more physical I/O workers;
+V01 runtime characterization remains the authority for increasing physical parallelism.
+
+The built-in `SimulatedAntenna` path models the same lifecycle contract. Simulation
+includes explicit powered/unpowered state when paired with simulated power control,
+initialization/inventory preconditions and controllable self-test/initialize/start failures so
+startup containment, recovery design and multiplex behaviour can be verified without
+hardware.
+
+### TagObservation and local event delivery
+
+`TagObservation` is an immutable decoded input fact:
+
+```java
+final class TagObservation {
+    TagId tagId();
+    int rssi();
+    long observedAtEpochMillis();
+    long observedAtMonotonicNanos();
+}
+```
+
+The antenna/provider implementation owns vendor bytes, framing, encryption and
+decryption. Once that work is complete, the generic observation carries the
+semantic `domain.eventdata.TagId`. RSSI is the decoded/normalized signal
+strength used by TagProcessor policy.
+
+Both time bases are captured at the earliest accepted decoded-observation point.
+The absolute epoch-millisecond value becomes the registration's source event time
+when that observation is selected. The monotonic value is never persisted; it only
+decides passage gaps/duration and equal-RSSI ordering. A presentation or protocol
+boundary may materialize a semantic timestamp object when that representation is
+actually needed.
+
+Each antenna owns:
+
+```java
+private final Event<TagObservation> observationEvent = new Event<>();
+
+public EventSource<TagObservation> tagObservedEvent() {
+    return observationEvent;
+}
+```
+
+Provider callbacks perform only bounded observation ingress. EventData resolution,
+duplicate suppression, passage filtering, diagnostics and TimingNode queueing run
+through TagProcessor's typed observation `SerialLane` and direct scheduled callbacks on
+the same Runtime-owned single-thread executor.
+
+### Optional raw-observation persistence
+
+Raw tag-observation logging is a separate non-critical consumer of
+`EventSource<TagObservation>`. It does not sit inline between Antenna and TagProcessor.
+
+The Java shape is a bounded asynchronous sink:
+
+```text
+Antenna Event<TagObservation>
+       |
+       +--> TagProcessor --> TimingNode.onNewRegistration(...) --> LogBook.execute(...)
+       |
+       +--> RawTagObservationSink
+              |
+              +-- bounded local buffer
+              +-- non-blocking offer on callback thread
+              |
+              v
+        shared bounded I/O ExecutorService
+              |
+              v
+        append/rotate diagnostic observation store
+```
+
+Do not submit one unbounded executor task per observation. The sink owns a bounded buffer
+and schedules/drains work through the shared executor so a burst of raw observations
+cannot fill the executor queue with arbitrary numbers of tiny persistence tasks.
+
+Required behaviour:
+
+- observation callback performs only a bounded/non-blocking buffer offer;
+- one sink keeps at most one drain job queued or running; new observations go only into
+  that sink's bounded local buffer;
+- a drain job processes a bounded batch before returning to the shared I/O executor;
+- stored records preserve the immutable observation values exactly enough for diagnostics;
+- queue-full/drop count is observable;
+- storage/write failures are observable;
+- diagnostic logging failure does not change TagProcessor queueing or TimingData commit;
+- shutdown performs a bounded drain according to the configured diagnostic-retention
+  policy and then closes the store;
+- raw observation files are explicitly non-authoritative and may be rotated/retained
+  independently from TimingData.
+
+A concrete sink may bind source/antenna identity from the subscription/composition context
+when that is needed for diagnostics; D04 does not require source identity to be added to
+the generic TagObservation value merely for logging.
+
+### Tag processing
+
+The node-local tag-processing path is:
+
+```text
+TagProcessor
+  -> EventData.registrationIdFor(TagId)
+  -> RegistrationDuplicateFilter
+  -> TagObservationFilter
+       keyed by RegistrationId
+       retains per-TagId passage attribution
+  -> TimingNode.onNewRegistration(...)
+  -> LogBook.execute(...)
+```
+
+`TagProcessor.onTagObserved(...)` is the Antenna EventSource callback. It only
+tries to place the immutable observation in its bounded queue and returns. Mapping,
+filtering and diagnostics do not run on the provider callback thread.
+
+On the TagProcessor lane, EventData first resolves the semantic `TagId` to a
+`RegistrationId`. Unmapped observations are counted and discarded. Duplicate
+suppression is then checked by RegistrationId. Only registrations that still need
+processing enter passage aggregation.
+
+One participant/registration may have multiple physical tags. The passage filter
+therefore remains keyed by RegistrationId:
+
+```text
+TAG-A -> R-123 --+
+                  +--> one R-123 passage
+TAG-B -> R-123 --+
+```
+
+It does **not** maintain independent passage or duplicate windows per tag.
+
+#### Registration passage state
+
+A high-rate reader may report many observations during one physical passage. Keep
+one small mutable passage state per active RegistrationId. In addition to expiry
+and strongest-observation state, retain compact per-tag attribution:
+
+```text
+PassageState R-123
+  firstSeenNanos
+  lastSeenNanos
+
+  TAG-A
+    observationCount
+    strongestRssi
+    first/last observed time
+
+  TAG-B
+    observationCount
+    strongestRssi
+    first/last observed time
+
+  selected
+    TagId
+    strongestRssi
+    observedAtEpochMillis
+```
+
+The implementation need not retain every TagObservation. Per-tag counters/extrema
+are sufficient for the baseline diagnostic requirement.
+
+A passage closes when either condition becomes true:
+
+```text
+now - lastSeen >= quietTimeout
+OR
+now - firstSeen >= maxBurstDuration
+```
+
+The selected candidate is the strongest observation over the complete
+RegistrationId passage, regardless of which associated TagId produced it. Equal
+RSSI keeps the earlier selected observation unless later requirements define
+another rule.
+
+The selected observation's original absolute epoch-millisecond value is emitted
+through `TagProcessor.NewRegistration` and remains a primitive through
+TimingNode and LogBookCommands. The default IF-05 profile canonicalizes that value
+to its required centisecond effective-time precision only when creating the
+TimingRecord.
+
+#### Duplicate suppression and queueing
+
+The filtering order is:
+
+```text
+TagObservation(TagId, RSSI, observedAtEpochMillis, observedAtMonotonicNanos)
+  |
+  +--> EventData.registrationIdFor(TagId)
+          |
+          +--> no RegistrationId ----------------------> unmapped
+          |
+          +--> RegistrationDuplicateFilter ------------> duplicate
+          |
+          +--> TagObservationFilter
+                  keyed by RegistrationId
+                  per-TagId attribution
+                  strongest observation
+                  |
+                  +--> selected registration
+                          |
+                          +--> record RegistrationId duplicate window
+                          +--> emit TagProcessor.NEW_REGISTRATION
+                                  |
+                                  +--> TimingNode OPEN -> LogBook.execute(...)
+                                  +--> TimingNode CLOSED -> ignore registration
+```
+
+The duplicate window belongs to TagProcessor's accepted passage selection, before the
+fire-and-forget TimingNode/LogBook handoff. `LogBook.execute(...)` has no admission result:
+it returns after attempting to queue the command and reports a later queue rejection only as
+a LogBook diagnostic. A persistence/admission failure therefore does not reopen TagProcessor's
+duplicate window. Once R-123 is suppressed, observations from TAG-A and TAG-B are both
+suppressed because EventData resolves both to the same RegistrationId.
+
+#### Engineering diagnostic view
+
+TagProcessor exposes an immutable read-only diagnostic snapshot of pending/recent
+passage processing. It is intended for engineering presentation and may contain:
+
+- RegistrationId;
+- contributing TagIds;
+- observation count per TagId;
+- strongest RSSI per TagId;
+- selected TagId, RSSI and observed time;
+- first/last observation timing;
+- processing state/outcome where retained.
+
+The snapshot is not TimingData, is not authoritative commit state and does not
+allow mutation of TagProcessor. It may be sampled/published through the normal
+Presentation path without making the engineering client part of timing processing.
+
+#### Execution and housekeeping
+
+TagProcessor owns one bounded `SerialLane<TagObservation>`. Its
+`observationQueueCapacity` is the capacity of that lane; there is no separate observation
+buffer in front of another lane.
+
+Runtime supplies one single-thread `tagProcessorScheduledExecutor`. That same executor
+backs the observation lane and is also the processor's direct JDK
+`ScheduledExecutorService` for timed work. Passage-filter sweeps and duplicate-state
+housekeeping use `scheduleWithFixedDelay(...)` only while timed state exists. Policy
+changes use `scheduler.execute(...)`. Because all of those callbacks and the observation
+lane worker use the same physical thread, mutable TagProcessor state remains serialized
+without a scheduled-lane wrapper or tick-item queue.
+
+No timer/scheduled task is created per observation and no dedicated thread is created per
+TagProcessor.
+
+The processor constructor receives EventData and the Runtime-owned scheduler rather than a
+loose mapper or scheduled-lane wrapper:
+
+```java
+TagProcessor(
+    EventData eventData,
+    ReadOnlyConfiguration<TagProcessingPolicy> policyConfiguration,
+    MonotonicClock monotonicClock,
+    TagProcessingMetrics metrics,
+    ScheduledExecutorService scheduler)
+```
+
+`TimingApplicationRuntime.create(...)` does not expose a separate tag-to-registration
+mapper parameter. Normal and simulated compositions construct/use EventData and then use
+the same TagProcessor path.
+
+`TagProcessingPolicy` continues to own quiet timeout, maximum passage duration,
+registration duplicate window, sweep cadence and bounded observation-lane capacity.
+Runtime policy replacement remains serialized by submitting it to the same single-thread
+scheduler.
+
+### SimulatedAntenna
+
+`SimulatedAntenna` implements the same lifecycle and observation contract. It can be
+probed/initialized, inventory can be enabled/disabled and deterministic
+`TagObservation` values can be emitted only while inventory is active.
+
+It owns no TimingNode, mapper, filter or persistence shortcut. Its only test/simulation
+specific capability is deterministic control of the decoded observations it publishes.
+
+### Simulated tag scenarios
+
+The simulated antenna remains deliberately passive. Behaviour such as repeated reads,
+one-versus-two-tag passages, RSSI shape and passage duration belongs to a separate
+engineering simulation layer rather than to `SimulatedAntenna` itself.
+
+The Application-facing engineering boundary is:
+
+```text
+SimulationControl
+  startRegistration(registrationId, profileId)
+```
+
+`SimulationControl` is optional and capability-gated. Runtime supplies it only when the
+composition has a controllable `SimulatedAntenna`. The API adapter calls this narrow
+boundary; it never receives the SimulatedAntenna object and never calls TagProcessor or
+TimingNode directly.
+
+The Runtime implementation, named `SimulatedTagScenarioRunner`, owns:
+
+- the selected `SimulatedAntenna`;
+- the same immutable `EventData` used by TagProcessor;
+- a shared `TimeSource` for observation timestamps;
+- one bounded scheduled execution capability supplied by Runtime.
+
+For one request it resolves `EventData.tagIdsFor(registrationId)`, chooses the requested
+profile and emits that profile's TagObservation sequence through the simulated antenna.
+No second TagId-to-RegistrationId mapping is introduced. A missing registration mapping,
+inactive simulated antenna or unavailable profile is an explicit rejected simulation
+request.
+
+Delayed observations use the shared scheduled-execution mechanism and release the physical
+worker between observations; profile delays must not be implemented with sleeps on the
+shared I/O worker. Multiple accepted scenarios may therefore interleave according to
+their scheduled observation times while still using bounded Runtime-owned execution.
+
+Initial built-in profile ids are:
+
+- `simple` — one minimal deterministic passage, using the first mapped tag;
+- `normal` — a representative clean passage and both mapped tags when at least two are
+  available;
+- `edge` — a deterministic edge-shape family including short, long and single-tag
+  behaviour. The selected edge shape is derived deterministically from the requested
+  RegistrationId so the same request is repeatable.
+
+Exact RSSI values, observation counts and relative offsets are implementation/test-fixture
+data, not Domain or IF-05 semantics. Tests assert the intended shape and resulting
+TagProcessor behaviour without promoting those fixture numbers into product requirements.
+
+For normal standalone development, the public synthetic EventData provider id
+`simulation` reuses the default/reference identifier convention for normal
+registrations `RT-A-0001` through `RT-A-2000`. Each registration resolves from
+the matching physical pair `TT-A-NNNN-1` and `TT-A-NNNN-2`. This keeps
+simulation behaviour representative without introducing a second synthetic
+identity grammar. Reserve scenarios may use `RT-R-NNNN` only when the required
+TeamId assignment is supplied by the scenario/reference data.
+
+The Development Client composes batches from the single-scenario IF-03 operation. Batch
+state stays client-side: count, numeric range, ascending versus seedable pseudo-random
+selection and interval between registration starts. The interval is deliberately outside
+the profile: the profile owns observation timing **inside** one passage.
+
+
+— — —
+
+- **Type:** Detailed Design
+- **Elaborates:** [`Antenna`](41-01-SSD-timing-application-specification-document.md#Antenna), [`AntennaManager`](41-01-SSD-timing-application-specification-document.md#AntennaManager), [`PowerDevice`](41-01-SSD-timing-application-specification-document.md#PowerDevice), [`SimulatedAntenna`](41-01-SSD-timing-application-specification-document.md#SimulatedAntenna), [`SimulatedPowerDevice`](41-01-SSD-timing-application-specification-document.md#SimulatedPowerDevice)
+
+---
+
+
+## Registration work and other runtime work
+
+<a id="DD-RuntimeWorkAndMeasurements"></a>
+
+**DD-RuntimeWorkAndMeasurements — Registration workload and runtime measurement**
+
+Detailed execution-budget and measurement design for registration work,
+background/runtime work, counters, snapshots and engineering access.
+
+The normal automatic-registration flow is:
+
+```text
+antenna/provider callback
+  -> Event<TagObservation>
+  -> TagProcessor
+  -> TimingNode.onNewRegistration(...)
+  -> LogBook.execute(...)
+  -> Data Lane worker
+  -> TimingDataPersistence.append(...)
+  -> LogBookData.add(...)
+  -> timingDataCommittedEvent.emit(...)
+```
+
+The callback/queueing steps must stay short and must not write files, send network data or wait
+for presentation/upstream work. `LogBook.execute(...)` is the fire-and-forget boundary:
+it only tries to place the command on the bounded Data Lane queue and returns without
+executing or waiting for that command. The Data Lane processes queued work independently afterwards.
+
+The Data Lane worker is allowed to wait for the required
+`TimingDataPersistence.append(...)` call because that local durable write is part of the
+TimingData commit. After the record has been written and added to LogBook, short local
+post-commit listeners may run synchronously on the Data Lane worker.
+
+A post-commit listener that needs socket I/O, retry, upstream delivery or another
+potentially slow operation must hand that work to its own bounded delivery mechanism and
+return. Synchronous `Event<T>` delivery is therefore allowed; Step-5 measurements check
+whether listener execution time materially increases TimingNode queue wait or queue
+high-water.
+
+Raw antenna-observation logging is diagnostic work. It uses its own bounded buffer and
+does not sit between TagProcessor and `LogBook.execute(...)`. Losing raw diagnostic
+records does not change whether a TimingData registration is accepted or committed.
+
+## Internal runtime measurements
+
+Runtime measurements are engineering data used to characterize the running Java design.
+They are not TimingData, TimingNode domain state, application status or presentation/API
+data.
+
+The registration path records only small primitive counters and monotonic durations at
+the component where the work happens. Reading measurements is a separate pull operation.
+A read may allocate an immutable snapshot because it is not performed for every
+observation or registration.
+
+Three snapshot groups are used:
+
+```text
+TimingNodeRuntimeSnapshot
+  queue depth / high-water
+  admitted / full / not-running / completed work
+  total + maximum queue wait
+  total + maximum serial execution time
+  TimingData append attempts / failures
+  total + maximum append time
+  committed TimingData count
+  post-commit event deliveries / listener failures
+  total + maximum post-commit event delivery time
+
+TagProcessingMetrics.Snapshot
+  received observations
+  observation-input queue full / processor-not-running ingress
+  closed observation bursts
+  mapped / unmapped observations
+  registration duplicates
+  TimingNode admitted / full / not-running results
+
+JvmRuntimeSnapshot
+  heap used
+  live thread count
+  GC collection count
+  GC collection time
+  shared role-worker CPU time when the JVM exposes it
+```
+
+The exact Java value classes may group fields for readability, but these three meanings
+must remain separate. A JVM/process snapshot is not a TimingNode snapshot, and
+tag-processing counts are not TimingNode queue counts.
+
+### Counter ownership
+
+The component that performs the work owns the hot-path counter update:
+
+- `ExecutionMetrics` owns the common bounded-admission, queue-depth/high-water,
+  queue-wait and execution-duration counters. Each execution primitive owns its own
+  instance: `SerialLane` measures queued typed items, while `SerialTaskRunner` measures
+  eligible cooperative task steps submitted to the JDK scheduler. `AFTER`/`AWAIT`
+  waiting time is not queue wait because no task-runner step is pending then. TagProcessor
+  reads the metrics of its `SerialLane<TagObservation>`; direct scheduled callbacks are
+  not a second execution metric. Because a physical worker is Runtime-owned and may back
+  multiple logical lanes/tasks, an execution snapshot does not claim exclusive worker CPU time;
+- the TimingNode commit path owns TimingData append/commit and post-commit event-delivery
+  counters;
+- `TagProcessingMetrics` owns observation, burst, mapping, duplicate and
+  TimingNode-queueing counters for `domain.node.processing` and exposes them through an
+  immutable `TagProcessingMetrics.Snapshot`;
+- physical role-worker identity/CPU time and JVM/process values are read on demand from the
+  supported JDK management APIs.
+
+Do not copy these counters into a second continuously updated model merely to make them
+easier to display.
+
+### Engineering access boundary
+
+The current one-TimingNode characterization uses one explicit Java reader:
+
+```text
+domain/node/processing/
+  TagProcessingMetrics
+    -> TagProcessingMetrics.Snapshot
+
+runtime/measurement/
+  RuntimeMeasurementReader
+  TimingNodeRuntimeSnapshot
+  JvmRuntimeSnapshot
+```
+
+`RuntimeMeasurementReader` is constructed only by engineering-harness composition. It
+reads the component-owned counters and creates/returns the immutable snapshots above. The
+tag-processing snapshot is the existing `TagProcessingMetrics.Snapshot`; D05 does not
+add a second wrapper with the same fields.
+
+Its visible read shape is:
+
+```java
+TimingNodeRuntimeSnapshot timingNode();
+TagProcessingMetrics.Snapshot tagProcessing();
+JvmRuntimeSnapshot jvm();
+```
+
+The normal public Domain component contract does not expose runtime measurements:
+
+```text
+TimingNode
+  open(...)
+  close()
+  functionalState()
+  locationId()
+  PROPERTIES.CHANGED
+  TIMING_DATA_COMMITTED
+
+  X runtimeMetrics()
+```
+
+`TimingNodeTypes` therefore contains only Domain state/result/problem/exception types;
+an engineering runtime snapshot is not a `TimingNodeTypes` member.
+
+`RuntimeMeasurementReader` is not exposed through `PresentationGateway`, IF-03, the
+local console or the remote shell merely for characterization. T01 obtains it from
+engineering-harness composition that already depends directly on `timing-point-core`.
+
+A02 may realize the reader's internal connection to TimingNode-owned counters with
+package-private readers or composition-retained measurement handles. For tag processing,
+composition may retain the same `TagProcessingMetrics` instance that it passes to
+`TagProcessor`. That mechanical
+choice must not add a public measurement method back to `TimingNode`, must not add
+measurement types to `TimingNodeTypes`, and must not make the reader a second owner of
+runtime state.
+
+### Snapshot semantics
+
+A snapshot is diagnostic, not transactional. Each field must be safe to read while the
+application runs, but fields do not have to represent one globally locked instant. The
+measurement path must not pause registration merely to make all counters change
+atomically together.
+
+Counter and duration totals are cumulative for the lifetime of their owning component.
+The harness calculates workload deltas from a before/after pair instead of resetting
+product counters between runs. Current queue depth is a gauge; queue high-water is a
+lifetime maximum for that component instance.
+
+Unsupported JVM measurements use an explicit unavailable value in the engineering
+snapshot. Measurement unavailability or snapshot creation failure must not change
+registration queueing or TimingData commit behaviour.
+
+No continuous measurement thread is introduced. Timer/scheduler work used for
+TagProcessor burst expiry is unrelated to runtime measurement.
+
+
+— — —
+
+- **Type:** Detailed Design
+- **Elaborates:** [`PlatformExecution`](41-01-SSD-timing-application-specification-document.md#PlatformExecution), [`RuntimeExecutors`](41-01-SSD-timing-application-specification-document.md#RuntimeExecutors), [`TagProcessor`](41-01-SSD-timing-application-specification-document.md#TagProcessor), [`TimingNode`](41-01-SSD-timing-application-specification-document.md#TimingNode)
+
+---
+
+
+## Runtime thread ownership and naming
+
+<a id="DD-RuntimeExecution"></a>
+
+**DD-RuntimeExecution — Runtime execution model**
+
+Detailed Java design for Runtime-owned physical role executors and component-owned bounded
+logical lanes.
+
+Project-owned SI-01 runtime threads use the diagnostic name form
+`tp-<owner>-<role>[-<qualifier>]`. The prefix makes Timing Point Application threads easy
+to separate from JDK, Maven/JGit and third-party library threads in a debugger, profiler or
+thread dump. The compact owner abbreviations used by the current runtime are `pl`
+(Presentation layer), `dl` (Domain layer), `io` (shared device/network I/O executor)
+and `inf` (Infrastructure). The executable entry thread uses the special compact name
+`tp-main` rather than a layer prefix.
+
+Examples:
+
+```text
+tp-main
+tp-pl-console
+tp-pl-remote-shell
+tp-dl-node
+tp-dl-tagproc
+tp-dl-system-conductor
+tp-io-shared
+tp-inf-logging
+tp-inf-live-log
+tp-inf-live-log-writer
+```
+
+JDK and third-party threads keep their own names, for example an HTTP dispatcher or
+WebSocket library worker. Do not rename those merely to make a thread dump visually uniform.
+
+NetBeans development Run/Debug starts SI-01 in a **separate JVM** through Maven
+`exec:exec`, not the in-process `exec:java` goal. The Maven process may therefore own
+its own `main`, ForkJoinPool, JGit and other build-tool threads, but those are not part of
+the Timing Point Application JVM or its runtime thread model.
+
+The child JVM is launched with the application runtime classpath and the configured IF-11
+application file. Debug launch adds the NetBeans JDWP listener address to that child JVM.
+On Windows the exec action enables long-classpath handling. The application uses its normal
+JVM entry point; `Main.main()` names that actual JVM main thread `tp-main`. Packaged
+`java -jar` startup follows the same application code path without any IDE-specific
+thread handoff or launcher workaround.
+
+The two remaining project-owned Presentation threads are intentional blocking-I/O waits:
+`tp-pl-console` blocks on local terminal input and `tp-pl-remote-shell` blocks on
+`ServerSocket.accept()` / the active remote shell session. They are not combined onto one
+worker because either endpoint could then head-of-line block the other. In the Java 8
+baseline, two mostly-idle blocking threads are simpler and safer than introducing a selector/
+NIO state machine solely to reduce visible thread count.
+
+Physical worker names describe the shared executor role, not one logical object that happens
+to submit work. A `TimingNodeId` therefore does **not** appear in the TimingNode or
+TagProcessor worker-thread name: one worker services the lanes for multiple nodes over its
+lifetime. Node identity remains available in lane/component diagnostics and metrics.
+
+Threads owned by the JDK or external libraries keep their own names.
+
+### Thread priority and execution roles
+
+The execution design isolates latency-sensitive TagProcessor work from the
+shared Domain/application workers. Each configured node has an independent
+Data Lane and cooperative Task Lane; the physical worker count is a separate
+capacity decision. Persisted TimingData loading is a TimingNode MainTask step on the
+shared node worker, not a Data Lane item.
+
+```text
+shared TagProcessor role worker
+  -> SerialLane<TagObservation> per TimingNode
+  -> direct scheduled filter/housekeeping callbacks on that same worker
+
+shared TimingNode scheduled executor
+  -> Data Lane per TimingNode: SerialLane<TimingNodeDataItem>
+  -> Task Lane per TimingNode: SerialTaskRunner
+  -> TimingNode MainTask recovery runs as Task Lane work
+
+shared TimingSystemConductor scheduled executor
+  -> one SerialTaskRunner per TimingSystemConductor
+
+shared I/O scheduled executor
+  -> one SerialTaskRunner per AntennaManager
+  -> bounded I/O/simulation work as composed
+```
+
+These logical queues/tasks may share a small fixed set of workers. A separate Task Lane
+does not make blocked persistence on a single worker run concurrently with a heartbeat.
+V01 measures physical worker demand.
+
+Step 5 still starts with normal/default Java thread priority for all roles. D04 defines
+functional separation and makes later role-specific tuning possible, but does not assign
+numeric Java priority values.
+
+V01 measures queue wait, execution latency, CPU/thread behaviour and fairness. The current
+reference stress workload is **20 registrations per second for the whole SI-01 application**.
+That target is aggregate across all configured TimingNodes: adding a second node does not
+turn it into 40 registrations/s. Multi-node characterization should vary the distribution
+of that same total load (for example 20/0 and 10/10) to expose unfair scheduling or queue
+growth without silently multiplying the hardware requirement.
+
+If evidence shows useful separation under load, role-specific priorities may then be tested,
+for example TagProcessor above TimingNode and background work below it. The exact values must
+be qualified on both the development host and the Raspberry Pi target.
+
+Correct registration behaviour, ordering and overload handling must never depend on Java
+thread priority. Java priority is only a scheduler hint and may behave differently between
+JVM/OS combinations.
+
+
+— — —
+
+- **Type:** Detailed Design
+- **Elaborates:** [`PlatformExecution`](41-01-SSD-timing-application-specification-document.md#PlatformExecution), [`RuntimeExecutors`](41-01-SSD-timing-application-specification-document.md#RuntimeExecutors), [`SerialLane`](41-01-SSD-timing-application-specification-document.md#SerialLane), [`SerialTaskRunner`](41-01-SSD-timing-application-specification-document.md#SerialTaskRunner)
+
+---
+
+
+## TimingNode active-object execution and persistence
+
+<a id="DD-TimingNodeExecution"></a>
+
+**DD-TimingNodeExecution — TimingNode execution, LogBook and local events**
+
+Detailed design for TimingNode ordered execution, durable TimingData commit,
+passive LogBookData reads and the local Event/EventSource publication boundary.
+
+The Java design uses composition rather than an `ActiveObject` inheritance
+hierarchy. One TimingNode owns two logically independent bounded serial lanes:
+
+```text
+TimingNode
+  ├── PropertyContainer
+  │     ├── functionalState -> transient CLOSED / OPEN
+  │     ├── operationalState -> node execution INIT / OK / ERROR
+  │     └── locationId -> current LocationId or none
+  ├── Data Lane -> TimingNodeDataLane -> SerialLane<TimingNodeDataItem>
+  │                └── LogBook
+  │                     ├── LogBookDataLane -> result/wait/rejection mapping
+  │                     ├── LogBookOperations -> commands, persistence, recovery + commit
+  │                     └── LogBookState -> recovery state + LogBookData records
+  └── Task Lane -> SerialTaskRunner
+                   ├── TimingNode.MainTask -> startup LogBook recovery
+                   └── NodeService
+                        ├── MainTask -> LogBook INIT / LOADED / ERROR
+                        └── NodeState -> retained live/derived state
+                             ├── DataTask -> current head + bounded TimingData range reads
+                             ├── StateQuery -> ordered result-bearing reads
+                             ├── RaceDataState -> TeamAssignments + StageStartTimes
+                             ├── ActiveRegistrations -> ordered registration list
+                             └── RegisteredTeams -> unique team set / + - changes
+```
+
+The **Data Lane** is the sole writer for normal ordered LogBook commands and queries.
+`TimingNodeDataLane` adapts the generic `SerialLane<TimingNodeDataItem>` to typed
+LogBook-operation and upstream-turn items without creating another queue or thread model.
+`LogBookDataLane` owns result-bearing command/query completion and bounded wait mapping.
+`LogBookOperations` owns state-changing domain operations, TimingData creation,
+record-creation time capture, durable append, recovery reconstruction and commit
+metrics/logging. Internal registration commands carry absolute times as UTC
+epoch-millisecond `long` values; they do not retain `TimingTimestamp` wrappers.
+For the default IF-05 profile, effective `time` is canonicalized to the required
+10 ms boundary before the TimingRecord is committed, while `recordedAtMillis`
+preserves the full 1 ms record-creation time required by `recTime`.
+`LogBookState` contains passive mutable state and committed in-memory TimingData.
+
+Persisted TimingData loading is **not** a Data Lane item. After child activation starts
+normal Data Lane admission, `TimingNode.MainTask` calls
+`LogBook.loadPersistedData()` synchronously on the same physical node worker. Commands
+may queue during that load but cannot execute until the MainTask step releases the worker.
+A successful load publishes `LogBookStatus.LOADED`; load failure publishes
+`LogBookStatus.ERROR`. Status is directly readable and is not another Data Lane query.
+Each later successful commit publishes the committed TimingData record.
+
+The **Task Lane** is the TimingNode's `SerialTaskRunner`. `NodeService.MainTask` handles
+only LogBook availability. NodeState groups the retained Task Lane-owned data while
+RaceDataState, ActiveRegistrations and RegisteredTeams keep their specialized internal
+responsibilities. NodeState directly implements NodeStateAccessor and NodeStateTestControl.
+Normal callers see the read-only accessor; engineering/test composition receives the mutation
+control separately, without an additional state-wrapper implementation object.
+
+NodeState owns DataTask and StateQuery as execution helpers. DataTask owns the source
+cursor, bounded asynchronous LogBook reads and catch-up completion. It reads the current
+LogBook head and continues from its own `nextSequence`, fetching missing records with
+bounded ordered `timingDataRange(...)` queries through LogBookAccessor and yielding
+while each Data Lane read completes. StateQuery preserves Task Lane ordering for
+result-bearing reads and may first yield on DataTask catch-up. The current implementation
+reads at most 64 TimingData records per batch.
+
+Later committed TimingData does not pass through NodeService or NodeState as a second
+history collection. The post-commit event only wakes DataTask; DataTask then catches up
+from the LogBook source. NodeState groups the current live and derived data but does not
+duplicate committed TimingData.
+
+`ActiveRegistrations` stores one ordered compact scalar entry per committed registration
+ADD. TimingData is consumed at the input boundary and is not retained: the row keeps only
+sequence, effective epoch milliseconds, packed RegistrationId, numeric LocationId and
+validity. Its original sequence and WP are stable. A matching REV marks the newest matching
+valid ADD invalid rather than removing it from the display list; nonregistration records
+are ignored. Semantic TimingData value objects are reconstructed only for read/output
+boundaries.
+The display may visit all registrations for one WP in original source order, including
+invalid entries, and is responsible for tracking which rows it has shown. A bounded
+`visitAfter(locationId, afterSequence, limit, visitor)` pages through later ADD rows using
+the original registration sequence, avoiding repeated delivery of earlier rows. This
+cursor does **not** detect later revocations of earlier ADDs: the display also needs
+to revisit its already displayed rows to observe changed validity. Domain owns neither
+the display cursor nor a second per-display update index.
+
+`RegisteredTeams` maintains the unique-team set of the **currently open WP**. The
+LocationId is scope of the whole projection rather than a key repeated in each retained row/map.
+Occurrence counts are still kept per RegistrationId so a live assignment change can move all
+existing occurrences to the newly resolved TeamId. The complete visitor supports the compact
+full synchronization burst; team order has no domain meaning and the CAN bitmap is independent
+of visitation order. Only post-rebuild zero-to-nonzero and nonzero-to-zero membership
+transitions produce incremental + / - notifications. Historical reconstruction itself is silent:
+the display first takes a full burst after the OPEN projection has caught up. CAN encoding,
+delivery and per-display synchronization state remain outside Domain.
+
+Stage-start interpretation is split deliberately between ingress normalization and
+`StageTiming`. `NodeService.applyRaceData(...)` samples the shared `TimeSource` once
+and normalizes every IF-06 SET to one compact UTC long before it enters `RaceDataState`.
+A time-only value retains only UTC `HHmmsscc` and therefore remains below `100000000`;
+a value that contains a date is stored as UTC `yyyyMMddHHmmsscc`. No missing date is added.
+
+Absolute IF-06 values already define their UTC instant. Local date/time values use the
+configured TimeSource zone and reject ambiguous/nonexistent DST wall times. A time-only
+value uses only the zone offset active for the sampled timing context; the result remains
+time-only. If a variable-offset zone has a transition within the relevant twelve-hour
+window, the time-only value is rejected rather than guessing which offset applies.
+
+`StageTiming` is the single elapsed/rollover rule. For a dated start it compares the
+explicit UTC date/time directly with the absolute registration passage. For a time-only
+start it evaluates same-UTC-day/previous-UTC-day rollover and accepts only the unique
+interpretation with `0 <= elapsed < 12 hours`. Exactly twelve hours or otherwise
+unresolvable values remain known stage starts but do not produce elapsed time or rank.
+
+The `domain.node.registration` package contains only **active-WP registration-derived
+state**. It is not a second history store. The LogBook remains authoritative for all
+LocationIds and all earlier OPEN/CLOSE periods.
+
+While the TimingNode is CLOSED there is no usable registration projection. On
+`OPEN(locationId)`, NodeState/DataTask clears the previous projection and scans the complete
+LogBook from sequence one in bounded batches. `ActiveRegistrations` admits only registration
+ADD/REV records whose LocationId equals the newly open WP. Therefore older registrations from
+earlier OPEN periods of the same WP return, while historical rows of every other WP are excluded.
+On CLOSE the derived projection is deactivated and cleared; reopening the same WP rebuilds it
+again from LogBook rather than relying on stale retained history.
+
+Because LocationId scopes the whole active projection, an `ActiveRegistrations.Registration`
+row stores only sequence, effective time, packed RegistrationId and validity. Rows remain in
+original ADD sequence order. A matching REV searches newest-to-oldest and marks the newest
+still-valid row with the same RegistrationId and effective timestamp invalid; the row is not
+removed because a display may already have shown it.
+
+`RegisteredTeams` is the second active-WP projection. It counts valid occurrences by
+RegistrationId and resolves those counts through current RaceData to one unique TeamId set.
+Repeated passages change only occurrence counts. A live assignment change can move all active
+occurrences for one RegistrationId. Historical replay after OPEN suppresses +/- events until
+DataTask has caught up; the full team visitor supplies the synchronization snapshot. Only later
+live zero-to-nonzero and nonzero-to-zero transitions publish incremental events.
+
+Open/close requests may supersede a pending bounded LogBook read. DataTask therefore treats the
+requested LocationId as a generation: an obsolete partial batch is discarded, both projections
+are reset, and the newest requested WP restarts from sequence one. NodeStateAccessor reads wait
+for that reconstruction/catch-up before observing the projection. Its registration/team read methods
+take no LocationId because there is exactly one current OPEN scope.
+
+These objects remain Task Lane-owned. CAN encoding, display cursor/synchronization state,
+persistence, elapsed-time result models and ranking calculations are outside this package.
+
+Do not add a production query/result type merely because a unit or integration test would
+be easier to write with it. A new calculated view belongs in production only when an
+actual application, presentation or I/O consumer requires that behavior. Tests verify the
+retained state through the existing production boundary or package-local implementation
+tests rather than defining extra public API.
+
+A failed persisted-data load leaves LogBook in `LogBookStatus.ERROR` with the concrete
+failure retained in LogBook diagnostics. The TimingNode MainTask still completes its own
+startup path to operational `OK`; `TimingNode.ERROR` is reserved for failure of the
+node's own startup/execution path.
+Neither condition replaces functional OPEN/CLOSED state or current LocationId.
+
+RACE_DATA therefore does **not** cross to the Data Lane: sequence validation,
+compact UTC stage-start normalization, transactional live-state mutation and ACK happen on Task
+Lane task turns. TIMING_DATA
+REQ/replay is different because its source is Data Lane-owned LogBookData; that path uses
+bounded asynchronous handoff and bounded TimingData batches. A cooperative task that needs
+a Data Lane query uses `LogBookAccessor.submit(...)` and `TaskStep.await(...)`; it never
+blocks the shared worker waiting on that completion.
+
+### Why composition instead of an ActiveObject base class
+
+A reusable base class such as `TimingNode extends ActiveObject<Work>` is
+possible, but it would couple the domain type to one threading mechanism.
+Composition keeps that choice replaceable and lets the public TimingNode API stay
+synchronous and domain-oriented.
+
+For state-dependent operations the caller uses the result-bearing LogBook path; device
+or callback ingress may use the fire-and-forget path:
+
+```java
+final class TimingNode {
+    private final LogBookAccessor logBook;
+
+    LogBookAccessor logBook() {
+        return logBook;
+    }
+}
+
+TimingNodeTypes.OpenResult opened =
+        node.logBook().process(LogBookCommands.open(locationId));
+
+node.logBook().execute(
+        LogBookCommands.addAutomaticRegistration(registrationId, time));
+
+// LogBook is the Data Lane component boundary.
+// LogBookDataLane owns LogBook-specific lane execution mechanics.
+// LogBookOperations owns state-changing command/commit work.
+// LogBookState owns passive state and committed TimingData; LogBookStatus owns published status.
+// SerialTaskRunner owns cooperative TaskRun execution for the TimingNode Task Lane.
+// NodeService.MainTask handles LogBook status and input-processing coordination.
+// NodeState implements NodeStateAccessor and NodeStateTestControl; Runtime exposes them separately.
+// DataTask rebuilds/catches up the OPEN-WP projection; StateQuery preserves ordered reads.
+// ActiveRegistrations owns ordered ADD rows and validity for the currently open WP.
+// RegisteredTeams owns the current open-WP unique-team set and live + / - changes.
+// Calculated presentation/query models are added only for an actual production consumer.
+// UpstreamDataSync invokes NodeService.applyRaceData(...) synchronously on the Task Lane.
+```
+
+The visible `TimingNode` delegates execution mechanics to its child components.
+`execute(command)` returns after queueing and has no synchronous domain result.
+`process(command)` and `process(query)` are the result-bearing boundary. An ORDERED
+query waits for its Data Lane turn; a CURRENT query may read an already safely published
+snapshot directly. The word `process` therefore denotes "handle this request and return
+its result", not "always enqueue this request". Callers use the intentional child boundary
+rather than reaching into mutable state.
+
+The important split is:
+
+```text
+open(locationId) / close / consistency-sensitive query
+    -> queued internally
+    -> execute against current ordered TimingNode state
+    -> caller receives processed domain result
+
+device/callback ingress that is explicitly offer-only
+    -> bounded queue result
+    -> callback may continue immediately
+    -> later processing has no synchronous caller waiting for its domain result
+```
+
+A queue result is never used as a substitute for the domain result of
+a state-dependent command.
+
+The Future used to connect the queued work with a waiting caller is an internal
+Active Object mechanism. It does not appear in the normal TimingNode
+application/domain interface. The current synchronous caller contract needs only an internal plain
+`Future<R>`; `CompletionStage` is not required.
+
+Code already running on the Data Lane uses direct private/domain methods
+such as `doOpen()` rather than calling the blocking public `open()` method
+again. Re-entering a public blocking operation from the same serial lane would
+wait on work that cannot run until the current work item finishes.
+
+### Operation results and execution failures
+
+Keep normal semantic results small and owned by the boundary that defines them.
+
+For example:
+
+```text
+TimingNodeTypes
+  FunctionalState
+  OpenResult
+  CloseResult
+
+Application
+  CommandResult
+    COMMITTED
+    NODE_NOT_OPEN
+
+LogBook command result
+  TimingData
+```
+
+`CommandResult` belongs to Application because it describes a
+presentation-triggered command, not TimingNode state and not a LogBook commit
+primitive. A LogBook registration/revocation command returns the committed
+`TimingData` directly. The proxy adds the normal application result around that
+value and decides `NODE_NOT_OPEN` before the LogBook is called.
+
+Technical queue rejection, unavailable execution, interruption, timeout and
+execution failure are not another TimingNode result/state enum. The Data Lane
+retains the bounded wait guards and logs the concrete technical reason where it
+is known. The Java call aborts normal flow with an ordinary runtime failure.
+Forwarding Application/Presentation layers do not translate the internal failure
+taxonomy into a second public reason model.
+
+A command wait timeout still has an important diagnostic distinction: already
+accepted work may complete later. The owning Data Lane log therefore records
+that the final command outcome may be unknown. An ordered-query timeout records
+only that no query result was obtained. That distinction belongs in retained
+diagnostics; it does not require a generic public operation-state exception.
+
+Exceptions are not grouped into `TimingNodeTypes`. That source-only grouping is
+for actual TimingNode value/result types. Introduce an owner-specific exception
+only when callers genuinely need distinct programmatic recovery behaviour;
+otherwise ordinary Java runtime failure plus owning-boundary diagnostics is
+preferred.
+
+The Java baseline uses separate wait guards for the two result-bearing LogBook
+operation families:
+
+```text
+TimingData commit command
+  OPEN / CLOSE / AUTO_REG / MAN_REG / REV
+  default caller wait guard: 5000 ms
+
+ORDERED LogBook query
+  count/range reads that enter the Data Lane
+  default caller wait guard: 2000 ms
+
+CURRENT LogBook query
+  published immutable/current snapshot
+  no Data Lane wait timeout
+```
+
+The 5000 ms commit value is a guard on how long the synchronous caller waits for
+the complete ordered commit result. It includes time already queued ahead of the
+command plus command execution, durable append, in-memory commit and result
+delivery. It is **not** a statement that one file append is allowed to consume
+five seconds. Normal local persistence is expected to complete far faster; a
+timeout is an operational failure signal.
+
+An accepted command is not cancelled when this caller wait expires. The Data
+Lane may still complete it later, so the caller-visible state-change outcome
+remains unknown until current state or a later committed fact establishes the
+result. An ORDERED-query timeout has different meaning: no query result was
+received within its wait guard, but no state-change outcome is implied.
+
+These two defaults are explicit composition constants, not one generic
+`operationTimeoutMillis`. Runtime configuration is not added solely for tuning
+before target measurements justify it. Timeout log records include the effective
+duration so the value is observable when a guard fires.
+
+### SerialLane design
+
+`SerialLane<T>` is the generic bounded typed FIFO/one-worker primitive. It stores
+caller-owned values and receives an item processor at construction. The backing
+`Executor` sees only the lane's fixed queue-worker runnable.
+
+The logical node topology is:
+
+```text
+RuntimeExecutors.timingNodeExecutor
+  ├─ TimingNode A Data Lane -> SerialLane<TimingNodeDataItem>
+  ├─ TimingNode A Task Lane -> SerialTaskRunner
+  ├─ TimingNode B Data Lane -> SerialLane<TimingNodeDataItem>
+  └─ TimingNode B Task Lane -> SerialTaskRunner
+```
+
+`offer(T)` never waits for capacity and returns one of `ACCEPTED`, `FULL` or
+`NOT_RUNNING`. A successful first offer while idle schedules the one fixed worker.
+Further offers only extend the lane queue while that worker is scheduled/running.
+
+One worker run processes at most `maxItemsPerRun` items that were available at the start
+of that run. If items remain afterwards, the same worker is scheduled once more. This
+creates a fairness point for sibling lanes sharing the same physical executor.
+
+`SerialLane` does not define application exception policy, result futures or a FAILED
+lifecycle state. The item owner contains expected domain/runtime failures where required.
+A backing-executor `RejectedExecutionException` stops further admission and clears queued
+items because the lane can no longer guarantee execution. `close()` stops admission and
+waits for already accepted work to drain; it never shuts down the Runtime-owned executor.
+
+Result-bearing domain adapters carry their own completion with the queued item. For
+example, LogBook query/command items complete their own `CompletableFuture`; the generic
+lane remains unaware of command/query semantics.
+
+The required behaviour is:
+
+- queue capacity is visible and bounded per logical lane;
+- FIFO order is preserved per lane;
+- at most one worker for one lane is scheduled/running at a time;
+- one worker run processes no more than `maxItemsPerRun` items;
+- sibling lanes may share one physical worker and make progress at batch boundaries;
+- `isExecutingOnCurrentThread()` identifies ownership without exposing a lifecycle enum;
+- closing drains accepted work but does not own physical-executor shutdown;
+- Runtime stops physical role executors only after component lanes/runners have stopped.
+
+`ExecutionMetrics` provides the shared queue/admission, depth/high-water, queue-wait
+and execution-duration model. Each `SerialLane` and `SerialTaskRunner` owns its own
+instance; `metrics().snapshot()` creates the immutable engineering view.
+
+### SerialTaskRunner and direct JDK scheduling
+
+`SerialTaskRunner` is an independent cooperative execution primitive. It does not
+subclass, contain or delegate to `SerialLane`; it owns runner-local bounded pending-step
+admission and uses the Runtime-supplied single-thread `ScheduledExecutorService` directly.
+
+`runTask(YieldingTask)` creates one TaskRun and submits its first eligible step. Each
+executor turn invokes one `runStep()`. `AGAIN` submits the continuation at the executor
+queue back, `AFTER` uses `ScheduledExecutorService.schedule(...)` only as a timer,
+`AWAIT` attaches an asynchronous completion callback, and `DONE` completes the run.
+Delayed/awaiting tasks occupy neither a runner pending-step slot nor the physical worker
+until their continuation becomes eligible.
+
+TagProcessor deliberately does **not** use `SerialTaskRunner`: observations are plain
+typed items, so one `SerialLane<TagObservation>` is sufficient. Its timed filter and
+housekeeping work runs directly on the same single-thread JDK scheduled executor that
+backs the observation lane.
+
+Current composition is:
+
+```text
+TimingNode
+  -> Data Lane: SerialLane<TimingNodeDataItem>
+  -> Task Lane: SerialTaskRunner
+  -> TagProcessor: SerialLane<TagObservation>
+                   + direct ScheduledExecutorService callbacks
+
+TimingSystemConductor
+  -> SerialTaskRunner
+  -> shared timingSystemConductorExecutor
+
+AntennaManager
+  -> SerialTaskRunner
+  -> sharedIoScheduledExecutor
+```
+
+`SimulatedTagScenarioRunner` uses the Runtime-owned `sharedIoScheduledExecutor`
+directly. It keeps at most 32 active scenarios and schedules only the next step of each
+scenario, so simulation work is bounded without another logical lane or scheduling wrapper.
+A lifecycle-generation guard prevents delayed work from a previous activation from emitting
+after deactivate/reactivate.
+
+All execution is JDK-backed. Physical parallelism remains a Runtime decision; adding
+logical lanes or task runners does not imply adding threads.
+
+
+— — —
+
+- **Type:** Detailed Design
+- **Elaborates:** [`Event`](41-01-SSD-timing-application-specification-document.md#Event), [`EventSource`](41-01-SSD-timing-application-specification-document.md#EventSource), [`LogBook`](41-01-SSD-timing-application-specification-document.md#LogBook), [`PlatformEvents`](41-01-SSD-timing-application-specification-document.md#PlatformEvents), [`TimingNode`](41-01-SSD-timing-application-specification-document.md#TimingNode)
+
+---
+
+
+## Shared TimingData library and concrete profiles
+
+<a id="DD-TimingDataProfiles"></a>
+
+**DD-TimingDataProfiles — TimingData shared contract and profiles**
+
+Detailed Java design for the shared TimingData API, default profile,
+factory/codec boundary and typed provider mechanism.
+
+Both SI-01 and the Development Client need common TimingData contracts without
+depending on the whole SI-01 application core. The shared artifact therefore
+owns the semantic interfaces and value types that every supported TimingData
+profile must implement; it does **not** require one concrete record class for all
+profiles.
+
+The traced Java semantic model is intentionally small:
+
+```text
+shared/timing-data
+  TimingData
+    common TimingNodeId / sequence / LocationId / time access
+    AutomaticRegistration
+      RegistrationId
+    ManualRegistration
+      RegistrationId
+      ManualTimeSource
+    ManualTimeSource
+    RecordKey
+  LocationId
+  RegistrationId
+  TimingTimestamp
+  TimingDataFactory
+    Context
+  TimingDataCodec
+    CodecException
+  TimingDataProvider
+
+default profile
+  DefaultTimingDataFactory
+    private automatic/manual immutable implementations
+  DefaultTimingDataCodec
+
+test / product-specific profile
+  DummyEventTimingDataFactory
+    private profile-specific immutable implementations
+  DummyEventTimingDataCodec
+```
+
+There is no intermediate public `RegistrationData` interface. Automatic and
+manual registration are already the useful type-safe variants, so another level
+would add hierarchy without giving callers a stronger contract.
+
+`LocationId` and `RegistrationId` are standalone shared value types because
+they are used at boundaries beyond one concrete TimingData subtype. They define
+stable Java/IF-05 representations and only minimal structural validity. Concrete
+event/profile/reference-data meaning and allowed values remain outside the shared
+library.
+
+Likewise, `TimingNodeStateData` and `RegistrationRevokedData` are not created
+from old record-enum values. UC-002 still defers OPEN/CLOSE-as-TimingData and the
+current use-case baseline does not require revocation. Add those semantic types
+only after a promoted requirement justifies them.
+
+The semantic interfaces are common. A configured profile supplies simple
+immutable implementing classes:
+
+```java
+TimingData.AutomaticRegistration automatic =
+        timingDataFactory.createAutomaticRegistration(context, registrationId);
+
+TimingData.ManualRegistration manual =
+        timingDataFactory.createManualRegistration(
+                context, registrationId, TimingData.ManualTimeSource.OPERATOR_ENTERED);
+```
+
+The return types preserve variant type safety even when the configured provider
+returns a different concrete implementation.
+
+### Stateless TimingData factory
+
+`TimingDataFactory` is a stateless construction service. It does not validate
+TimingNode state policy, allocate sequence numbers, resolve `TagId` or
+`TeamId`, commit data, own a LogBook or publish events. Those responsibilities
+stay with the TimingNode and its contained domain components.
+
+Source/reference resolution happens outside the TimingData factory. EventData owns
+TagId-to-RegistrationId and stable RegistrationId-to-TeamId relationships. Live TeamId lookup may fall back through TeamAssignments:
+
+```text
+TagId -> EventData -> RegistrationId
+                        |
+                        +-> EventData stable TeamId
+                        |
+                        +-> TeamAssignments fallback TeamId
+```
+
+TimingData continues to store the already resolved RegistrationId; TeamId is derived
+for race/stage views and does not become TimingData identity.
+
+The factory receives the already selected common construction values in one
+generic context and only the extra values required by the requested variant:
+
+```java
+TimingData.AutomaticRegistration createAutomaticRegistration(
+        TimingDataFactory.Context context,
+        RegistrationId registrationId);
+
+TimingData.ManualRegistration createManualRegistration(
+        TimingDataFactory.Context context,
+        RegistrationId registrationId,
+        TimingData.ManualTimeSource timeSource);
+```
+
+```text
+TimingDataFactory.Context
+  timingNodeId
+  sequenceNumber
+  locationId
+  effectiveTime
+  recordedAt
+```
+
+For the current manual variant, `TimingData.ManualTimeSource` is constrained to
+`SYSTEM_ASSIGNED` or `OPERATOR_ENTERED`. Automatic registration uses observed
+time by definition, so callers do not pass an `origin` or `OBSERVED` flag
+merely to restate the return type.
+
+The context contains values only. It does not contain `TimingNode`, `LogBook`,
+stores, services or other mutable collaborators.
+
+The design does not use an abstract TimingData base class.
+Concrete immutable implementations may delegate to `TimingDataFactory.Context`.
+Introduce a private/protected helper only when multiple real implementations show
+enough repeated behaviour to justify it; such a helper remains implementation
+reuse, not an additional public semantic layer.
+
+### Provider boundary
+
+A `TimingDataProvider` supplies a coherent family:
+
+```text
+TimingDataProvider
+  stable provider/profile id
+  TimingDataFactory
+  TimingDataCodec
+```
+
+The factory creates the concrete in-memory TimingData objects. The codec
+encodes/decodes the same profile family.
+The built-in default/reference codec uses Jackson's streaming API only; JSON Lines
+record framing, durable append and incomplete-tail recovery remain store responsibilities.
+Provider discovery and configuration remain bootstrap/infrastructure concerns.
+
+A `TimingDataCodec` is a **configured translator instance**. Its per-record API
+remains deliberately small:
+
+```java
+byte[] encode(TimingData data)
+TimingData decode(byte[] encodedRecord)
+```
+
+Do not add event date, time zone, deployment configuration or UI context to those
+method calls. A provider that needs translation context receives and validates it
+at provider/codec creation time, and the returned codec captures the resolved
+immutable values it needs.
+
+For example, a profile that serializes registration time as local time-of-day
+may capture an event-date/day-selection rule and a `ZoneId` or fixed
+`ZoneOffset`. If the profile cannot resolve a local time uniquely (for example
+a daylight-saving overlap) or cannot represent the semantic instant within its
+configured day scope, encode/decode fails according to that profile rather than
+guessing from the host clock.
+
+This translation context is distinct from `TimingDataFactory.Context`.
+`TimingDataFactory.Context` contains semantic values of one record; provider
+configuration explains how those values are represented externally.
+
+The current `TimingDataProvider.createCodec()` shape does not force a
+configuration mechanism by itself. When generic provider discovery/configuration
+is implemented, bootstrap must construct or configure the provider before asking
+it for a codec. If implementation evidence requires a typed provider
+creation/configuration object, that type belongs at the provider/bootstrap
+boundary, not in `TimingDataCodec.encode/decode`.
+
+The provider therefore does more than representation translation, but it still
+does not own TimingNode business rules. It chooses the concrete TimingData
+implementation and its representation while preserving the common semantic
+contracts defined by IF-05.
+
+Both the Java-8 SI-01 runtime and Java-17 Development Client can depend on
+`event-timing-data`. The Development Client may inspect the common interfaces
+without depending on SI-01 Domain classes. Profile-specific inspection can be
+added only where a real consumer needs it.
+
+The current design keeps the default/reference profile inside the shared
+TimingData library while the design is still changing; do not create another
+production Maven artifact solely to mirror the conceptual profile split. A dummy
+event-specific implementation in tests is sufficient to prove that the common
+contract does not accidentally depend on the default concrete classes. A
+separate provider artifact becomes justified when a real independently deployed
+profile exists.
+
+This artifact contains no SI-01 runtime/application classes and no JavaFX code.
+Its Java API must remain usable from both the Java-8 SI-01 baseline and the
+Java-17 Development Client.
+
+
+— — —
+
+- **Type:** Detailed Design
+- **Elaborates:** [`TimingData`](41-01-SSD-timing-application-specification-document.md#TimingData)
+
+---
+
+
+## Derived consumers
+
+<a id="DD-ExtensionAndComposition"></a>
+
+**DD-ExtensionAndComposition — Extension and product composition**
+
+Detailed design for supported consumer topologies, Java-8 provider discovery,
+public/private composition, artifact extraction and dependency checks.
+
+The application core is deliberately not tied to one executable topology. Plausible consumers include:
+
+```text
+single-system application
+multi-system / simulation application
+public reference/test application
+private/product application
+```
+
+These are consumer possibilities, not modules to create now.
+
+## Java 8 extension/provider mechanism
+
+A concrete public/private extension requirement now exists, so provider discovery
+is no longer merely an optional capability. Keep the mechanism narrow and
+composition-oriented.
+
+The first V04 implementation slice covers only `EventDataProvider` and
+`TimingDataProvider`:
+
+```text
+IF-11 provider ids
+        |
+        v
+runtime.TimingApplicationRuntime.create(...)
+        |
+        v
+infra.extension.ExtensionRegistry
+        |
+        +--> built-in EventDataProvider("reference")
+        +--> built-in TimingDataProvider("reference")
+        +--> ServiceLoader external EventDataProvider(s)
+        +--> ServiceLoader external TimingDataProvider(s)
+        |
+        v
+resolve configured ids
+        |
+        +--> EventData
+        +--> TimingDataFactory + TimingDataCodec
+        |
+        v
+normal application composition
+```
+
+`infra.extension.ExtensionRegistry` owns only typed provider registration,
+duplicate-id detection, discovery from a supplied `ClassLoader` and lookup by
+stable provider ID. It is not a generic `Plugin` API and it does not know
+TimingNode/Application behaviour.
+
+The public built-in EventData and TimingData providers both use the IF-11 stable
+ID `reference`. TimingData therefore has a concrete
+`DefaultTimingDataProvider` beside the existing default factory/codec.
+
+For the Java 8 baseline, an external provider JAR uses normal
+`META-INF/services` metadata. A caller may create a dedicated
+`URLClassLoader` for one or more provider JARs and pass that loader to
+`ExtensionRegistry`; the registry then uses standard `ServiceLoader`.
+The registry does not choose a filesystem extension directory, scan arbitrary
+folders, own hot reload/unload or own class-loader lifecycle. The exact
+external-JAR directory/layout and dependency-isolation policy therefore remain
+separate/open deployment decisions.
+
+Each configured TimingSystem carries its own `eventDataProvider` and
+`timingDataProvider` selections. The reference IDs remain the compiled/default
+profile values when a deployment does not override them. Runtime resolves both
+provider IDs per TimingSystem before creating that system's TimingData
+persistence or TimingNodes. Unknown configured IDs and duplicate discovered IDs
+within one provider family fail before normal composition rather than silently
+falling back.
+
+A synthetic V04 test creates an external provider JAR and a dedicated
+`URLClassLoader` to prove that `ServiceLoader` discovery works outside the
+built-in class set.
+
+Provider contracts belong with the capability whose meaning they create;
+class-loader/discovery mechanics belong under application-core Infrastructure
+support. Domain, Application and I/O component code must not depend on
+`URLClassLoader`, `ServiceLoader` or a generic extension interface.
+
+Step 7 adds the typed `UpstreamDataProvider` family. Later slices may register
+`AntennaProvider`, `CanProtocolProvider` and
+`DisplayProtocolProvider` families in the same registry pattern when those
+capabilities are implemented. They are intentionally not created as empty
+families in the first EventData/TimingData slice.
+
+IF-11 selects providers by stable provider ID. Missing providers, duplicate IDs
+or an incompatible provider/configuration combination fail during validation or
+startup rather than silently falling back to another implementation.
+
+Whether the provider contracts eventually justify a separately versioned SPI
+artifact remains implementation/evidence-driven.
+
+## Public/private composition
+
+Expected private/product-specific areas may include:
+
+- production RFID control/protocol details;
+- product-specific I/O/protocol implementations;
+- production asset/source inventory and mappings;
+- production upstream schemas/codecs where sensitive;
+- deployment-specific composition/policies.
+
+Prefer normal composition and constructor/factory injection. Do not introduce a subclass-based `BaseApplication` extension model. The provider mechanism above is the explicit runtime-extension boundary; do not generalise it into arbitrary plugin access from domain/application code.
+
+## Artifact extraction criteria
+
+Create additional artifacts only when a real boundary requires them. Candidate extractions include:
+
+- RabbitMQ/messaging I/O;
+- Linux/Raspberry-Pi platform support;
+- public/private RFID/CAN I/O implementations;
+- separately versioning `event-timing-data` if binary compatibility/release evidence requires an independent release cycle;
+- reusable test support.
+
+Extraction is preferred over speculative libraries: keep package/responsibility boundaries clean enough that a proven boundary can be split without redesign.
+
+## Architecture/dependency checks
+
+Useful automated rules may include:
+
+- presentation packages do not own or persist application state;
+- Domain does not depend on Presentation; Domain-to-I/O dependencies must be explicit design relationships, such as `domain.system.TimingSystemConductor -> AntennaManager`;
+- platform packages do not depend on event-timing application/domain behaviour;
+- wire/protocol classes stay with their presentation or I/O capability;
+- semantic contracts are not moved into transport packages merely because transport code uses them;
+- public code contains no real deployment mappings or proprietary values;
+- domain/application/runtime components do not depend on extension class-loader mechanics;
+- duplicate provider IDs and unknown configured provider IDs fail deterministically;
+- the executable consumes `timing-point-core` rather than copying/forking application-core source;
+- the core artifact does not carry a concrete SLF4J provider/backend transitively;
+- an executable runtime contains exactly one intended SLF4J provider.
+
+
+— — —
+
+- **Type:** Detailed Design
+- **Elaborates:** [`EventData`](41-01-SSD-timing-application-specification-document.md#EventData), [`TimingData`](41-01-SSD-timing-application-specification-document.md#TimingData)
+
+---
+
+
+## Open detailed-design decisions
+
+- exact package granularity after real application/domain classes exist;
+- final package naming where capability-oriented packages prove clearer than layer names;
+- exact reusable boundary between single-instance runtime mechanics and multi-system application orchestration;
+- exact bounded TimingNode work-queue capacity and queue-full operational policy after Raspberry-Pi burst/latency measurement;
+- whether the 5000 ms commit and 2000 ms ORDERED-query wait guards need deployment configuration after target-platform measurements;
+- compact LogBook indexing required by future ranking/query implementation when measurement justifies it;
+- exact antenna automatic-recovery trigger, retry/backoff, retry-limit and terminal-failure policy;
+- exact external extension-JAR directory/layout and dependency-isolation policy;
+- private Maven artifact publication/consumption mechanism;
+- version alignment between public core/provider contracts and private implementations;
+- which I/O capabilities eventually deserve independent artifacts;
+- whether and when provider contracts deserve a dedicated independently versioned SPI artifact;
+- exact field logging configuration/rotation/retention policy in the default executable.

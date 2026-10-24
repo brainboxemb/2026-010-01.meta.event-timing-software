@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1740" height="900" viewBox="0 0 1740 900">
+<defs>
+<marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+<path d="M0,0 L0,6 L9,3 z" fill="#5f6368"/>
+</marker>
+</defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="30.0" y="38.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#202124">Figure SDD01-TD02 — TimingNode execution and data ownership</text>
+<text x="30.0" y="68.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Logical lane separation defines ownership and FIFO ordering, not physical parallelism. Cross-lane work is bounded and asynchronous; neither lane waits synchronously for the other.</text>
+<rect x="40" y="110" width="285" height="665" rx="10" ry="10" fill="#fff8df" stroke="#d6b656" stroke-width="2"/>
+<text x="56.0" y="132.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#202124">Callers / ingress</text>
+<rect x="360" y="110" width="925" height="665" rx="10" ry="10" fill="#eef8ee" stroke="#82b366" stroke-width="2"/>
+<text x="376.0" y="132.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#202124">TimingNode component</text>
+<rect x="1320" y="110" width="375" height="665" rx="10" ry="10" fill="#fff0ee" stroke="#b85450" stroke-width="2"/>
+<text x="1336.0" y="132.0" text-anchor="start" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#202124">Runtime / I/O</text>
+<polyline points="295.0,245.0 342.5,245.0 342.5,195.0 405.0,195.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="313.8" y="182.0" width="120" height="22" fill="#ffffff" opacity="0.94"/>
+<text x="373.8" y="194.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">command / query</text>
+<polyline points="405.0,195.0 587.5,195.0 587.5,355.0 770.0,355.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="440.2" y="182.0" width="112" height="22" fill="#ffffff" opacity="0.94"/>
+<text x="496.2" y="194.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">data operation</text>
+<polyline points="1240.0,195.0 1032.5,195.0 1032.5,355.0 825.0,355.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="1060.2" y="182.0" width="152" height="22" fill="#ffffff" opacity="0.94"/>
+<text x="1136.2" y="194.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">task / coordination</text>
+<polyline points="295.0,481.0 342.5,481.0 342.5,511.0 405.0,511.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="329.8" y="498.0" width="88" height="22" fill="#ffffff" opacity="0.94"/>
+<text x="373.8" y="510.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">observation</text>
+<polyline points="587.5,470.0 587.5,410.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="492.5" y="427.0" width="190" height="22" fill="#ffffff" opacity="0.94"/>
+<text x="587.5" y="439.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">bounded registration command</text>
+<polyline points="295.0,651.0 305.0,651.0 305.0,420.0 815.0,420.0 815.0,355.0 825.0,355.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="512.0" y="407.0" width="96" height="22" fill="#ffffff" opacity="0.94"/>
+<text x="560.0" y="419.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">notification</text>
+<polyline points="1007.5,410.0 1007.5,470.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="912.5" y="427.0" width="190" height="22" fill="#ffffff" opacity="0.94"/>
+<text x="1007.5" y="439.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">dispatch / protocol state</text>
+<polyline points="825.0,355.0 770.0,355.0" fill="none" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<rect x="702.5" y="342.0" width="190" height="22" fill="#ffffff" opacity="0.94"/>
+<text x="797.5" y="354.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">bounded LogBook request / immutable batch</text>
+<polyline points="770.0,355.0 825.0,355.0" fill="none" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<rect x="702.5" y="342.0" width="190" height="22" fill="#ffffff" opacity="0.94"/>
+<text x="797.5" y="354.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">recovered / committed TimingData facts</text>
+<polyline points="587.5,410.0 587.5,420.0 395.0,420.0 395.0,610.0 587.5,610.0 587.5,620.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="396.2" y="407.0" width="190" height="22" fill="#ffffff" opacity="0.94"/>
+<text x="491.2" y="419.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">sole LogBook / persistence mutation</text>
+<polyline points="1007.5,410.0 1007.5,420.0 815.0,420.0 815.0,610.0 1007.5,610.0 1007.5,620.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="816.2" y="407.0" width="190" height="22" fill="#ffffff" opacity="0.94"/>
+<text x="911.2" y="419.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">sole RaceData / derived-state mutation</text>
+<polyline points="770.0,355.0 780.0,355.0 780.0,290.0 1340.0,290.0 1340.0,310.0 1350.0,310.0" fill="none" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<rect x="984.0" y="277.0" width="152" height="22" fill="#ffffff" opacity="0.94"/>
+<text x="1060.0" y="289.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Data SerialExecutor</text>
+<polyline points="1190.0,355.0 1302.5,355.0 1302.5,310.0 1350.0,310.0" fill="none" stroke="#5f6368" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<rect x="1170.2" y="342.0" width="152" height="22" fill="#ffffff" opacity="0.94"/>
+<text x="1246.2" y="354.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">Task SerialExecutor</text>
+<polyline points="1190.0,519.0 1302.5,519.0 1302.5,520.0 1350.0,520.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="1170.2" y="506.0" width="152" height="22" fill="#ffffff" opacity="0.94"/>
+<text x="1246.2" y="518.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">send / read mailbox</text>
+<polyline points="770.0,680.0 780.0,680.0 780.0,750.0 1340.0,750.0 1340.0,691.0 1350.0,691.0" fill="none" stroke="#5f6368" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="972.0" y="737.0" width="176" height="22" fill="#ffffff" opacity="0.94"/>
+<text x="1060.0" y="749.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#202124">TimingData persistence</text>
+<rect x="70" y="205" width="225" height="80" rx="8" ry="8" fill="#fffaf0" stroke="#d6b656" stroke-width="2"/>
+<text x="182.5" y="245.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">Presentation / API / application caller</text>
+<rect x="70" y="445" width="225" height="72" rx="8" ry="8" fill="#fffaf0" stroke="#d6b656" stroke-width="2"/>
+<text x="182.5" y="481.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">Antenna observations</text>
+<rect x="70" y="615" width="225" height="72" rx="8" ry="8" fill="#fffaf0" stroke="#d6b656" stroke-width="2"/>
+<text x="182.5" y="651.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">node-scoped upstream input</text>
+<rect x="405" y="155" width="835" height="80" rx="8" ry="8" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+<text x="822.5" y="186.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">TimingNode</text>
+<text x="822.5" y="204.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">facade • composition • lifecycle</text>
+<rect x="405" y="300" width="365" height="110" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="587.5" y="337.1" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">LogBookProcessor</text>
+<text x="587.5" y="355.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">Data Lane owner</text>
+<text x="587.5" y="372.9" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">TimingData • LogBook • persistence</text>
+<rect x="825" y="300" width="365" height="110" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="1007.5" y="337.1" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">NodeTaskProcessor</text>
+<text x="1007.5" y="355.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">Task Lane owner</text>
+<text x="1007.5" y="372.9" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">RaceData • derived timing • protocol</text>
+<rect x="405" y="470" width="365" height="82" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="587.5" y="502.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">TagProcessor</text>
+<text x="587.5" y="520.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">independent scheduled lane</text>
+<rect x="825" y="470" width="365" height="98" rx="8" ry="8" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
+<text x="1007.5" y="510.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">UpstreamHandler</text>
+<text x="1007.5" y="528.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">UpstreamHeartbeat • UpstreamDataSync • LogBookSync</text>
+<rect x="405" y="620" width="365" height="120" rx="8" ry="8" fill="#fffaf0" stroke="#d6b656" stroke-width="2"/>
+<text x="587.5" y="662.1" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">Data Lane-owned state</text>
+<text x="587.5" y="680.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">LogBook • TimingDataPersistence</text>
+<text x="587.5" y="697.9" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">lifecycle/location • TimingData sequence</text>
+<rect x="825" y="620" width="365" height="120" rx="8" ry="8" fill="#fffaf0" stroke="#d6b656" stroke-width="2"/>
+<text x="1007.5" y="662.1" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">Task Lane-owned live state</text>
+<text x="1007.5" y="680.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">RaceData • TeamAssignments • StageStartTimes</text>
+<text x="1007.5" y="697.9" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">UniqueTeamRegistrations • StageTiming</text>
+<rect x="1350" y="260" width="315" height="100" rx="8" ry="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="1507.5" y="301.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">Runtime-owned shared ExecutorService</text>
+<text x="1507.5" y="319.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">backs Data + Task SerialExecutor lanes</text>
+<rect x="1350" y="475" width="315" height="90" rx="8" ry="8" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
+<text x="1507.5" y="511.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">UpstreamStream</text>
+<text x="1507.5" y="529.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">non-blocking messaging mailbox</text>
+<rect x="1350" y="650" width="315" height="82" rx="8" ry="8" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
+<text x="1507.5" y="682.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">AppendOnlyRecordStore</text>
+<text x="1507.5" y="700.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#202124">FileAppendOnlyRecordStore</text>
+</svg>
