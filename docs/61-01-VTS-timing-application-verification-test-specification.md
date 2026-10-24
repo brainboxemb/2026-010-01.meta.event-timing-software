@@ -696,8 +696,8 @@ TIMING_DATA_REQ.
    only after that range completes.
 6. Repeat with `fromSeq = capturedHead + 1` and verify the empty replay range completes
    the replay-to-live handoff without inventing data.
-7. Disconnect/reconnect and verify positions are refreshed through SEQ; no RACE_DATA
-   source-head SYNC is required.
+7. Disconnect/reconnect and verify positions are refreshed through SEQ; verify that
+   RACE_DATA does not perform a separate source-head exchange.
 
 **Expected result**
 
