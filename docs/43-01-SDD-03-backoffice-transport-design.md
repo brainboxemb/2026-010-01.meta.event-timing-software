@@ -461,8 +461,8 @@ Central System -> TimingNode
 
 ### Downstream delivery
 
-For one TimingNode, Central has at most one normal positive-ID DN_PACKET outstanding.
-Central does not send the next normal positive-ID packet until the current one is
+For one TimingNode, Central has at most one normal positive-numbered DN_PACKET outstanding.
+Central does not send the next normal positive-numbered packet until the current one is
 confirmed through RECV. If confirmation does not arrive, Central resends the exact same
 packet with the same packetNr and semantic content.
 
