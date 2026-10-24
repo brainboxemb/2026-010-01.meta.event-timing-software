@@ -43,7 +43,7 @@ UTF-8 JSON packet shape with an explicit direction:
 - `DN_PACKET`: Central System -> SI-01.
 
 Each packet carries exactly one semantic message in v1. Keeping one semantic message per
-packet makes delivery identity unambiguous and makes the PING isolation rule explicit.
+packet makes delivery numbering unambiguous and makes the PING isolation rule explicit.
 
 A normal packet has this shape:
 
@@ -73,12 +73,12 @@ Top-level members:
 | `pckNr` | integer | packet delivery/debug identity; 0 is reserved for PING |
 | `msg` | object | exactly one semantic IF-06 message |
 
-The wire name `pckNr` denotes packet delivery identity (`packetNr` in the typed Java model), while `seqNr` remains the IF-05 TimingData/LogBook sequence. The RECV wire name `rcvPckNr` denotes `receivedPacketNr` in the typed semantic model.
+The wire name `pckNr` denotes packet delivery/debug number (`packetNr` in the typed Java model), while `seqNr` remains the IF-05 TimingData/LogBook sequence. The RECV wire name `rcvPckNr` denotes `receivedPacketNr` in the typed semantic model.
 
 Packet identity is separate from TimingData identity. In particular,
 `pckNr=42` does not imply TimingData sequence 42.
 
-Both directions use packet ids because they materially improve engineering traces and
+Both directions use packet numbers because they materially improve engineering traces and
 message inspection. In the current baseline only positive DN_PACKET ids participate in
 RECV/resend. UP_PACKET ids are visible delivery/debug identity and are not themselves
 acknowledged.
@@ -214,7 +214,7 @@ A SEQ message never refers to RACE_DATA.
 
 ### RACE_DATA
 
-RACE_DATA travels in a normal DN_PACKET. It has no independent `seq`; delivery identity
+RACE_DATA travels in a normal DN_PACKET. It has no independent `seq`; delivery numbering
 comes from the containing packet.
 
 ```json
@@ -278,7 +278,7 @@ The outer `pckNr=59` identifies this upstream packet for tracing. The inner
 
 For a positive value, `rcvPckNr` is the last normal DN_PACKET that SI-01 has
 successfully processed. In the normal stop-and-wait flow it equals Central's outstanding
-packet id and confirms that packet. If confirmation is lost and Central resends the same
+packet number and confirms that packet. If confirmation is lost and Central resends the same
 packet, SI-01 repeats RECV without reapplying the semantic message.
 
 A receiver that detects it cannot advance because an earlier downstream packet is still
