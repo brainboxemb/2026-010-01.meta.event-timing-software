@@ -72,7 +72,7 @@ The reference design uses:
 | code | By record type | `code` |
 | automatic registration origin | Optional, AUTO_REG only | `tagSrc` |
 | automatic effective-time origin | Optional, AUTO_REG only | `timeSrc` |
-| record creation time metadata | Optional | `recTime` |
+| record creation time metadata | Always | `recTime` |
 
 The stable IF-05 record key `(Node ID, sequence number)` is represented by
 `(nodeId, seqNr)`.
@@ -178,8 +178,7 @@ locId   = location active immediately before close
 ```
 
 `NODE_INFO` lifecycle records do not carry `regId`. The `OPEN` or
-`CLOSE` code contains the lifecycle meaning. `recTime`, when emitted,
-remains optional record-creation metadata and does not replace lifecycle
+`CLOSE` code contains the lifecycle meaning. `recTime` remains record-creation metadata and does not replace lifecycle
 `time`.
 
 An idempotent/already-in-state lifecycle command or a command that fails before
@@ -209,7 +208,7 @@ Known members use the following JSON types and validation rules.
 | `code` | array of strings | By record type | required for registration and `NODE_INFO` records |
 | `tagSrc` | string | Optional, AUTO_REG only | `API` or `ANT`; accompanies `timeSrc` |
 | `timeSrc` | string | Optional, AUTO_REG only | `API`, `NODE` or `OBS`; accompanies `tagSrc` |
-| `recTime` | string | Optional | canonical UTC millisecond record-creation timestamp when emitted |
+| `recTime` | string | Always | canonical UTC millisecond record-creation timestamp |
 
 Canonical writer member order:
 
@@ -231,8 +230,7 @@ Validation rules:
 
 - every `Always` member is present and non-null;
 - every `By record type` member required by the selected `recType` is present and non-null;
-- `Optional` members such as `recTime` may be omitted; on AUTO_REG, `tagSrc`
-  and `timeSrc` must occur together if either occurs;
+- optional AUTO_REG provenance members `tagSrc` and `timeSrc` may be omitted, but must occur together if either occurs;
 - `tagSrc`/`timeSrc` must be absent on MAN_REG and NODE_INFO records;
   unknown provenance code values are invalid;
 - `nodeId` is not normalized, case-folded or derived by the reference reader/writer;
@@ -258,7 +256,7 @@ Rules:
 
 - the literal `Z` represents UTC;
 - `time` contains exactly two fractional digits;
-- `recTime`, when present, contains exactly three fractional digits;
+- `recTime` contains exactly three fractional digits;
 - trailing fractional zeroes are retained;
 - offsets such as `+02:00`, implicit local time and timezone names are not
   canonical v1 values;
