@@ -162,8 +162,8 @@ only the live RegistrationId -> TeamId assignment. A RegistrationId that already
 to a stable TeamId through EventData shall not be remapped by RaceData.
 
 Normal Central-to-node delivery uses stop-and-wait semantics. For each TimingNode, Central
-keeps at most one positive-ID DN_PACKET outstanding. It does not send the next normal
-positive-ID DN_PACKET until the current one has been confirmed by RECV. If confirmation
+keeps at most one positive-numbered DN_PACKET outstanding. It does not send the next normal
+positive-numbered DN_PACKET until the current one has been confirmed by RECV. If confirmation
 is not received, Central may resend the **same packet with the same packetNr and semantic
 content**.
 
@@ -246,7 +246,7 @@ a manual request. This applies in both directions.
 PING is deliberately outside normal downstream confirmation. A packet carrying PING
 uses packetNr 0 and is not followed by RECV. A PING packet carries no other semantic
 message. The PING answer also uses packetNr 0. This keeps liveness response independent
-from a normal positive-ID DN_PACKET that may still be awaiting confirmation.
+from a normal positive-numbered DN_PACKET that may still be awaiting confirmation.
 
 There is no separate PONG message type in the default model. A request/correlation
 identifier is not part of the mandatory semantic contract; a representation may expose
@@ -620,8 +620,8 @@ DN_PACKET turns; it shall not create a RaceData source sequence.
 :id: IF06-REQ-014  
 :status: D  
 
-For one TimingNode, Central shall keep at most one normal positive-ID DN_PACKET
-unconfirmed. It shall not send the next normal positive-ID DN_PACKET until RECV confirms
+For one TimingNode, Central shall keep at most one normal positive-numbered DN_PACKET
+unconfirmed. It shall not send the next normal positive-numbered DN_PACKET until RECV confirms
 the current one. If confirmation is absent, Central may resend the exact same packet
 with the same packetNr and semantic content. SI-01 shall not apply a resent already
 processed packet twice.
