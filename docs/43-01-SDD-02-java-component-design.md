@@ -504,7 +504,7 @@ The ownership rule is responsibility-based:
   ordering, validation and heartbeat cadence/state. Only one decoded inbound semantic
   message operation is active per node.
 - `UpstreamData` is one node-scoped packet value with direction
-  `UP_PACKET | DN_PACKET`, packetId, packetVersion and one semantic message.
+  `UP_PACKET | DN_PACKET`, packetId and one semantic message.
   Semantic message values include TimingDataTransfer, TimingDataRequest, Sequence,
   RaceData, Receive and Ping. The public semantic type is the stored value itself;
   there is no subtype-interface plus hidden implementation-object hierarchy.
@@ -517,8 +517,8 @@ The ownership rule is responsibility-based:
   and data-available facts; it does not expose composition-only EventInput objects.
 - The owning `TimingSystem` installs each fixed `UpstreamStream -> NodeUpstream`
   subscription before activation, using the node mapping already resolved by Runtime.
-- `DownstreamDelivery` owns the accepted normal DN_PACKET identity, packetVersion
-  state and RECV/resend rules. RACE_DATA changes are applied through the node service
+- `DownstreamDelivery` owns the accepted normal DN_PACKET identity and RECV/resend
+  rules. RACE_DATA changes are applied through the node service
   boundary before the containing packet is confirmed.
 - `TimingDataSync` owns SEQ position exchange and retained TIMING_DATA_REQ replay
   coordination through LogBookAccessor.
@@ -1057,7 +1057,7 @@ one `Upstream` component with one `NodeUpstream` per TimingNode.
 
 `UpstreamData` carries one semantic message inside an UP_PACKET or DN_PACKET.
 Current messages include RaceData, TimingData, TIMING_DATA_REQ, SEQ, RECV and PING.
-The packet carries packetId plus packetVersion independently from the semantic payload.
+The packet carries packetId independently from the semantic payload.
 `NodeUpstream` owns the UpstreamData codec and is the first component that turns an
 encoded packet into that semantic hierarchy.
 
