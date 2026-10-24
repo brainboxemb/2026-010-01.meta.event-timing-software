@@ -49,6 +49,7 @@ A normal packet has this shape:
   "type": "DN_PACKET",
   "nodeId": "A",
   "packetId": 42,
+  "packetVersion": 2,
   "message": {
     "type": "SEQ",
     "data": {
@@ -67,10 +68,16 @@ Top-level members:
 | `type` | `UP_PACKET` or `DN_PACKET` | packet direction |
 | `nodeId` | string | TimingNode owning/addressed by this packet |
 | `packetId` | integer | packet delivery/debug identity; 0 is reserved for PING |
+| `packetVersion` | integer | producer packet/state generation; even = stable, odd = unstable/in-transition |
 | `message` | object | exactly one semantic IF-06 message |
 
 Packet identity is separate from TimingData identity. In particular,
 `packetId=42` does not imply TimingData sequence 42.
+
+`packetVersion` is a separate state-generation value. Its parity is meaningful:
+even values denote stable producer state and odd values denote unstable/in-transition
+producer state. packetVersion is not acknowledged by RECV and is not a TIMING_DATA
+sequence. Resending one packet keeps both packetId and packetVersion unchanged.
 
 Both directions use packet ids because they materially improve engineering traces and
 message inspection. In the current baseline only positive DN_PACKET ids participate in
@@ -108,6 +115,7 @@ TimingData values as elements of its `data` array.
   "type": "UP_PACKET",
   "nodeId": "A",
   "packetId": 57,
+  "packetVersion": 2,
   "message": {
     "type": "TIMING_DATA",
     "data": [
@@ -139,6 +147,7 @@ Central requests retained TimingData with a normal DN_PACKET:
   "type": "DN_PACKET",
   "nodeId": "A",
   "packetId": 41,
+  "packetVersion": 2,
   "message": {
     "type": "TIMING_DATA_REQ",
     "data": {
@@ -173,6 +182,7 @@ Request:
   "type": "DN_PACKET",
   "nodeId": "A",
   "packetId": 42,
+  "packetVersion": 2,
   "message": {
     "type": "SEQ",
     "data": {
@@ -190,6 +200,7 @@ Answer:
   "type": "UP_PACKET",
   "nodeId": "A",
   "packetId": 58,
+  "packetVersion": 2,
   "message": {
     "type": "SEQ",
     "data": {
@@ -217,6 +228,7 @@ comes from the containing packet.
   "type": "DN_PACKET",
   "nodeId": "A",
   "packetId": 43,
+  "packetVersion": 2,
   "message": {
     "type": "RACE_DATA",
     "locationId": 7,
@@ -258,6 +270,7 @@ RECV is an UP_PACKET semantic message referring to downstream delivery:
   "type": "UP_PACKET",
   "nodeId": "A",
   "packetId": 59,
+  "packetVersion": 2,
   "message": {
     "type": "RECV",
     "data": {
@@ -296,6 +309,7 @@ Request:
   "type": "UP_PACKET",
   "nodeId": "A",
   "packetId": 0,
+  "packetVersion": 2,
   "message": {
     "type": "PING",
     "data": {
@@ -315,6 +329,7 @@ Answer:
   "type": "DN_PACKET",
   "nodeId": "A",
   "packetId": 0,
+  "packetVersion": 2,
   "message": {
     "type": "PING",
     "data": {
@@ -343,7 +358,8 @@ The packet-oriented default/reference writer:
 - emits UTF-8 JSON without BOM;
 - emits integer `v = 2`;
 - emits top-level `type = UP_PACKET | DN_PACKET`;
-- emits one NodeId and one packetId;
+- emits one NodeId, one packetId and one packetVersion;
+- emits an even packetVersion for stable producer state and an odd packetVersion for unstable/in-transition producer state;
 - emits exactly one semantic `message`;
 - uses positive packetId for ordinary packets and packetId 0 only for PING;
 - emits at most 16 TimingData records or 16 combined RaceData changes in one semantic message;
@@ -455,6 +471,7 @@ format.
 | IF06-REQ-016 | `stageStartTimes` carries RegistrationId-scoped SET/DEL changes |
 | IF06-REQ-006/017 | SEQ REQ/ANS/NTF exchanges only the TIMING_DATA position |
 | IF06-REQ-018 | both packet directions expose packetId; only downstream packetId participates in current RECV handling |
+| IF06-REQ-023 | packetVersion is independent from packetId; even values are stable and odd values are unstable/in-transition |
 | IF06-REQ-019 | TIMING_DATA replay reuses original TimingData identity/content |
 | IF06-REQ-020 | TIMING_DATA_REQ uses inclusive `fromSeq` |
 | IF06-REQ-021 | fresh SEQ plus TIMING_DATA_REQ re-establish the replay-to-live handoff; RECV 0 requests current downstream-state resend |
@@ -466,6 +483,9 @@ format.
 | IF06-REQ-011/012/013 | PING uses packetId 0, immediate REQ/ANS and no RECV |
 
 ## Open design points
+
+- Exact rules for advancing packetVersion around a multi-packet state mutation/snapshot.
+  The parity contract is fixed; the producer transition boundary is still to be finalized.
 
 - Final common STATUS JSON members.
 - Whether TIMING_DATA remains single-source per message or permits an explicit
