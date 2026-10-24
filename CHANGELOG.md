@@ -8,6 +8,8 @@ The repository is currently in its planning and research phase.
 
 ## Unreleased
 
+- Clarify SI-01 Java logging rule DR-09 with stable operational INFO prefixes for registration, LogBook persistence and upstream session/delivery boundaries; require transport logs to follow the actual message/batch boundary and keep full encoded payload at DEBUG/TRACE.
+
 - Define optional absolute UTC `PING.data.time` as the creation/send time of that specific PING message. Reference producers populate it, ANS creates its own time instead of echoing REQ time, and readers remain compatible with PING messages that omit the field.
 
 - Define the IF-06 TIMING_DATA replay-to-live handoff: Central answers every fresh TIMING_DATA source-head SYNC with REQ from its next expected sequence, SI-01 captures and replays through the LogBook head observed at that REQ before proactive live forwarding resumes, and public v1 adds no TIMING_DATA ACK.

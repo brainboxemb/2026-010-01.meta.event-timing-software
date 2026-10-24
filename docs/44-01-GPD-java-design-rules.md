@@ -750,6 +750,30 @@ a request or attempt must not be phrased as if success already happened. When a 
 design defines a domain-specific logging matrix, follow that matrix instead of scattering
 level choices through implementations.
 
+Recurring operational boundaries should use **stable semantic prefixes and stable key
+names** instead of ad-hoc prose. This makes a normal INFO log readable as a sequence and
+lets operators filter the same fact across releases. For the registration/upstream path,
+the normal vocabulary is:
+
+```text
+Registration accepted:
+LogBook persisted:
+Upstream queued:
+Upstream sent:
+Upstream connected:
+Upstream disconnected:
+```
+
+The owner still determines the fields following that prefix. LogBook owns durable
+persistence facts; the semantic upstream owner summarizes IF-06 messages; the transport
+owner logs session connection/disconnection. INFO summaries stay compact. Exact encoded
+payload belongs at DEBUG/TRACE when useful.
+
+A transport log follows the **actual message boundary**, not every item contained in a
+batch. For example, one TIMING_DATA message containing records 578 through 593 produces
+one queued/sent batch summary such as `seq=578..593, records=16`; it must not produce
+sixteen transport INFO lines merely because the message contains sixteen records.
+
 Logging I/O must not become hidden application backpressure. When normal logging writes
 to potentially blocking sinks such as console, files or network transports, Infrastructure
 must isolate that I/O from Domain/Application execution with bounded non-blocking handoff.
