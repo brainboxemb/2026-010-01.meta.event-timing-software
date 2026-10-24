@@ -87,24 +87,20 @@ message meaning:
 - `UP_PACKET` carries one semantic message from SI-01 to the Central System;
 - `DN_PACKET` carries one semantic message from the Central System to SI-01.
 
-Both packet directions have a `packetNr`. The packet identifier is delivery identity
-and must not be confused with the IF-05/LogBook TimingData sequence. The public/default
-representation includes packet identifiers in both directions because they make traces,
-logs and engineering inspection unambiguous. In the current contract only a positive
-`DN_PACKET.packetNr` participates in `RECV`/resend handling. A normal
+Both packet directions have a `packetNr`. The packet number is delivery/debug
+numbering and must not be confused with the IF-05/LogBook TimingData sequence. The
+public/default representation includes packet numbers in both directions because they
+make traces, logs and engineering inspection unambiguous. In the current contract only
+a positive `DN_PACKET.packetNr` participates in `RECV`/resend handling. A normal
 `UP_PACKET.packetNr` is not itself acknowledged.
 
-Each packet also carries a ``, separate from `packetNr`. It describes the
-producer's packet/state generation rather than delivery order:
-
-- an **even**  denotes stable state;
-- an **odd**  denotes unstable/in-transition state.
-
- is not acknowledged by RECV, is not a replay cursor and does not replace
-the TIMING_DATA/LogBook sequence. Delivery retry keeps the same packetNr and the same
-. The exact producer-side transition that moves a generation from stable to
-unstable and back to stable is owned by the packet/state producer and shall not be
-inferred from packetNr parity.
+The public/default JSON representation also carries integer `v`, separate from
+`packetNr`. `v` is the representation version: odd values denote a development/
+unstable representation and even values denote a stable/released representation.
+It is not packet-delivery state, is not acknowledged by RECV, is not a replay cursor
+and does not replace the TIMING_DATA/LogBook sequence. Delivery retry keeps the same
+`packetNr` and semantic content; packet ordering or stability must not be inferred
+from `v` or from packet-number parity.
 
 The current semantic message families carried by those packets are:
 
@@ -144,7 +140,7 @@ another TimingData sequence.
 
 `RACE_DATA` carries Central-owned live race-state changes for one addressed TimingNode.
 It is **not** a durable historical stream and does not have a second source sequence.
-The containing `DN_PACKET.packetNr` provides delivery identity; it does not become a
+The containing `DN_PACKET.packetNr` provides delivery numbering; it does not become a
 RaceData revision or a TimingData sequence.
 
 Each RACE_DATA message carries one message-level `LocationId`. The LocationId identifies
@@ -316,7 +312,7 @@ Input:
 - addressed TimingNode;
 - message-level LocationId identifying the WP context;
 - **1..16** current RaceData changes total across all change sections;
-- containing DN_PACKET delivery identity.
+- containing DN_PACKET delivery number.
 
 Outcome:
 
@@ -563,11 +559,11 @@ is the highest contiguous TIMING_DATA sequence it has accepted/processed. Sequen
 means no position yet.
 :::
 
-:::{ifreq} Separate packet identity from TimingData synchronization  
+:::{ifreq} Separate packet numbering from TimingData synchronization  
 :id: IF06-REQ-018  
 :status: D  
 
-Both public/default packet directions shall carry packet identity for traceability.
+Both public/default packet directions shall carry a packet number for traceability.
 A positive DN_PACKET packetNr shall participate in RECV/resend handling; an UP_PACKET
 packetNr shall not itself require acknowledgement in the current baseline. Packet
 identity shall not replace or advance the IF-05/LogBook TIMING_DATA sequence.
