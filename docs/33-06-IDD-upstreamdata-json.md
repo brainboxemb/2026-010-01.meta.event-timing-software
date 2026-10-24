@@ -29,420 +29,334 @@ Contained TimingData values conform to IF-05 and its public/default JSON mapping
 Connector/session realization belongs to
 `43-01-SDD-03-backoffice-transport-design.md`.
 
+
 ## Design baseline
 
-The default/reference representation uses **one UTF-8 JSON message format for
-both directions** of IF-06. Every exchange uses the same envelope; its `type`
-selects the message family and its `data` contains the type-specific payload.
-The envelope is the message. A TimingData record (the semantic counterpart of
-an individual log entry) is an item *inside* the `data` payload of a
-`TIMING_DATA` message; it is not a second, unrelated top-level wire format.
+The packet-oriented default/reference representation is version **2**. It uses one
+UTF-8 JSON packet shape with an explicit direction:
 
-The common envelope is intentionally small:
+- \`UP_PACKET\`: SI-01 -> Central System;
+- \`DN_PACKET\`: Central System -> SI-01.
+
+Each packet carries exactly one semantic message in v2. Keeping one semantic message per
+packet makes delivery identity unambiguous and makes the PING isolation rule explicit.
+
+A normal packet has this shape:
+
+\`\`\`json
+{
+  "v": 2,
+  "type": "DN_PACKET",
+  "nodeId": "A",
+  "packetId": 42,
+  "message": {
+    "type": "SEQ",
+    "data": {
+      "op": "ANS",
+      "seq": 1186
+    }
+  }
+}
+\`\`\`
+
+Top-level members:
 
 | Member | Type | Meaning |
 | --- | --- | --- |
-| `v` | integer | UpstreamData representation version |
-| `type` | string | semantic message family/type |
-| `nodeId` | string, type-dependent | addressed/owning TimingNode when the message is node-scoped |
-| `locationId` | integer, type-dependent | message-level WP context; required by RACE_DATA in public v1 |
-| `seq` | integer, type-dependent | source sequence for an ordered top-level data stream; currently RACE_DATA |
-| `data` | object/array, type-dependent | semantic payload |
+| \`v\` | integer | representation version; packet-oriented form is 2 |
+| \`type\` | \`UP_PACKET\` or \`DN_PACKET\` | packet direction |
+| \`nodeId\` | string | TimingNode owning/addressed by this packet |
+| \`packetId\` | integer | packet delivery/debug identity; 0 is reserved for PING |
+| \`message\` | object | exactly one semantic IF-06 message |
 
-The representation does not require a transport/delivery/session identifier in the
-semantic envelope. A concrete transport may carry such metadata outside the encoded
-UpstreamData object.
+Packet identity is separate from TimingData identity. In particular,
+\`packetId=42\` does not imply TimingData sequence 42.
+
+Both directions use packet ids because they materially improve engineering traces and
+message inspection. In the current baseline only positive DN_PACKET ids participate in
+RECV/resend. UP_PACKET ids are visible delivery/debug identity and are not themselves
+acknowledged.
+
+Normal positive DN_PACKET ids advance in send order. Central keeps at most one positive
+DN_PACKET unconfirmed for a TimingNode. It does not advance to the next normal downstream
+packet until the outstanding packet has been confirmed. A resend uses the same packetId
+and the same semantic message.
+
+Packet id 0 is reserved for PING packets. A PING packet does not consume the normal
+positive packet counter and is not confirmed with RECV.
 
 ## Message families
 
-The current public v1 design reserves these semantic families:
+The v2 semantic message object reserves:
 
-- `TIMING_DATA`;
-- `RACE_DATA`;
-- `SYNC`;
-- `ACK`;
-- `REQ`;
-- `PING` (REQ and ANS);
-- `STATUS`.
-
-Only fields whose semantics are promoted by the IF-06 ISD and its Step-7 refinements
-become normative public members.
+- \`TIMING_DATA\`;
+- \`TIMING_DATA_REQ\`;
+- \`SEQ\` (REQ, ANS and NTF);
+- \`RACE_DATA\`;
+- \`RECV\`;
+- \`PING\` (REQ and ANS);
+- \`STATUS\`.
 
 ### TIMING_DATA
 
-A TIMING_DATA message carries **1..16** committed TimingData values as elements
-of its `data` array. The same envelope applies regardless of direction; this
-family ordinarily flows from SI-01 to the backend. For example, one committed
-record is one child of an UpstreamData message:
+TIMING_DATA ordinarily travels in an UP_PACKET and carries **1..16** committed
+TimingData values as elements of its \`data\` array.
 
-Conceptual JSON:
-
-```json
+\`\`\`json
 {
-  "v": 1,
-  "type": "TIMING_DATA",
+  "v": 2,
+  "type": "UP_PACKET",
   "nodeId": "A",
-  "data": [
-    {
-      "v": 1,
-      "nodeId": "A",
-      "seqNr": 42,
-      "locId": 1,
-      "recType": "AUTO_REG",
-      "time": "2026-10-13T08:00:00.00Z",
-      "regId": "A0042",
-      "code": ["ADD"]
-    }
-  ]
+  "packetId": 57,
+  "message": {
+    "type": "TIMING_DATA",
+    "data": [
+      {
+        "v": 1,
+        "nodeId": "A",
+        "seqNr": 42,
+        "locId": 1,
+        "recType": "AUTO_REG",
+        "time": "2026-10-13T08:00:00.00Z",
+        "regId": "A0042",
+        "code": ["ADD"]
+      }
+    ]
+  }
 }
-```
+\`\`\`
 
-The nested TimingData objects use the applicable public IF-05 JSON mapping. The
-UpstreamData wrapper does not change their record key or source sequence.
-The JSON representation does not serialize a LogBook file, nor wrap old LBR
-text lines as opaque strings. It represents committed IF-05 records as structured
-child objects of one UpstreamData message.
+The child values use the applicable public IF-05 JSON mapping. Batching never creates
+another TimingData sequence; the original \`seqNr\` remains the record identity/order.
 
-A batch contains at most 16 records and may contain records only from a
-semantically compatible source scope. Batching is delivery convenience and never
-creates another TimingData sequence. Larger replay ranges are split into multiple
-TIMING_DATA messages.
+### TIMING_DATA_REQ
+
+Central requests retained TimingData with a normal DN_PACKET:
+
+\`\`\`json
+{
+  "v": 2,
+  "type": "DN_PACKET",
+  "nodeId": "A",
+  "packetId": 41,
+  "message": {
+    "type": "TIMING_DATA_REQ",
+    "data": {
+      "fromSeq": 1171
+    }
+  }
+}
+\`\`\`
+
+\`fromSeq\` is inclusive and uses the IF-05/LogBook sequence. The request itself has no
+TimingData source sequence.
+
+Because this is a normal positive-ID DN_PACKET, SI-01 confirms processing of the request
+with RECV in its own UP_PACKET. Serving the requested TIMING_DATA remains a separate
+semantic action from confirming receipt of the request packet.
+
+### SEQ
+
+SEQ exchanges the current TIMING_DATA position and has one required \`op\`:
+
+| op | seq | Meaning |
+| --- | --- | --- |
+| \`REQ\` | absent | ask the peer for its current TIMING_DATA position |
+| \`ANS\` | required | answer a SEQ REQ |
+| \`NTF\` | required | notify the peer of the sender's current position |
+
+Request:
+
+\`\`\`json
+{
+  "v": 2,
+  "type": "DN_PACKET",
+  "nodeId": "A",
+  "packetId": 42,
+  "message": {
+    "type": "SEQ",
+    "data": {
+      "op": "REQ"
+    }
+  }
+}
+\`\`\`
+
+Answer:
+
+\`\`\`json
+{
+  "v": 2,
+  "type": "UP_PACKET",
+  "nodeId": "A",
+  "packetId": 58,
+  "message": {
+    "type": "SEQ",
+    "data": {
+      "op": "ANS",
+      "seq": 1186
+    }
+  }
+}
+\`\`\`
+
+The same family works in either direction. SI-01's sequence value is its current
+LogBook/IF-05 head. Central's sequence value is the highest contiguous TIMING_DATA
+sequence it has accepted/processed. \`seq=0\` means no position yet.
+
+A SEQ message never refers to RACE_DATA.
 
 ### RACE_DATA
 
-RACE_DATA is the ordered Central System -> SI-01 live race-state stream. It is
-node-scoped and requires `nodeId`, one positive message-level `locationId`
-and a positive top-level `seq`. The LocationId identifies the WP context for
-the whole RACE_DATA message; individual changes remain keyed by RegistrationId.
+RACE_DATA travels in a normal DN_PACKET. It has no independent \`seq\`; delivery identity
+comes from the containing packet.
 
-Example:
-
-```json
+\`\`\`json
 {
-  "v": 1,
-  "type": "RACE_DATA",
+  "v": 2,
+  "type": "DN_PACKET",
   "nodeId": "A",
-  "locationId": 7,
-  "seq": 123,
-  "data": {
-    "teamAssignments": [
-      {
-        "op": "SET",
-        "regId": "R0001",
-        "teamId": "0042"
-      }
-    ],
-    "stageStartTimes": [
-      {
-        "op": "SET",
-        "regId": "R0001",
-        "start": "23:59:50.00"
-      }
-    ]
+  "packetId": 43,
+  "message": {
+    "type": "RACE_DATA",
+    "locationId": 7,
+    "data": {
+      "teamAssignments": [
+        {
+          "op": "SET",
+          "regId": "R0001",
+          "teamId": "0042"
+        }
+      ],
+      "stageStartTimes": [
+        {
+          "op": "SET",
+          "regId": "R0001",
+          "start": "23:59:50.00"
+        }
+      ]
+    }
   }
 }
-```
+\`\`\`
 
-`locationId` is the WP context in which Central created the message. It belongs
-to the RACE_DATA message, not to every individual change. `seq` is the
-Central-owned source order for RACE_DATA of the addressed TimingNode. It starts
-at 1 and increases by one for each RaceData message. The JSON-safe range is
-1..9007199254740991.
+One RACE_DATA message carries at most 16 changes total across all supported sections.
+A resent DN_PACKET is identified by the same packetId and must not cause the same
+RACE_DATA changes to be applied twice.
 
-The `data` object contains **incremental changes**, not a complete snapshot. Supported
-v1 sections are optional:
+RACE_DATA is current-state delivery, not retained source-history synchronization.
+Central therefore need not retain old RACE_DATA packets after confirmation. It keeps
+the current race state plus the exact outstanding packet required for retry.
 
-| Section | Key | Operations |
-| --- | --- | --- |
-| `teamAssignments` | `regId` | `SET` with `teamId`; `DEL` removes the assignment |
-| `stageStartTimes` | `regId` | `SET` with one `start` TimingTimestamp value; `DEL` removes the definition |
+### RECV
 
-At least one non-empty supported change section is required. One RACE_DATA
-message contains **at most 16 changes total** across all supported sections.
-A larger logical update is split into multiple consecutively sequenced
-RACE_DATA messages. An omitted section means “no change”; it never means
-“clear that entire state”.
+RECV is an UP_PACKET semantic message referring to downstream delivery:
 
-Reserve-tag mapping example for removal:
-
-```json
+\`\`\`json
 {
-  "v": 1,
-  "type": "RACE_DATA",
+  "v": 2,
+  "type": "UP_PACKET",
   "nodeId": "A",
-  "locationId": 7,
-  "seq": 124,
-  "data": {
-    "teamAssignments": [
-      {
-        "op": "DEL",
-        "regId": "R0001"
-      }
-    ]
+  "packetId": 59,
+  "message": {
+    "type": "RECV",
+    "data": {
+      "receivedPacketId": 43
+    }
   }
 }
-```
+\`\`\`
 
-Both RACE_DATA sections use `regId` as their timing-domain key. The top-level
-`locationId` supplies the common WP context and is therefore not repeated
-inside `teamAssignments` or `stageStartTimes`. EventData resolves physical
-TagIds to RegistrationId, while `teamAssignments` optionally supplies a live
-RegistrationId-to-TeamId relationship. A stage start belongs directly to the RegistrationId;
-its lookup does not depend on whether a TeamId is fixed in EventData or assigned live.
-The UpstreamData contract does not classify a live assignment as a special reserve-tag concept.
+The outer \`packetId=59\` identifies this upstream packet for tracing. The inner
+\`receivedPacketId=43\` is the downstream packet position being reported.
 
-Because the public/reference v1 contract is still draft, this correction changes draft v1
-directly. A `stageStartTimes` item that carries only `teamId` does not conform and is rejected;
-there is no compatibility alias that silently restores the old key.
+For a positive value, \`receivedPacketId\` is the last normal DN_PACKET that SI-01 has
+successfully processed. In the normal stop-and-wait flow it equals Central's outstanding
+packet id and confirms that packet. If confirmation is lost and Central resends the same
+packet, SI-01 repeats RECV without reapplying the semantic message.
 
-`start` is one textual `TimingTimestamp` value. The default v1 profile accepts:
-- time-only: `HH:mm:ss[.fraction]`;
-- local date/time: `YYYY-MM-DDTHH:mm:ss[.fraction]`;
-- absolute UTC: `YYYY-MM-DDTHH:mm:ss[.fraction]Z`.
+A receiver that detects it cannot advance because an earlier downstream packet is still
+missing reports its last successfully processed downstream packet. Under the normal
+stop-and-wait rule Central never sends packet N+1 before N is confirmed.
 
-A source may provide time-only data; the codec shall not invent a date or zone.
-SI-01 StageTiming owns any event/race-time-zone and rollover interpretation needed
-to calculate an absolute start.
+\`receivedPacketId=0\` is special: it is not acknowledgement of a normal DN_PACKET. It
+requests that Central rebuild and resend the applicable current downstream state. It
+does not request historical RACE_DATA by source sequence.
 
-One RACE_DATA message is validated and applied as one ordered unit. A sequence gap is
-not silently skipped and the message is not partially applied before its ACK point
-advances.
+### PING
 
-### SYNC
+PING is carried in a packet with \`packetId=0\` in either direction. It has \`op=REQ|ANS\`,
+optional \`mode=HB\`, optional absolute UTC \`time\` and optional \`pingId\`.
 
-SYNC advertises the source head of one ordered stream for one `nodeId`.
+Request:
 
-TimingNode -> Central System:
-
-```json
+\`\`\`json
 {
-  "v": 1,
-  "type": "SYNC",
+  "v": 2,
+  "type": "UP_PACKET",
   "nodeId": "A",
-  "data": {
-    "stream": "TIMING_DATA",
-    "seq": 42
+  "packetId": 0,
+  "message": {
+    "type": "PING",
+    "data": {
+      "op": "REQ",
+      "mode": "HB",
+      "time": "2026-10-24T14:12:00.123Z"
+    }
   }
 }
-```
+\`\`\`
 
-Central System -> TimingNode:
+Answer:
 
-```json
+\`\`\`json
 {
-  "v": 1,
-  "type": "SYNC",
+  "v": 2,
+  "type": "DN_PACKET",
   "nodeId": "A",
-  "data": {
-    "stream": "RACE_DATA",
-    "seq": 123
+  "packetId": 0,
+  "message": {
+    "type": "PING",
+    "data": {
+      "op": "ANS",
+      "mode": "HB",
+      "time": "2026-10-24T14:12:00.130Z"
+    }
   }
 }
-```
+\`\`\`
 
-Members:
-
-| Member | Values | Meaning |
-| --- | --- | --- |
-| `stream` | `TIMING_DATA`, `RACE_DATA` | source stream being advertised |
-| `seq` | integer 0..9007199254740991 | current highest source sequence; 0 means the source stream is empty |
-
-For TIMING_DATA, `seq` is the TimingNode's LogBook/IF-05 source head. For RACE_DATA,
-`seq` is the Central System's RaceData source head. A receiver that is behind uses
-REQ from its first missing sequence.
-
-For the SI-01 -> Central TIMING_DATA stream, Central also sends REQ when it is already
-caught up: `fromSeq = centralHead + 1`. This empty-range request is the explicit
-replay-to-live handoff barrier. SI-01 captures its current LogBook head while handling
-the REQ, so a record committed after SYNC but before REQ joins replay rather than
-arriving early as live data. Proactive live TIMING_DATA resumes only after that captured
-replay range has completed.
-
-SYNC carries no stream payload and consumes no source sequence itself.
-
-### ACK
-
-ACK confirms ordered semantic application. Public v1 requires ACK for the
-Central System -> SI-01 RACE_DATA stream.
-
-```json
-{
-  "v": 1,
-  "type": "ACK",
-  "nodeId": "A",
-  "data": {
-    "stream": "RACE_DATA",
-    "seq": 123
-  }
-}
-```
-
-`seq` means that SI-01 has successfully applied RACE_DATA contiguously through that
-sequence. ACK is emitted only after semantic application. Re-receiving an already
-applied RaceData message does not apply it again; SI-01 may repeat its cumulative ACK.
-
-### REQ
-
-REQ is bidirectional and requests retransmission from one source sequence.
-
-Central System requests TimingData:
-
-```json
-{
-  "v": 1,
-  "type": "REQ",
-  "nodeId": "A",
-  "data": {
-    "stream": "TIMING_DATA",
-    "fromSeq": 41
-  }
-}
-```
-
-TimingNode requests RaceData:
-
-```json
-{
-  "v": 1,
-  "type": "REQ",
-  "nodeId": "A",
-  "data": {
-    "stream": "RACE_DATA",
-    "fromSeq": 121
-  }
-}
-```
-
-`fromSeq` is in the range 1..9007199254740991 and is inclusive. `fromSeq = 1`
-means replay from the retained beginning of the selected stream. For TIMING_DATA,
-Central sends `fromSeq = centralHead + 1` after each fresh source-head SYNC, including
-when the advertised source head equals `centralHead`. SI-01 captures its current
-LogBook head on that request and completes replay through the captured head before
-proactive live forwarding resumes.
-
-A deployment-specific legacy codec may map the semantic request
-
-```text
-REQ stream=TIMING_DATA fromSeq=1
-```
-
-to a legacy “receive all” sentinel such as `RECV package-id = 0000`, and decode
-that sentinel back to the same semantic request. The public source sequence still
-starts at 1; `0000` remains a legacy wire representation detail. Arbitrary
-`fromSeq` values are available only when the selected legacy representation can
-express them.
-
-### PING (REQUEST / ANSWER)
-
-PING uses the **same UpstreamData message type** in both directions and for both
-request and answer. The `data` object has one required field and three optional fields:
-
-| Member | Values | Meaning |
-| --- | --- | --- |
-| `op` | `REQ`, `ANS` (required) | request or answer |
-| `mode` | `HB` (optional) | scheduled heartbeat; absence means manual/explicit |
-| `time` | absolute UTC `TimingTimestamp` (optional) | creation/send time of this specific PING message |
-| `pingId` | string (optional) | reference correlation token for a specific exchange |
-
-PING is system/upstream-scoped and does not require `nodeId`. A receiver of
-`op = REQ` issues one `op = ANS`. The answer preserves the
-request's optional `mode`: if absent in the request, it is absent in the
-answer. Neither party shall answer an `ANS`. A `REQ` may originate from
-SI-01 or from the backend.
-
-Heartbeat request (`REQ`):
-
-```json
-{
-  "v": 1,
-  "type": "PING",
-  "data": {
-    "op": "REQ",
-    "mode": "HB",
-    "time": "2026-10-24T14:12:00.123Z"
-  }
-}
-```
-
-Heartbeat answer (`ANS`):
-
-```json
-{
-  "v": 1,
-  "type": "PING",
-  "data": {
-    "op": "ANS",
-    "mode": "HB",
-    "time": "2026-10-24T14:12:00.137Z"
-  }
-}
-```
-
-Manual request (`REQ`, no `mode`):
-
-```json
-{
-  "v": 1,
-  "type": "PING",
-  "data": {
-    "op": "REQ"
-  }
-}
-```
-
-Manual answer (`ANS`):
-
-```json
-{
-  "v": 1,
-  "type": "PING",
-  "data": {
-    "op": "ANS"
-  }
-}
-```
-
-The default v1 reader accepts missing `mode` as manual/explicit and missing `time`
-for compatibility. When `time` is present it must be an absolute UTC TimingTimestamp;
-time-only or local date/time forms are invalid for PING. The default/reference producers
-populate `time` on newly created PING messages. A corresponding ANS uses its own current
-message time and does not echo the REQ time. Unsupported `mode` values are rejected
-rather than guessed as manual. A manual request does not reset the periodic heartbeat
-cycle. There is **no separate PONG message family** in the default representation.
-
-A reference implementation may include optional `pingId` on a `REQ` and
-echo it on the corresponding `ANS`, for example `"pingId": "p-0001"`.
-It is not mandatory IF-06 semantics, TimingData identity or transport sequence.
-Legacy fixed-field protocol positions are not normative public JSON fields.
-
-PING REQUEST/ANSWER carries no TimingData record and consumes no TimingData
-sequence identity. The optional PING `time` is message metadata only; it does not become
-a TimingData identity, source sequence or clock-synchronization protocol. Its
-lifecycle/timing semantics are defined by IF06-REQ-011/012/013.
+A PING REQ is answered immediately. PING packets are not followed by RECV and do not
+consume the normal positive packet-id sequence. In v2 each packet already carries one
+semantic message, so a PING packet cannot contain another message.
 
 ### STATUS
 
-The envelope and type are reserved in v1. Common semantic status members are added only
-when their interface meaning is stable.
+STATUS payload members remain an open design point. STATUS, when defined, uses an
+ordinary UP_PACKET or DN_PACKET according to direction.
+
 
 ## JSON rules
 
-The default/reference v1 writer:
+The packet-oriented default/reference writer:
 
 - emits UTF-8 JSON without BOM;
-- emits integer `v = 1`;
-- emits a known `type`;
-- emits only members defined by the selected message family;
-- emits top-level `locationId` only for RACE_DATA in public v1;
-- emits no more than 16 TimingData records or 16 combined RaceData changes in one data message;
-- emits semantic payload values without embedding transport-specific routing metadata.
+- emits integer \`v = 2\`;
+- emits top-level \`type = UP_PACKET | DN_PACKET\`;
+- emits one NodeId and one packetId;
+- emits exactly one semantic \`message\`;
+- uses positive packetId for ordinary packets and packetId 0 only for PING;
+- emits at most 16 TimingData records or 16 combined RaceData changes in one semantic message;
+- does not copy transport-specific routing/session metadata into semantic message content.
 
 The reader:
 
 - rejects malformed JSON;
 - rejects missing required members;
 - rejects unsupported representation versions;
-- reports unknown message types as unsupported rather than reinterpreting them;
+- rejects packetId 0 for non-PING messages;
+- rejects a positive-ID PING packet;
+- rejects unknown semantic message types as unsupported rather than reinterpreting them;
 - may ignore unknown additional members when all required known members remain valid.
 
 ## TimingData composition
@@ -510,40 +424,51 @@ public application/domain code.
 Concrete Java package/API details remain SI-01 detailed design and are not normative
 IF-06 interface requirements.
 
+
 ## Compatibility and versioning
 
-The integer `v` identifies the default UpstreamData JSON representation version.
+The integer \`v\` identifies the default UpstreamData JSON representation version.
 
-Compatible additions may add optional members whose absence preserves existing meaning.
-Breaking changes require another representation version.
+The packet-oriented shape is version 2 because introducing UP_PACKET/DN_PACKET and
+packetId changes the v1 top-level envelope. Version 1 used a flat message envelope with
+SYNC/ACK/REQ control families and an independently sequenced RACE_DATA stream. Those
+semantics are superseded by the v2 packet model.
+
+A migration implementation may temporarily decode v1 while producing v2, but it shall
+keep the version-specific meanings explicit. It must not silently reinterpret a v1
+RACE_DATA source sequence as a v2 packetId or a v1 SYNC/ACK field as TIMING_DATA sequence
+state when the semantic meaning cannot be preserved.
+
+Compatible v2 additions may add optional members whose absence preserves existing
+meaning. Breaking v2 changes require another representation version.
 
 A custom representation is not required to use JSON or this version member. It conforms
 through preservation of the applicable IF-06 semantics, not by copying the default wire
 format.
 
+
 ## ISD mapping
 
 | IF-06 requirement | Default JSON realization |
 | --- | --- |
-| IF06-REQ-001 | JSON represents transport-independent UpstreamData |
+| IF06-REQ-001 | v2 represents transport-independent IF-06 packet/message semantics |
 | IF06-REQ-002 | TIMING_DATA embeds IF-05-compatible TimingData values |
-| IF06-REQ-003 | no transport/session ID replaces Node ID + sequence |
-| IF06-REQ-004/005 | RACE_DATA carries NodeId + message-level LocationId + ordered incremental changes and explicit application outcome |
-| IF06-REQ-014 | top-level RACE_DATA `seq` + cumulative ACK realize ordered application |
-| IF06-REQ-015 | `teamAssignments` carries live `regId` -> `teamId` SET/DEL changes |
-| IF06-REQ-016 | `stageStartTimes` carries RegistrationId-scoped SET/DEL changes |
-| IF06-REQ-006 | SYNC/REQ preserve the authoritative source identity/order of each stream |
-| IF06-REQ-017 | SYNC uses `stream` + current source-head `seq` |
-| IF06-REQ-018 | transport acknowledgement does not replace RACE_DATA semantic ACK/source sync |
+| IF06-REQ-003 | packetId remains separate from NodeId + IF-05 sequence identity |
+| IF06-REQ-004/005 | RACE_DATA carries NodeId + LocationId + current changes and is confirmed through its DN_PACKET |
+| IF06-REQ-014 | positive DN_PACKET uses stop-and-wait RECV/resend |
+| IF06-REQ-015 | \`teamAssignments\` carries live RegistrationId -> TeamId SET/DEL changes |
+| IF06-REQ-016 | \`stageStartTimes\` carries RegistrationId-scoped SET/DEL changes |
+| IF06-REQ-006/017 | SEQ REQ/ANS/NTF exchanges only the TIMING_DATA position |
+| IF06-REQ-018 | both packet directions expose packetId; only downstream packetId participates in current RECV handling |
 | IF06-REQ-019 | TIMING_DATA replay reuses original TimingData identity/content |
-| IF06-REQ-020 | REQ uses `stream` + inclusive `fromSeq` in either direction |
-| IF06-REQ-021 | every fresh TIMING_DATA SYNC receives a next-expected REQ handoff before live forwarding resumes |
+| IF06-REQ-020 | TIMING_DATA_REQ uses inclusive \`fromSeq\` |
+| IF06-REQ-021 | fresh SEQ plus TIMING_DATA_REQ re-establish the replay-to-live handoff; RECV 0 requests current downstream-state resend |
 | IF06-REQ-022 | TIMING_DATA is limited to 16 records/message and RACE_DATA to 16 combined changes/message |
-| IF06-REQ-007 | representation does not couple local commit to transport delivery |
-| IF06-REQ-008 | v1 JSON is the public/default representation |
+| IF06-REQ-007 | representation does not couple local TimingData commit to delivery |
+| IF06-REQ-008 | v2 JSON is the packet-oriented public/default representation |
 | IF06-REQ-009 | provider/codec boundary permits alternative representations |
-| IF06-REQ-010 | same JSON semantics can be mapped to IF-03 or RabbitMQ |
-| IF06-REQ-011/012/013 | PING carries required op REQ/ANS and optional mode HB (omission means manual); optional `pingId` supports reference correlation without consuming TimingData identity |
+| IF06-REQ-010 | the same packet/message semantics can be mapped to IF-03 or RabbitMQ |
+| IF06-REQ-011/012/013 | PING uses packetId 0, immediate REQ/ANS and no RECV |
 
 ## Open design points
 
