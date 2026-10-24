@@ -45,6 +45,7 @@ The common envelope is intentionally small:
 | `v` | integer | UpstreamData representation version |
 | `type` | string | semantic message family/type |
 | `nodeId` | string, type-dependent | addressed/owning TimingNode when the message is node-scoped |
+| `locationId` | integer, type-dependent | message-level WP context; required by RACE_DATA in public v1 |
 | `seq` | integer, type-dependent | source sequence for an ordered top-level data stream; currently RACE_DATA |
 | `data` | object/array, type-dependent | semantic payload |
 
@@ -69,7 +70,7 @@ become normative public members.
 
 ### TIMING_DATA
 
-A TIMING_DATA message carries one or more committed TimingData values as elements
+A TIMING_DATA message carries **1..16** committed TimingData values as elements
 of its `data` array. The same envelope applies regardless of direction; this
 family ordinarily flows from SI-01 to the backend. For example, one committed
 record is one child of an UpstreamData message:
@@ -89,7 +90,7 @@ Conceptual JSON:
       "locId": 1,
       "recType": "AUTO_REG",
       "time": "2026-10-13T08:00:00.00Z",
-      "regId": "RT-A-0042",
+      "regId": "A0042",
       "code": ["ADD"]
     }
   ]
@@ -102,13 +103,17 @@ The JSON representation does not serialize a LogBook file, nor wrap old LBR
 text lines as opaque strings. It represents committed IF-05 records as structured
 child objects of one UpstreamData message.
 
-A batch may contain multiple records only from a semantically compatible source scope.
-Batching is delivery convenience and never creates another TimingData sequence.
+A batch contains at most 16 records and may contain records only from a
+semantically compatible source scope. Batching is delivery convenience and never
+creates another TimingData sequence. Larger replay ranges are split into multiple
+TIMING_DATA messages.
 
 ### RACE_DATA
 
 RACE_DATA is the ordered Central System -> SI-01 live race-state stream. It is
-node-scoped and requires both `nodeId` and a positive top-level `seq`.
+node-scoped and requires `nodeId`, one positive message-level `locationId`
+and a positive top-level `seq`. The LocationId identifies the WP context for
+the whole RACE_DATA message; individual changes remain keyed by RegistrationId.
 
 Example:
 
@@ -117,19 +122,20 @@ Example:
   "v": 1,
   "type": "RACE_DATA",
   "nodeId": "A",
+  "locationId": 7,
   "seq": 123,
   "data": {
     "teamAssignments": [
       {
         "op": "SET",
-        "regId": "RT-R-0001",
+        "regId": "R0001",
         "teamId": "0042"
       }
     ],
     "stageStartTimes": [
       {
         "op": "SET",
-        "regId": "RT-R-0001",
+        "regId": "R0001",
         "start": "23:59:50.00"
       }
     ]
@@ -137,8 +143,10 @@ Example:
 }
 ```
 
-`seq` is the Central-owned source order for RACE_DATA of the addressed TimingNode.
-It starts at 1 and increases by one for each RaceData message. The JSON-safe range is
+`locationId` is the WP context in which Central created the message. It belongs
+to the RACE_DATA message, not to every individual change. `seq` is the
+Central-owned source order for RACE_DATA of the addressed TimingNode. It starts
+at 1 and increases by one for each RaceData message. The JSON-safe range is
 1..9007199254740991.
 
 The `data` object contains **incremental changes**, not a complete snapshot. Supported
@@ -149,8 +157,11 @@ v1 sections are optional:
 | `teamAssignments` | `regId` | `SET` with `teamId`; `DEL` removes the assignment |
 | `stageStartTimes` | `regId` | `SET` with one `start` TimingTimestamp value; `DEL` removes the definition |
 
-At least one non-empty supported change section is required. An omitted section means
-“no change”; it never means “clear that entire state”.
+At least one non-empty supported change section is required. One RACE_DATA
+message contains **at most 16 changes total** across all supported sections.
+A larger logical update is split into multiple consecutively sequenced
+RACE_DATA messages. An omitted section means “no change”; it never means
+“clear that entire state”.
 
 Reserve-tag mapping example for removal:
 
@@ -159,19 +170,22 @@ Reserve-tag mapping example for removal:
   "v": 1,
   "type": "RACE_DATA",
   "nodeId": "A",
+  "locationId": 7,
   "seq": 124,
   "data": {
     "teamAssignments": [
       {
         "op": "DEL",
-        "regId": "RT-R-0001"
+        "regId": "R0001"
       }
     ]
   }
 }
 ```
 
-Both RACE_DATA sections use `regId` as their timing-domain key. EventData resolves physical
+Both RACE_DATA sections use `regId` as their timing-domain key. The top-level
+`locationId` supplies the common WP context and is therefore not repeated
+inside `teamAssignments` or `stageStartTimes`. EventData resolves physical
 TagIds to RegistrationId, while `teamAssignments` optionally supplies a live
 RegistrationId-to-TeamId relationship. A stage start belongs directly to the RegistrationId;
 its lookup does not depend on whether a TeamId is fixed in EventData or assigned live.
@@ -401,6 +415,8 @@ The default/reference v1 writer:
 - emits integer `v = 1`;
 - emits a known `type`;
 - emits only members defined by the selected message family;
+- emits top-level `locationId` only for RACE_DATA in public v1;
+- emits no more than 16 TimingData records or 16 combined RaceData changes in one data message;
 - emits semantic payload values without embedding transport-specific routing metadata.
 
 The reader:
@@ -494,7 +510,7 @@ format.
 | IF06-REQ-001 | JSON represents transport-independent UpstreamData |
 | IF06-REQ-002 | TIMING_DATA embeds IF-05-compatible TimingData values |
 | IF06-REQ-003 | no transport/session ID replaces Node ID + sequence |
-| IF06-REQ-004/005 | RACE_DATA carries node-scoped ordered incremental changes and explicit application outcome |
+| IF06-REQ-004/005 | RACE_DATA carries NodeId + message-level LocationId + ordered incremental changes and explicit application outcome |
 | IF06-REQ-014 | top-level RACE_DATA `seq` + cumulative ACK realize ordered application |
 | IF06-REQ-015 | `teamAssignments` carries live `regId` -> `teamId` SET/DEL changes |
 | IF06-REQ-016 | `stageStartTimes` carries RegistrationId-scoped SET/DEL changes |
@@ -504,6 +520,7 @@ format.
 | IF06-REQ-019 | TIMING_DATA replay reuses original TimingData identity/content |
 | IF06-REQ-020 | REQ uses `stream` + inclusive `fromSeq` in either direction |
 | IF06-REQ-021 | fresh source-head SYNC/REQ re-establish state after connect/reconnect |
+| IF06-REQ-022 | TIMING_DATA is limited to 16 records/message and RACE_DATA to 16 combined changes/message |
 | IF06-REQ-007 | representation does not couple local commit to transport delivery |
 | IF06-REQ-008 | v1 JSON is the public/default representation |
 | IF06-REQ-009 | provider/codec boundary permits alternative representations |
