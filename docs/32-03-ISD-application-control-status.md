@@ -684,9 +684,10 @@ shall be admitted for one Engineering API connector.
 
 Current IF-03 status and status-change events shall expose whether the Engineering
 API upstream peer is disconnected, synchronizing, synchronized or in conflict,
-together with node-scoped TimingData-head and RaceData-sequence state required for
-engineering diagnosis. Closing the designated upstream-role event connection shall
-make that connector disconnected without discarding LogBook or applied RaceData state.
+together with node-scoped TIMING_DATA position and downstream packet-delivery state
+required for engineering diagnosis. Closing the designated upstream-role event
+connection shall make that connector disconnected without discarding LogBook or
+applied RaceData state.
 :::
 
 :::{ifreq} Simulated tag passage control  
