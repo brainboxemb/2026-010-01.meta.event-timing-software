@@ -1,6 +1,6 @@
 # Changelog
 
-- Define SI-02 viewer timestamps as host-local presentation while preserving canonical UTC in raw IF-03/IF-05/IF-06 payloads; Central TIMING_DATA Messages use IF-05 recTime as source Time and keep Received as a separate receive timestamp.
+- Define SI-02 viewer timestamps as host-local presentation while preserving canonical UTC in raw IF-03/IF-05/IF-06 payloads; Central TIMING_DATA Messages use IF-05 effective time as source Time and keep Received as a separate receive timestamp.
 
 - Clarify TimingNode lifecycle ownership: OPEN/CLOSED runtime state now remains independent from lifecycle LogBook persistence, with lifecycle records treated as separately ordered historical TimingData and verification updated accordingly.
 
