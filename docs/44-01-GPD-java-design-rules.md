@@ -766,8 +766,10 @@ Upstream disconnected:
 
 The owner still determines the fields following that prefix. LogBook owns durable
 persistence facts; the semantic upstream owner summarizes IF-06 messages; the transport
-owner logs session connection/disconnection. INFO summaries stay compact. Exact encoded
-payload belongs at DEBUG/TRACE when useful.
+owner logs session connection/disconnection. Log summaries stay compact at normal runtime
+levels. Do not routinely log complete encoded IF-06 payloads, including at DEBUG/TRACE;
+prefer targeted semantic fields and use dedicated message/journal inspection when complete
+protocol content is needed.
 
 A transport log follows the **actual message boundary**, not every item contained in a
 batch. For example, one TIMING_DATA message containing records 578 through 593 produces
