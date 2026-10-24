@@ -981,7 +981,7 @@ backoffice test environment while preserving local operation during outages.
 
 - promote IF-06 Backend Integration semantics before transport implementation drives them;
 - define RaceData, StageStartTimes, TeamID interpretation, StagePassageList and StageRanking ownership;
-- define packetId/packetVersion, RECV/resend, duplicate/idempotency and TIMING_DATA SEQ/TIMING_DATA_REQ LogBook synchronization rules;
+- define packetId, RECV/resend, duplicate/idempotency and TIMING_DATA SEQ/TIMING_DATA_REQ LogBook synchronization rules;
 - adopt the existing multi-node composition/isolation baseline and verify it as Step-7 input;
 - receive/apply node-scoped synthetic/public reference data;
 - derive StagePassageList and StageRanking from explicit local/reference inputs;
@@ -1019,7 +1019,7 @@ backoffice test environment while preserving local operation during outages.
 | --- | --- |
 | `D01` | Promote IF-06 UpstreamData semantic contract and public JSON reference representation |
 | `D02` | Define reference-data, TeamID, StagePassageList and StageRanking ownership/semantics |
-| `D03` | Define packet delivery, packetVersion stability and TIMING_DATA sequence/replay semantics |
+| `D03` | Define packet delivery plus TIMING_DATA sequence/replay semantics |
 | `D04` | Align backoffice transport SDD plus Engineering API connector / hosted RabbitMQ verification topology |
 | `A01` | Adopt and qualify the existing multi-node composition baseline |
 | `V01` | Requalify multi-node addressing, isolation, persistence and recovery |
@@ -1038,7 +1038,7 @@ introduced through issue #491 / PR #509 and later ownership refactors. That impl
 uses flat SYNC/ACK/REQ messages and a separately sequenced RACE_DATA stream.
 
 The promoted IF-06 packet design now supersedes that draft before the interface is
-released: the target model uses UP_PACKET/DN_PACKET, packetId plus packetVersion,
+released: the target model uses UP_PACKET/DN_PACKET with packetId,
 RECV/stop-and-wait for normal downstream delivery, SEQ/TIMING_DATA_REQ for the durable
 TimingData LogBook sequence, and no independent RACE_DATA replay sequence. The existing
 Java implementation must therefore be migrated in a follow-up implementation change;
