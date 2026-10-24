@@ -758,6 +758,7 @@ the normal vocabulary is:
 ```text
 Registration accepted:
 LogBook persisted:
+Upstream received:
 Upstream queued:
 Upstream sent:
 Upstream connected:
@@ -766,8 +767,10 @@ Upstream disconnected:
 
 The owner still determines the fields following that prefix. LogBook owns durable
 persistence facts; the semantic upstream owner summarizes IF-06 messages; the transport
-owner logs session connection/disconnection. Log summaries stay compact at normal runtime
-levels. Do not routinely log complete encoded IF-06 payloads, including at DEBUG/TRACE;
+owner logs session connection/disconnection. `Upstream received:` belongs after successful
+IF-06 decode at that semantic boundary: it means the message was received and recognized,
+not that its requested semantic operation has already completed. A later processing failure
+therefore remains a separate WARN. Log summaries stay compact at normal runtime levels. Do not routinely log complete encoded IF-06 payloads, including at DEBUG/TRACE;
 prefer targeted semantic fields and use dedicated message/journal inspection when complete
 protocol content is needed.
 
