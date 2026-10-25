@@ -70,6 +70,8 @@ POST /api/v1/node/{id}/registration/revoke
 GET  /api/v1/node/{id}/logbook
 GET  /api/v1/node/{id}/logbook?from=...&limit=...
 GET  /api/v1/node/{id}/logbook?last=...
+GET  /api/v1/node/{id}/registrations
+GET  /api/v1/node/{id}/registrations?after=...&limit=...
 
 POST /api/v1/dev/node/{id}/auto-reg
 POST /api/v1/dev/node/{id}/simulation/registration
@@ -494,6 +496,55 @@ Record-bearing response:
 
 Each record in `records` uses the public IF-05 reference representation defined by
 `33-05-IDD-timingdata-interchange.md`.
+
+## Development-v1 active registration projection
+
+The Engineering Client may inspect the currently OPEN LocationId projection without
+reconstructing it from LogBook history.
+
+Metadata:
+
+```text
+GET /api/v1/node/{id}/registrations
+```
+
+A bounded chronological ADD page uses the original ADD sequence as cursor:
+
+```text
+GET /api/v1/node/{id}/registrations?after=100&limit=100
+```
+
+The development-v1 page response contains the same projection metadata on every page and
+a bounded `registrations` array:
+
+```json
+{
+  "locId": 24,
+  "count": 2,
+  "uniqueCount": 2,
+  "lastMutationSeq": 43,
+  "lastRevokeSeq": 0,
+  "nextAfter": null,
+  "registrations": [
+    {
+      "seqNr": 42,
+      "regId": "A0042",
+      "time": "2026-10-25T10:00:00Z",
+      "elapsedMillis": 372340,
+      "valid": true
+    }
+  ]
+}
+```
+
+`elapsedMillis` is nullable. A numeric value is the SI-01-maintained elapsed stage time
+for that registration, expressed in milliseconds as registration passage time minus the
+current RegistrationId-scoped stage start. `null` means no unambiguous elapsed time is
+currently available. A consumer shall use this authoritative projection value rather than
+reconstructing stage timing from LogBook and RaceData.
+
+This is a compatible additive v1 response field. As required by the common compatibility
+rules, existing v1 clients tolerate response members they do not yet consume.
 
 ## IF03-OP-009 — Current application configuration
 

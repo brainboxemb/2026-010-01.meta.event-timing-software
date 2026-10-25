@@ -9,6 +9,8 @@ All notable changes to this repository are documented here.
 
 The repository is currently in its planning and research phase.
 
+- Document the existing development-v1 active registration projection and add nullable `elapsedMillis` so engineering clients can present SI-01-maintained RunningTime without reconstructing stage timing from LogBook/RaceData.
+
 ## Unreleased
 
 - Replace the draft IF-06 flat SYNC/ACK/REQ stream model with explicit UP_PACKET/DN_PACKET delivery: both directions expose packetNr for tracing, normal downstream packets use RECV/stop-and-wait resend, PING uses packetNr 0 without RECV, TIMING_DATA alone retains durable SEQ/TIMING_DATA_REQ replay, and RACE_DATA no longer has its own source-sequence history. Record the shared project convention that integer JSON `v` values use odd numbers for development/unstable representations and even numbers for stable/released representations.
