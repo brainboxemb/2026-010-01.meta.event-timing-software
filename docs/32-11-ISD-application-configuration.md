@@ -458,6 +458,24 @@ io
               type: engineering-api
 ```
 
+The current executable subset has one selected upstream transport and exposes the
+shared replay pacing setting directly under `upstream`:
+
+```yaml
+upstream:
+  transport: engineering-api
+  timingDataReplayPacketDelayMillis: 0
+```
+
+`timingDataReplayPacketDelayMillis` is a non-negative deployment value. Zero
+means no artificial pacing. A positive value inserts that delay only between
+successive outbound TIMING_DATA packets while SI-01 serves one
+TIMING_DATA_REQ replay. The first replay packet is not delayed, there is no
+trailing delay after the final replay packet, and normal live TIMING_DATA
+forwarding is not throttled by this setting. The delay changes execution pacing
+only; it does not change IF-06 packet/message content, packet numbering, replay
+batch size, record order, captured replay head or the replay-to-live handoff.
+
 The `timingSystem` reference is local composition information; it is not added
 to UpstreamData merely for routing. `UpstreamGateway` owns the external
 transport/session boundary. Shared Domain `UpstreamData` defines the semantic

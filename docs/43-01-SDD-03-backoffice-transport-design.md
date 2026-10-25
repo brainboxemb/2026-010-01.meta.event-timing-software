@@ -179,9 +179,14 @@ Pseudo-configuration:
 ```yaml
 upstream:
   transport: engineering-api   # or rabbitmq
+  timingDataReplayPacketDelayMillis: 0
 ```
 
-The executable application resolves this selection to a concrete communication implementation.
+The executable application resolves the transport selection to a concrete communication
+implementation. `timingDataReplayPacketDelayMillis` is shared upstream execution
+configuration rather than an IF-06 field. Zero preserves immediate replay. A positive
+value delays only the continuation between successive TIMING_DATA replay packets after
+the first packet has been sent.
 A public reference/test application can use `engineering-api` or a stub. A
 private/product application can select RabbitMQ plus private mappings/codecs where
 required.
@@ -499,6 +504,13 @@ A reconnect creates a new transport session but does not create a new TimingData
 sequence. The peers refresh their TimingData positions through SEQ and use
 TIMING_DATA_REQ where required. RACE_DATA recovery remains packet/state based rather than
 source-history based.
+
+Replay pacing is optional deployment behavior. When
+`timingDataReplayPacketDelayMillis` is greater than zero, the replay task releases its
+serial lane after emitting a non-final TIMING_DATA packet and becomes eligible again
+after the configured delay. It does not block the executor thread. No delay is inserted
+before the first replay packet, after the final replay packet or into normal live
+TIMING_DATA forwarding.
 
 No exact millisecond retry/backoff policy is fixed by this SDD.
 
