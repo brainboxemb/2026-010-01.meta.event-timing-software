@@ -3,6 +3,12 @@ step: 7
 planning_changes:
   - date: '2026-10-25'
     change: >-
+      Simplify TIMING_DATA synchronization: proactive live forwarding is the default
+      while the upstream session is available. SEQ reports positions but does not gate
+      live forwarding. Only an actual TIMING_DATA_REQ pauses live forwarding for its
+      captured replay range; caught-up Central sends no automatic response.
+  - date: '2026-10-25'
+    change: >-
       Refine the IF-06 replay-to-live handoff: TIMING_DATA_REQ now means missing
       retained data only. A caught-up reconnect completes through equal SEQ positions;
       SI-01 refreshes its source-head NTF if the LogBook advances while that confirmation
