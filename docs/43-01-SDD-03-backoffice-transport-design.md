@@ -491,11 +491,18 @@ SEQ has REQ/ANS/NTF operations. Central may ask SI-01 for its current LogBook he
 may ask Central for the highest contiguous TimingData sequence Central processed; either
 side may answer, and SI-01 may proactively notify a new source head.
 
-Central requests actual records with TIMING_DATA_REQ from an inclusive IF-05 sequence.
-When SI-01 handles that request it captures the current LogBook head and replays through
-that captured position in bounded TIMING_DATA messages. Later commits are not
-interleaved into the captured replay range. This request remains the replay-to-live
-handoff barrier, including the empty-range case when Central is already caught up.
+Central requests actual records with TIMING_DATA_REQ from an inclusive IF-05 sequence
+only when its processed position is behind SI-01's reported source head. When SI-01
+handles that request it captures the current LogBook head and replays through that
+captured position in bounded TIMING_DATA messages. Later commits are not interleaved into
+the captured replay range.
+
+When Central's processed position already equals the reported SI-01 source head, Central
+sends that equal position back with SEQ NTF instead of issuing an empty replay request.
+SI-01 then enables live forwarding from the next sequence. While this equal-position
+handoff is pending, a newly committed TimingData record causes SI-01 to refresh its
+source-head NTF; Central then requests the newly missing suffix. This keeps the handoff
+race-free without using a fictitious TIMING_DATA_REQ.
 
 The LogBook is the durable replay payload history; SI-01 does not persist a duplicate
 TimingData outbox solely for upstream recovery.
