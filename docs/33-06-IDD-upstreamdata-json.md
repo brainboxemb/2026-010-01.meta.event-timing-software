@@ -216,6 +216,14 @@ sequence it has accepted/processed. `seq=0` means no position yet.
 
 A SEQ message never refers to RACE_DATA.
 
+On a fresh or re-established upstream session, SI-01 may notify its current source head
+with SEQ NTF. Central compares that value with its highest contiguous processed position.
+If Central is behind it requests the missing suffix with TIMING_DATA_REQ. If both values
+are equal, Central replies with its own SEQ NTF carrying that processed position; this
+equal position completes the replay-to-live handoff without an empty TIMING_DATA_REQ.
+If SI-01 advances while that equal-position confirmation is pending, it refreshes the
+source-head NTF so the newly missing suffix can be requested.
+
 ### RACE_DATA
 
 RACE_DATA travels in a normal DN_PACKET. It has no independent `seq`; delivery numbering
@@ -468,7 +476,7 @@ format.
 | IF06-REQ-018 | both packet directions expose packetNr; only downstream packetNr participates in current RECV handling |
 | IF06-REQ-019 | TIMING_DATA replay reuses original TimingData identity/content |
 | IF06-REQ-020 | TIMING_DATA_REQ uses inclusive `fromSeq` |
-| IF06-REQ-021 | fresh SEQ plus TIMING_DATA_REQ re-establish the replay-to-live handoff; RECV 0 requests current downstream-state resend |
+| IF06-REQ-021 | fresh SEQ reconciles TIMING_DATA positions; TIMING_DATA_REQ is used only for a missing suffix, while equal positions complete the replay-to-live handoff through SEQ; RECV 0 requests current downstream-state resend |
 | IF06-REQ-022 | TIMING_DATA is limited to 16 records/message and RACE_DATA to 16 combined changes/message |
 | IF06-REQ-007 | representation does not couple local TimingData commit to delivery |
 | IF06-REQ-008 | v1 JSON is the packet-oriented public/default representation |

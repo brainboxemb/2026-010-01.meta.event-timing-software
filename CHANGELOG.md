@@ -19,7 +19,7 @@ The repository is currently in its planning and research phase.
 
 - Define optional absolute UTC `PING.data.time` as the creation/send time of that specific PING message. Reference producers populate it, ANS creates its own time instead of echoing REQ time, and readers remain compatible with PING messages that omit the field.
 
-- Define the IF-06 TIMING_DATA replay-to-live handoff: SEQ exchanges LogBook/processed positions, Central uses TIMING_DATA_REQ from its next expected sequence, and SI-01 captures and replays through the LogBook head observed at that request before proactive live forwarding resumes.
+- Refine the IF-06 TIMING_DATA replay-to-live handoff: TIMING_DATA_REQ now requests a missing retained suffix only; when Central is already caught up, equal SEQ positions complete the handoff without an empty replay request, and SI-01 refreshes its source-head NTF if the LogBook advances while that confirmation is pending.
 
 - Align IF-06 data semantics with compact RegistrationIds (`A0001` / `R0001`), message-level `LocationId` on RACE_DATA, RegistrationId-scoped changes, and bounds of 16 TIMING_DATA records or 16 RACE_DATA changes per semantic message.
 

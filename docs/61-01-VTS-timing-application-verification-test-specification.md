@@ -685,23 +685,28 @@ TIMING_DATA_REQ.
    contiguous processed TIMING_DATA sequence.
 3. Commit one additional TimingData record and verify SI-01 may publish SEQ NTF with the
    new LogBook head.
-4. Send `TIMING_DATA_REQ(fromSeq=M)` from Central and verify SI-01 captures its current
-   LogBook head and replays the original records M..capturedHead in source order and
-   bounded TIMING_DATA messages.
+4. Send `TIMING_DATA_REQ(fromSeq=M)` from Central while Central is behind and verify
+   SI-01 captures its current LogBook head and replays the original records
+   M..capturedHead in source order and bounded TIMING_DATA messages.
 5. Commit another record after the captured head while replay is active. Verify it is not
    interleaved into the captured replay range and becomes eligible for live forwarding
    only after that range completes.
-6. Repeat with `fromSeq = capturedHead + 1` and verify the empty replay range completes
-   the replay-to-live handoff without inventing data.
-7. Disconnect/reconnect and verify positions are refreshed through SEQ; verify that
-   RACE_DATA does not perform a separate source-head exchange.
+6. Reconnect with Central already caught up to the SI-01 source head. Verify SI-01 sends
+   the source-head SEQ NTF, Central returns its equal processed position through SEQ NTF,
+   no TIMING_DATA_REQ is sent, and SI-01 enables live forwarding from the next sequence.
+7. Repeat the caught-up reconnect but commit one additional TimingData record after
+   SI-01's first source-head NTF and before Central's equal-position confirmation is
+   processed. Verify SI-01 refreshes its source-head NTF, Central requests the newly
+   missing suffix, and the new record is not lost.
+8. Verify that RACE_DATA does not perform a separate source-head exchange.
 
 **Expected result**
 
 - SEQ REQ/ANS/NTF concerns TIMING_DATA position only;
 - SI-01 position equals its LogBook/IF-05 head;
 - Central position equals its highest contiguous processed TIMING_DATA sequence;
-- TIMING_DATA_REQ uses the retained LogBook as replay source;
+- TIMING_DATA_REQ uses the retained LogBook as replay source only when records are missing;
+- equal TIMING_DATA positions complete reconnect handoff through SEQ without an empty replay request;
 - replay preserves original record identity and ordering;
 - no second durable TimingData outbox or RACE_DATA replay sequence is required.
 

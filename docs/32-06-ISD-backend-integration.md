@@ -213,12 +213,19 @@ N. SI-01 answers with one or more bounded TIMING_DATA messages containing the or
 records and identities.
 
 The LogBook remains the replay source. After a fresh connection/sequence exchange,
-Central sends TIMING_DATA_REQ from its next expected sequence even when it is already
-caught up. That request is the replay-to-live handoff barrier. When SI-01 handles it,
-SI-01 captures its current LogBook head and replays from `fromSeq` through that captured
-head. Records committed after the captured head are sent only after that replay range has
-completed. When `fromSeq` is exactly one greater than the captured head, the replay
-range is empty and the handoff completes immediately.
+SI-01 publishes its current source head through SEQ. Central compares that position with
+its highest contiguous processed TIMING_DATA sequence. When Central is behind, it sends
+TIMING_DATA_REQ from its next expected sequence. When both positions are equal, Central
+instead confirms its processed position with SEQ NTF; no empty TIMING_DATA_REQ is needed.
+An equal peer SEQ position completes the replay-to-live handoff and SI-01 may continue
+live forwarding from the next sequence.
+
+When SI-01 handles an actual TIMING_DATA_REQ, it captures its current LogBook head and
+replays from `fromSeq` through that captured head. Records committed after the captured
+head are sent only after that replay range has completed. If SI-01's source head advances
+while a caught-up SEQ handoff is still pending, SI-01 refreshes its source-head SEQ NTF
+and remains non-live until Central either requests the newly missing suffix or confirms
+an equal processed position.
 
 Loss does not require a second durable TimingData outbox. Central can request retained
 TimingData again from the LogBook. Retransmission preserves the original IF-05 record
@@ -592,11 +599,17 @@ mechanism.
 :status: D  
 
 When an upstream semantic connection is established or re-established, the peers shall
-refresh the applicable TIMING_DATA positions through SEQ. Central shall then send
-TIMING_DATA_REQ from its next expected sequence even when it is already caught up.
-SI-01 shall capture its current LogBook head when handling that request, replay through
-that captured head, and shall not proactively send later committed TimingData until
-that replay handoff has completed.
+refresh the applicable TIMING_DATA positions through SEQ. When Central is behind SI-01's
+reported source head, Central shall send TIMING_DATA_REQ from its next expected sequence.
+When Central's processed position already equals SI-01's source head, Central shall report
+that equal processed position through SEQ and shall not send an empty TIMING_DATA_REQ.
+SI-01 shall then enable live forwarding from the next sequence.
+
+When SI-01 handles a TIMING_DATA_REQ it shall capture its current LogBook head, replay
+through that captured head, and shall not proactively send later committed TimingData
+until that replay handoff has completed. If SI-01's head advances while an equal-position
+SEQ handoff is still pending, it shall refresh its source-head notification so Central can
+request the newly missing suffix.
 
 RACE_DATA recovery shall not depend on a retained Central source sequence. When SI-01
 cannot trust its downstream state it may request a full resend of the current

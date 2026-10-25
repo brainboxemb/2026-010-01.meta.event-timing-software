@@ -3,6 +3,12 @@ step: 7
 planning_changes:
   - date: '2026-10-25'
     change: >-
+      Refine the IF-06 replay-to-live handoff: TIMING_DATA_REQ now means missing
+      retained data only. A caught-up reconnect completes through equal SEQ positions;
+      SI-01 refreshes its source-head NTF if the LogBook advances while that confirmation
+      is pending, avoiding an empty replay request without losing the handoff race.
+  - date: '2026-10-25'
+    change: >-
       Define optional SI-01 TIMING_DATA replay pacing as the formal IF-11
       upstream.timingDataReplayPacketDelayMillis setting. Zero preserves current
       immediate replay; a positive value delays only between successive replay
