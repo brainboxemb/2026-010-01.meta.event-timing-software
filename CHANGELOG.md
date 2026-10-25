@@ -1,5 +1,7 @@
 # Changelog
 
+- Adopt `oss.relay.timing` as the Java/Maven family namespace for the Timing Point Application and shared timing packages, retaining compound roots such as `timingpoint`, `timingdata`, `eventdata` and `upstreamdata`; implementation counterpart: `2026-010-02.java.timing-point-application#972`.
+
 - Define `upstream.timingDataReplayPacketDelayMillis` as optional IF-11 replay pacing: zero preserves immediate TIMING_DATA replay, while a positive value delays only between successive replay packets through cooperative task continuation without changing IF-06 semantics or live forwarding.
 - Define SI-02 viewer timestamps as host-local presentation while preserving canonical UTC in raw IF-03/IF-05/IF-06 payloads; Central TIMING_DATA Messages use IF-05 effective time as source Time and keep Received as a separate receive timestamp.
 

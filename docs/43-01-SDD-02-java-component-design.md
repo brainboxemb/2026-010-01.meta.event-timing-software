@@ -75,7 +75,7 @@ reactor/
 Working coordinates:
 
 ```text
-groupId: io.github.brainboxemb.eventtiming
+groupId: oss.relay.timing
 
 parent:          timing-point-parent
 TimingData:      event-timing-data
@@ -93,7 +93,7 @@ separate Core architecture layer in Figure SI01-01. The executable `app/`
 module stays deliberately thin and adds the launcher, concrete runtime-provider
 selection and packaging needed to run that core.
 
-The Maven `groupId` remains the **event-timing software-system/product-family** coordinate. SI-01 Java code is more specific: the reusable application core and default executable live under `io.github.brainboxemb.eventtiming.timingpoint`. `TimingPoint` names the local software/deployment role; it does **not** replace the internal `TimingNode` domain aggregate. One Timing Point Application process may host 1..N TimingSystems and therefore multiple TimingNodes.
+The Maven `groupId` remains the **event-timing software-system/product-family** coordinate. SI-01 Java code is more specific: the reusable application core and default executable live under `oss.relay.timing.timingpoint`. `TimingPoint` names the local software/deployment role; it does **not** replace the internal `TimingNode` domain aggregate. One Timing Point Application process may host 1..N TimingSystems and therefore multiple TimingNodes.
 
 ## Package direction
 
@@ -103,7 +103,7 @@ diagram.
 Likely top-level packages are:
 
 ```text
-io.github.brainboxemb.eventtiming/timingpoint/
+oss.relay.timing/timingpoint/
   application/
   domain/
   platform/
@@ -172,7 +172,7 @@ The shared EventData artifact has its own package root:
 
 ```text
 shared/event-data/
-  io.github.brainboxemb.eventtiming.eventdata/
+  oss.relay.timing.eventdata/
     EventData.java
     TagId.java
     TeamId.java
@@ -195,7 +195,7 @@ The shared TimingData artifact has its own package root:
 
 ```text
 shared/timing-data/
-  io.github.brainboxemb.eventtiming.timingdata/
+  oss.relay.timing.timingdata/
     TimingData.java
       AutomaticRegistration
       ManualRegistration
@@ -219,7 +219,7 @@ The Step-7 UpstreamData capability follows the same shared-capability direction:
 
 ```text
 shared/upstream-data/
-  io.github.brainboxemb.eventtiming.upstreamdata/
+  oss.relay.timing.upstreamdata/
     UpstreamData.java
     UpstreamDataCodec.java
     UpstreamDataProvider.java
@@ -1227,13 +1227,13 @@ Logging follows the same library-versus-executable composition boundary.
 ```text
 timing-point-core.jar
   -> slf4j-api only
-  -> io.github.brainboxemb.eventtiming.timingpoint.infra.logging
+  -> oss.relay.timing.timingpoint.infra.logging
        +-- Logging
        +-- LoggingConfig / LoggingLevel / LoggingFileConfig
        +-- LoggingControl
        +-- ConsoleHandler
        +-- TimestampedFileLogHandler + CompactLogFormatter
-  -> io.github.brainboxemb.eventtiming.timingpoint.infra.loggingserver
+  -> oss.relay.timing.timingpoint.infra.loggingserver
        +-- LoggingServer
        +-- LoggingServerConfig
        +-- LiveLogHandler
@@ -1345,14 +1345,14 @@ SimulationRuntime, PresentationRuntime and the built-in Console, RemoteShell and
 Its executable package is deliberately thin:
 
 ```text
-io.github.brainboxemb.eventtiming.timingpoint.app/
+oss.relay.timing.timingpoint.app/
   Main.java
 ```
 
 The application core owns the reusable SI-01 runtime and supporting infrastructure:
 
 ```text
-io.github.brainboxemb.eventtiming/timingpoint/
+oss.relay.timing/timingpoint/
   runtime/
     Lifecycle.java
     TimingApplicationRuntime.java
@@ -1530,7 +1530,7 @@ The executable artifact remains deliberately thin. Its launcher/input adapter st
 
 ```text
 timing-point-core.jar
-  io.github.brainboxemb.eventtiming.timingpoint.infra/
+  oss.relay.timing.timingpoint.infra/
     BuildIdentity.java
     EmbeddedBuildIdentityLoader.java
     configuration/
@@ -1545,15 +1545,15 @@ timing-point-core.jar
       PropertyContainer.java
       PropertyUpdate.java
 
-  io.github.brainboxemb.eventtiming.timingpoint.application/
+  oss.relay.timing.timingpoint.application/
     ApplicationConductor.java
     ConfigurationControl.java
 
-  io.github.brainboxemb.eventtiming.timingpoint.domain.system/
+  oss.relay.timing.timingpoint.domain.system/
     TimingSystem.java
     TimingSystemConductor.java
 
-  io.github.brainboxemb.eventtiming.timingpoint.runtime/
+  oss.relay.timing.timingpoint.runtime/
     TimingApplicationRuntime.java
     RuntimeExecutors.java
     RuntimeTimeSources.java
@@ -1572,7 +1572,7 @@ timing-point-core.jar
       YamlLoader.java
 
 timing-point-app.jar
-  io.github.brainboxemb.eventtiming.timingpoint.app/
+  oss.relay.timing.timingpoint.app/
     Main.java
 ```
 
