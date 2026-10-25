@@ -692,12 +692,12 @@ TIMING_DATA_REQ.
    interleaved into the captured replay range and becomes eligible for live forwarding
    only after that range completes.
 6. Reconnect with Central already caught up to the SI-01 source head. Verify SI-01 sends
-   the source-head SEQ NTF, Central returns its equal processed position through SEQ NTF,
-   no TIMING_DATA_REQ is sent, and SI-01 enables live forwarding from the next sequence.
-7. Repeat the caught-up reconnect but commit one additional TimingData record after
-   SI-01's first source-head NTF and before Central's equal-position confirmation is
-   processed. Verify SI-01 refreshes its source-head NTF, Central requests the newly
-   missing suffix, and the new record is not lost.
+   the source-head SEQ NTF, Central sends no automatic synchronization message back, no
+   TIMING_DATA_REQ is sent, and newly committed TimingData continues through normal live
+   forwarding.
+7. Reconnect with Central behind. Verify Central sends TIMING_DATA_REQ from its next
+   expected sequence, SI-01 pauses proactive live forwarding while serving the captured
+   replay range, and live forwarding resumes at capturedHead+1 after replay completes.
 8. Verify that RACE_DATA does not perform a separate source-head exchange.
 
 **Expected result**
@@ -706,7 +706,7 @@ TIMING_DATA_REQ.
 - SI-01 position equals its LogBook/IF-05 head;
 - Central position equals its highest contiguous processed TIMING_DATA sequence;
 - TIMING_DATA_REQ uses the retained LogBook as replay source only when records are missing;
-- equal TIMING_DATA positions complete reconnect handoff through SEQ without an empty replay request;
+- equal TIMING_DATA positions require no automatic Central response and no empty replay request;
 - replay preserves original record identity and ordering;
 - no second durable TimingData outbox or RACE_DATA replay sequence is required.
 

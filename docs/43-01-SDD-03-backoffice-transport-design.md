@@ -497,12 +497,12 @@ handles that request it captures the current LogBook head and replays through th
 captured position in bounded TIMING_DATA messages. Later commits are not interleaved into
 the captured replay range.
 
-When Central's processed position already equals the reported SI-01 source head, Central
-sends that equal position back with SEQ NTF instead of issuing an empty replay request.
-SI-01 then enables live forwarding from the next sequence. While this equal-position
-handoff is pending, a newly committed TimingData record causes SI-01 to refresh its
-source-head NTF; Central then requests the newly missing suffix. This keeps the handoff
-race-free without using a fictitious TIMING_DATA_REQ.
+Proactive live TIMING_DATA forwarding is the normal state for an available upstream
+session. A SEQ source-head notification reports position but does not create a separate
+handoff state. When Central is already at the reported source head it sends no automatic
+synchronization message back. When Central is behind, TIMING_DATA_REQ starts replay
+synchronization; SI-01 pauses proactive live forwarding for that captured replay range
+and resumes it at capturedHead+1 when replay completes.
 
 The LogBook is the durable replay payload history; SI-01 does not persist a duplicate
 TimingData outbox solely for upstream recovery.

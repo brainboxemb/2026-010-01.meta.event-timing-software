@@ -212,20 +212,19 @@ Actual record replay is a separate `TIMING_DATA_REQ` operation. Central sends
 N. SI-01 answers with one or more bounded TIMING_DATA messages containing the original
 records and identities.
 
-The LogBook remains the replay source. After a fresh connection/sequence exchange,
-SI-01 publishes its current source head through SEQ. Central compares that position with
-its highest contiguous processed TIMING_DATA sequence. When Central is behind, it sends
+The LogBook remains the replay source. On an available upstream session, proactive
+live TIMING_DATA forwarding is normally enabled. After a fresh connection SI-01 publishes
+its current source head through SEQ. Central compares that position with its highest
+contiguous processed TIMING_DATA sequence. When Central is behind, it sends
 TIMING_DATA_REQ from its next expected sequence. When both positions are equal, Central
-instead confirms its processed position with SEQ NTF; no empty TIMING_DATA_REQ is needed.
-An equal peer SEQ position completes the replay-to-live handoff and SI-01 may continue
-live forwarding from the next sequence.
+does not need to send a synchronization message back.
 
-When SI-01 handles an actual TIMING_DATA_REQ, it captures its current LogBook head and
-replays from `fromSeq` through that captured head. Records committed after the captured
-head are sent only after that replay range has completed. If SI-01's source head advances
-while a caught-up SEQ handoff is still pending, SI-01 refreshes its source-head SEQ NTF
-and remains non-live until Central either requests the newly missing suffix or confirms
-an equal processed position.
+When SI-01 handles an actual TIMING_DATA_REQ, that replay synchronization temporarily
+pauses proactive live forwarding. SI-01 captures its current LogBook head and replays
+from `fromSeq` through that captured head. Records committed after the captured head are
+not interleaved into the replay range. After replay completes, proactive live forwarding
+resumes from the sequence after the captured head. SEQ position exchange itself does not
+enable, disable or gate live forwarding.
 
 Loss does not require a second durable TimingData outbox. Central can request retained
 TimingData again from the LogBook. Retransmission preserves the original IF-05 record
@@ -598,18 +597,17 @@ mechanism.
 :id: IF06-REQ-021  
 :status: D  
 
-When an upstream semantic connection is established or re-established, the peers shall
-refresh the applicable TIMING_DATA positions through SEQ. When Central is behind SI-01's
+When an upstream semantic connection is established or re-established, SI-01 shall
+publish its current TIMING_DATA source head through SEQ. When Central is behind that
 reported source head, Central shall send TIMING_DATA_REQ from its next expected sequence.
-When Central's processed position already equals SI-01's source head, Central shall report
-that equal processed position through SEQ and shall not send an empty TIMING_DATA_REQ.
-SI-01 shall then enable live forwarding from the next sequence.
+When Central's processed position already equals SI-01's source head, Central need not
+send either an empty TIMING_DATA_REQ or an equal-position SEQ notification.
 
-When SI-01 handles a TIMING_DATA_REQ it shall capture its current LogBook head, replay
-through that captured head, and shall not proactively send later committed TimingData
-until that replay handoff has completed. If SI-01's head advances while an equal-position
-SEQ handoff is still pending, it shall refresh its source-head notification so Central can
-request the newly missing suffix.
+Proactive live TIMING_DATA forwarding shall normally remain enabled while the session is
+available. When SI-01 handles a TIMING_DATA_REQ it shall temporarily pause proactive live
+forwarding, capture its current LogBook head, replay through that captured head, and
+resume proactive live forwarding from the next sequence only after that replay completes.
+SEQ position exchange itself shall not gate proactive live forwarding.
 
 RACE_DATA recovery shall not depend on a retained Central source sequence. When SI-01
 cannot trust its downstream state it may request a full resend of the current
