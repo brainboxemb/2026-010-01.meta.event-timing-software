@@ -1,6 +1,13 @@
 step: 7
 
 planning_changes:
+  - date: '2026-10-25'
+    change: >-
+      Define optional SI-01 TIMING_DATA replay pacing as the formal IF-11
+      upstream.timingDataReplayPacketDelayMillis setting. Zero preserves current
+      immediate replay; a positive value delays only between successive replay
+      packets and must use cooperative task continuation rather than blocking a
+      TimingNode executor. IF-06 wire semantics and live forwarding remain unchanged.
   - date: '2026-10-21'
     change: >-
       Refine D04/A05 after the upstream architecture update. ST-2 now uses one
