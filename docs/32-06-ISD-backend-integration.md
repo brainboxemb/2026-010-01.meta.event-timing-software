@@ -669,7 +669,9 @@ RACE_DATA shall be able to carry incremental RegistrationId-scoped stage-start-t
 The message-level LocationId supplies the WP/stage-finish context in which those definitions
 are sent; the individual change remains keyed by RegistrationId. For the current event model,
 Stage N finishes at LocationId N, so Central routes the current Stage N definitions to
-LocationId N without adding StageId to the message. The RegistrationId is the timing-domain
+LocationId N without adding StageId to the message. Such delivery is valid only for a
+currently OPEN LocationId context; retained NODE_OPEN/NODE_CLOSE TimingData alone does
+not establish current runtime state after restart. The RegistrationId is the timing-domain
 identity whose start is being defined; consumers shall not need an intermediate TeamId lookup
 to match a registration to its stage start.
 A SET shall carry one `TimingTimestamp` value containing at least local race
