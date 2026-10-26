@@ -671,7 +671,9 @@ proprietary transport framing.
 IF03-OP-003 shall allow one connected client to register the `upstream` role
 using the normal IF-03 WebSocket event connection. That connection shall continue
 to receive the normal live-event stream and shall additionally receive outbound
-structured UpstreamData events. No second SI-01 listener port or second SI-02
+structured UpstreamData events. The complete STATUS_SNAPSHOT remains the current
+runtime-state baseline for that peer; the upstream role does not make retained
+TimingData lifecycle records authoritative current state. No second SI-01 listener port or second SI-02
 WebSocket lifecycle shall be required. At most one active upstream-role peer
 shall be admitted for one Engineering API connector.
 :::
@@ -710,6 +712,9 @@ registration injection for the simulated antenna path.
 
 IF03-OP-002 and the complete status snapshot from IF03-OP-003 shall expose
 functional OPEN/CLOSED state and current optional LocationId for every TimingNode.
+That status is the authority for the current running process. Persisted
+NODE_OPEN/NODE_CLOSE TimingData is historical evidence and shall not be used by a
+client to restore current OPEN state after a process restart.
 
 Startup/recovery and required-component failures shall not be encoded as a second
 TimingNode operational-state field in this baseline. Failure semantics remain available

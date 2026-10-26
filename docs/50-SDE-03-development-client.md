@@ -292,7 +292,11 @@ transport is below that model.
 For ST-2, the existing `ApiEventClient` is opened at
 `/api/v1/events?role=upstream`. That one WebSocket is full-duplex: it receives the
 ordinary STATUS_SNAPSHOT/live-event stream and sends/receives semantic UpstreamData.
-No HTTP injection route and no second SI-02 WebSocket service is used.
+The status snapshot/change stream is also the Central simulator's authority for the
+running TimingNode's current OPEN/CLOSED and LocationId state. TIMING_DATA remains
+durable LogBook history; a historical unmatched NODE_OPEN after SI-01 restart never
+restores runtime OPEN state in the simulator. No HTTP injection route and no second
+SI-02 WebSocket service is used.
 
 For ST-3, the same simulator model later receives a RabbitMQ Central-System transport.
 RabbitMQ queue/channel/broker mechanics do not leak into the simulator's RaceData,
@@ -426,8 +430,8 @@ TimingNode: Team Mapping is Central-owned current state, and Stage Start Times a
 per StageId. The engineering UI supports setting or deleting a contiguous RegistrationId
 range for one stage; SET may apply a non-negative interval between successive registration
 start times. Under the current event mapping, Stage N finishes at LocationId N, so the
-simulator routes Stage N state to an OPEN node at LocationId N and IF-06 itself remains
-LocationId-scoped. Large authored changes are emitted through the existing bounded
+simulator routes Stage N state only to a node whose current runtime status is OPEN at
+LocationId N; IF-06 itself remains LocationId-scoped. Large authored changes are emitted through the existing bounded
 RACE_DATA delta/RECV flow rather than creating a larger protocol message.
 
 ST-2 uses the full-duplex upstream-role ApiEventClient session; ST-3 later swaps only the

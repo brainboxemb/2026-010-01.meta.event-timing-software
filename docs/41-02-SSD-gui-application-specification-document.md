@@ -189,7 +189,13 @@ communicate through supported external transports and shall not call SI-01 domai
 directly.
 
 For deterministic ST-2 operation the simulator shall use the existing IF-03
-event WebSocket in `role=upstream` mode as one full-duplex connection. A later
+event WebSocket in `role=upstream` mode as one full-duplex connection. The
+simulator shall consume STATUS_SNAPSHOT and STATUS_CHANGED from that same
+connection as the authority for current TimingNode OPEN/CLOSED and LocationId
+state. It shall not infer current OPEN state from NODE_OPEN/NODE_CLOSE records
+received through TIMING_DATA. Central-owned RaceData may be retained while a
+node is CLOSED, but SI-02 shall emit LocationId-scoped RACE_DATA only when the
+current runtime status reports that node OPEN at the matching LocationId. A later
 RabbitMQ transport may be selected for ST-3 without changing the simulator's
 semantic UpstreamData state model.
 :::
