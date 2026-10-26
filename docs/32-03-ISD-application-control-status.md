@@ -356,6 +356,21 @@ messages generated while processing the input, such as a PING answer, are delive
 through the upstream-role IF03-OP-003 event stream rather than being substituted
 as the HTTP response body.
 
+### IF03-OP-015 — Query applied StageStartTimes
+
+This read-only node-scoped operation exposes the current RegistrationId-scoped
+StageStartTimes actually applied in SI-01 RaceData state. It is current runtime data,
+not Central simulator state and not reconstructed LogBook history.
+
+The operation provides metadata plus bounded paging. Metadata shall include the
+current row count and a monotonically changing StageStart revision. A page shall
+contain RegistrationId and current start value in deterministic RegistrationId order.
+Clients may use the revision to detect mutation during paging and retry.
+
+The same StageStart revision shall be exposed with the active registration projection,
+because a StageStart SET/DEL can change elapsed time and rank without changing
+registration count or LogBook ADD/REV mutation cursors.
+
 ## Operation ordering and concurrency
 
 Presentation clients may submit commands concurrently. IF-03 therefore requires
@@ -690,6 +705,18 @@ together with node-scoped TIMING_DATA position and downstream packet-delivery st
 required for engineering diagnosis. Closing the designated upstream-role event
 connection shall make that connector disconnected without discarding LogBook or
 applied RaceData state.
+:::
+
+:::{ifreq} Applied StageStartTimes query  
+:id: IF03-REQ-028  
+:status: D  
+:refines: SI01-REQ-068  
+
+IF-03 shall provide IF03-OP-015 as a node-scoped bounded read of current applied
+StageStartTimes. The read shall expose a StageStart revision suitable for client
+resynchronisation. Active registration projection metadata shall expose the same
+revision so clients can invalidate elapsed/rank presentation when StageStartTimes
+change without a registration ADD/REV.
 :::
 
 :::{ifreq} Simulated tag passage control  
