@@ -528,11 +528,15 @@ needed for diagnosis. Transport connection state shall remain separately observa
 :depends_on: SI01-REQ-081, SI01-REQ-082, SI01-REQ-078, IF06-REQ-021  
 
 When a configured upstream connection becomes operational or reconnects, SI-01 shall
-refresh the TIMING_DATA positions through SEQ and shall serve any resulting
-TIMING_DATA_REQ from the LogBook. RACE_DATA shall not use a source-head replay
-sequence. If SI-01 cannot trust its current downstream Central-owned state, it shall be
-able to request a full current-state resend through RECV position 0. An earlier transport
-session shall not cause TimingData sequence recovery to be skipped.
+announce its retained downstream receive position through RECV before refreshing the
+TIMING_DATA positions through SEQ. RECV 0 shall request a full current-state resend when
+this runtime has processed no normal DN_PACKET; a positive RECV N shall preserve the
+already processed downstream position so a restarted Central peer can continue at N+1
+without resetting TimingNode protocol state.
+
+SI-01 shall serve any resulting TIMING_DATA_REQ from the LogBook. RACE_DATA shall not use
+a source-head replay sequence. An earlier transport session shall not cause TimingData
+sequence recovery to be skipped.
 :::
 
 :::{req} Resolve TeamId without rewriting TimingData  
