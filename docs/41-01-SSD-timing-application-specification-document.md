@@ -572,7 +572,7 @@ RACE_DATA shall not maintain an independent source sequence or historical replay
 :depends_on: SI01-REQ-078, IF06-REQ-016  
 
 Within an accepted RACE_DATA message, SI-01 shall apply StageStartTimes
-changes by TeamId. SET shall create/replace the current start definition and DEL
+changes by RegistrationId. SET shall create/replace the current start definition and DEL
 shall remove it. A SET definition shall contain local race time-of-day and may
 contain an explicit local date. A start-time change may be valid before the
 corresponding reserve mapping exists; the two RaceData sections shall not create a

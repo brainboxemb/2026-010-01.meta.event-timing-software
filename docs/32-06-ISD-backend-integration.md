@@ -146,6 +146,12 @@ Each RACE_DATA message carries one message-level `LocationId`. The LocationId id
 the WP context for which Central created that message; individual team/stage-start
 changes remain keyed by RegistrationId and do not repeat LocationId.
 
+Central may author current race state independently from any connected TimingNode. For
+the current event model, Stage N finishes at LocationId N. A stage-start definition
+authored for Stage N is therefore delivered in RACE_DATA whose message-level LocationId
+is N when a TimingNode is operating at that location. StageId is authoring/routing
+context and is not duplicated in the IF-06 RACE_DATA payload.
+
 The current RaceData payload can contain one or more incremental change sections:
 
 - `teamAssignments` changes the live RegistrationId -> TeamId assignment;
@@ -652,8 +658,10 @@ Physical TagIds remain resolved to their RegistrationId by EventData.
 :status: D  
 
 RACE_DATA shall be able to carry incremental RegistrationId-scoped stage-start-time changes.
-The message-level LocationId supplies the WP context in which those definitions are sent;
-the individual change remains keyed by RegistrationId. The RegistrationId is the timing-domain
+The message-level LocationId supplies the WP/stage-finish context in which those definitions
+are sent; the individual change remains keyed by RegistrationId. For the current event model,
+Stage N finishes at LocationId N, so Central routes the current Stage N definitions to
+LocationId N without adding StageId to the message. The RegistrationId is the timing-domain
 identity whose start is being defined; consumers shall not need an intermediate TeamId lookup
 to match a registration to its stage start.
 A SET shall carry one `TimingTimestamp` value containing at least local race
