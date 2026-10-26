@@ -604,10 +604,18 @@ mechanism.
 :status: D  
 
 When an upstream semantic connection is established or re-established, SI-01 shall
-publish its current TIMING_DATA source head through SEQ. When Central is behind that
-reported source head, Central shall send TIMING_DATA_REQ from its next expected sequence.
-When Central's processed position already equals SI-01's source head, Central need not
-send either an empty TIMING_DATA_REQ or an equal-position SEQ notification.
+first publish its current downstream receive position through RECV and shall publish its
+current TIMING_DATA source head through SEQ. RECV position 0 means this SI-01 runtime
+has not processed a normal DN_PACKET and therefore requests a full current-state resend.
+A positive RECV position N means SI-01 has already processed DN_PACKET N; a Central peer
+that has no local downstream baseline shall continue normal numbering at N+1 rather than
+restart at packet 1. This receive-position announcement preserves TimingNode-owned
+downstream state across transport reconnects and Central-process restarts.
+
+When Central is behind the reported TIMING_DATA source head, Central shall send
+TIMING_DATA_REQ from its next expected sequence. When Central's processed position already
+equals SI-01's source head, Central need not send either an empty TIMING_DATA_REQ or an
+equal-position SEQ notification.
 
 Proactive live TIMING_DATA forwarding shall normally remain enabled while the session is
 available. When SI-01 handles a TIMING_DATA_REQ it shall temporarily pause proactive live
