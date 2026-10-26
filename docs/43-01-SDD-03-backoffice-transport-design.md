@@ -479,8 +479,14 @@ Central does not retain a historical RACE_DATA sequence. Once a downstream packe
 confirmed, its old wire packet is not required for future source replay. Central keeps
 its current race/reference state and the one exact outstanding packet needed for retry.
 
-RECV position 0 requests a complete resend of the applicable current Central-owned
-downstream state. It is not a request for a retained RACE_DATA history.
+On every new transport session, SI-01 announces its retained downstream receive position
+before the normal SEQ/PING reconnect work. Position 0 requests a complete resend of the
+applicable current Central-owned downstream state. A positive position N tells a fresh or
+restarted Central peer that SI-01 already processed DN_PACKET N, so Central continues with
+N+1 instead of restarting the delivery counter. An ordinary reconnect of the same Central
+peer therefore leaves the already-known position unchanged.
+
+RECV position 0 is not a request for a retained RACE_DATA history.
 
 ### TimingData synchronization
 
@@ -508,9 +514,10 @@ The LogBook is the durable replay payload history; SI-01 does not persist a dupl
 TimingData outbox solely for upstream recovery.
 
 A reconnect creates a new transport session but does not create a new TimingData source
-sequence. The peers refresh their TimingData positions through SEQ and use
-TIMING_DATA_REQ where required. RACE_DATA recovery remains packet/state based rather than
-source-history based.
+sequence and does not reset the TimingNode-owned downstream DN_PACKET receive position.
+SI-01 first announces that downstream position through RECV, then the peers refresh their
+TimingData positions through SEQ and use TIMING_DATA_REQ where required. RACE_DATA recovery
+remains packet/state based rather than source-history based.
 
 Replay pacing is optional deployment behavior. When
 `timingDataReplayPacketDelayMillis` is greater than zero, the replay task releases its
