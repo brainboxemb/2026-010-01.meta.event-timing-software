@@ -44,7 +44,10 @@ It may be used:
 - by repeatable scripted engineering workflows through the same client/application services.
 
 SI-02 does not own TimingNode or TimingData domain state. SI-01 remains
-authoritative and SI-02 uses supported external interfaces.
+authoritative and SI-02 uses supported external interfaces. The Node viewer shall expose
+an applied **StartTimes** inspection beside **Registrations**, sourced through IF03-OP-015.
+When the shared StageStart revision changes, SI-02 shall refresh the registration
+projection so displayed RunningTime/rank follows SI-01's maintained values.
 
 ## Software-item requirements
 
