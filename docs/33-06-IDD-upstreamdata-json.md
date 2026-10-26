@@ -259,8 +259,10 @@ comes from the containing packet.
 ```
 
 One RACE_DATA message carries at most 16 changes total across all supported sections.
-A resent DN_PACKET is identified by the same pckNr and must not cause the same
-RACE_DATA changes to be applied twice.
+StageId is not serialized in this representation. Under the current event mapping,
+Central sends authored Stage N start definitions in RACE_DATA with `locationId = N`,
+because Stage N finishes at LocationId N. A resent DN_PACKET is identified by the same
+pckNr and must not cause the same RACE_DATA changes to be applied twice.
 
 RACE_DATA is current-state delivery, not retained source-history synchronization.
 Central therefore need not retain old RACE_DATA packets after confirmation. It keeps

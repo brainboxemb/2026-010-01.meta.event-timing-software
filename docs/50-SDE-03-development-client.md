@@ -421,8 +421,17 @@ it does not undo a scenario already accepted by SI-01.
 
 Backend/UpstreamData simulation remains a separate capability for inbound RaceData and
 outbound timing/synchronization behaviour. Its state belongs to CentralSystemSimulator,
-not JavaFX controls. ST-2 uses the full-duplex upstream-role ApiEventClient session;
-ST-3 later swaps only the transport below the same simulator model.
+not JavaFX controls. Central RaceData authoring is not scoped by the currently selected
+TimingNode: Team Mapping is Central-owned current state, and Stage Start Times are authored
+per StageId. The engineering UI supports setting or deleting a contiguous RegistrationId
+range for one stage; SET may apply a non-negative interval between successive registration
+start times. Under the current event mapping, Stage N finishes at LocationId N, so the
+simulator routes Stage N state to an OPEN node at LocationId N and IF-06 itself remains
+LocationId-scoped. Large authored changes are emitted through the existing bounded
+RACE_DATA delta/RECV flow rather than creating a larger protocol message.
+
+ST-2 uses the full-duplex upstream-role ApiEventClient session; ST-3 later swaps only the
+transport below the same simulator model.
 
 ## Existing web-application compatibility
 

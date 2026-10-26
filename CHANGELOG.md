@@ -1,5 +1,7 @@
 # Changelog
 
+- Define the current stage/location relationship as Stage N ending at LocationId N; keep StageId as Central authoring/routing context rather than adding it to IF-06, correct StageStartTimes to RegistrationId scope, and define SI-02 bulk stage-start authoring by RegistrationId range with optional interval.
+
 - Adopt `oss.relay.timing` as the Java/Maven family namespace for the Timing Point Application and shared timing packages, retaining compound roots such as `timingpoint`, `timingdata`, `eventdata` and `upstreamdata`; implementation counterpart: `2026-010-02.java.timing-point-application#972`.
 
 - Define `upstream.timingDataReplayPacketDelayMillis` as optional IF-11 replay pacing: zero preserves immediate TIMING_DATA replay, while a positive value delays only between successive replay packets through cooperative task continuation without changing IF-06 semantics or live forwarding.

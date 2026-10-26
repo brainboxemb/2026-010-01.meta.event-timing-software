@@ -48,6 +48,8 @@ Operational state such as `OPEN` / `CLOSED` belongs to the TimingNode software/d
 
 A `Stage` and a `TimingNode` are related but distinct concepts: a stage ends at a timing node. Stage-specific reference data such as start-time data may therefore be consumed by the timing node software without making the stage itself a hardware or runtime container.
 
+For the current event model, numeric `StageId` and `LocationId` have a direct finish relationship: **Stage N ends at LocationId N**. LocationId 1 is therefore the finish of Stage 1, LocationId 2 the finish of Stage 2, and so on. The start reference needed to calculate Stage N is the start of that stage: for Stage 1 this is the event/start reference; for Stage N > 1 it can be derived from the participant's passage at LocationId N-1. This relationship does not make LocationId and StageId the same namespace: LocationId remains physical event-location context, while StageId identifies the race segment whose elapsed time is being measured.
+
 The previous working name `TimingSystemInstance` was rejected as a name for an individual timing node because it mixed node semantics with runtime isolation. `TimingSystem` now has a distinct broader meaning: one logical timing-system aggregate that owns 1..N `TimingNode` instances.
 
 ## Timing-system, antenna and TimingNode identity
