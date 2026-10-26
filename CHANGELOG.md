@@ -1,5 +1,7 @@
 # Changelog
 
+- Define reconnect synchronization for normal downstream delivery: SI-01 announces its retained RECV position on every upstream connection, where 0 requests full current state and positive N lets a restarted Central continue with DN_PACKET N+1 without resetting TimingNode-owned protocol state.
+
 - Define the current stage/location relationship as Stage N ending at LocationId N; keep StageId as Central authoring/routing context rather than adding it to IF-06, correct StageStartTimes to RegistrationId scope, and define SI-02 bulk stage-start authoring by RegistrationId range with optional interval.
 
 - Adopt `oss.relay.timing` as the Java/Maven family namespace for the Timing Point Application and shared timing packages, retaining compound roots such as `timingpoint`, `timingdata`, `eventdata` and `upstreamdata`; implementation counterpart: `2026-010-02.java.timing-point-application#972`.
