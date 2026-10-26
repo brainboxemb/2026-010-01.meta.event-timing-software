@@ -800,10 +800,13 @@ change. `NO_CHANGE`, `INVALID` and `RESTART_REQUIRED` do not emit it.
 WebSocket listener startup does not wait for TimingNode recovery. After connection
 SI-01 sends a **complete** `STATUS_SNAPSHOT` before the client relies on subsequent
 change events. For a `role=upstream` connection, the Engineering API connector is marked
-operationally connected only after that initial snapshot is successfully sent. It then
-emits its immediate heartbeat PING and performs the node-scoped TIMING_DATA position
-exchange through SEQ as normal `UPSTREAM_DATA` events. Central may issue
-TIMING_DATA_REQ as required. RACE_DATA does not perform a separate source-head exchange.
+operationally connected only after that initial snapshot is successfully sent. Each
+NodeUpstream then emits its current downstream RECV position before the ordinary reconnect
+sequence, followed by the node-scoped TIMING_DATA position exchange through SEQ and the
+immediate heartbeat PING as normal `UPSTREAM_DATA` events. RECV 0 means a fresh
+downstream runtime; a positive RECV N lets a restarted Engineering Client continue with
+DN_PACKET N+1. Central may issue TIMING_DATA_REQ as required. RACE_DATA does not perform
+a separate source-head exchange.
 Closing that WebSocket marks the connector disconnected and stops its heartbeat lifecycle
 without clearing LogBook or applied RaceData state.
 
