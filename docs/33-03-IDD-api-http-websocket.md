@@ -72,6 +72,8 @@ GET  /api/v1/node/{id}/logbook?from=...&limit=...
 GET  /api/v1/node/{id}/logbook?last=...
 GET  /api/v1/node/{id}/registrations
 GET  /api/v1/node/{id}/registrations?after=...&limit=...
+GET  /api/v1/node/{id}/stage-start-times
+GET  /api/v1/node/{id}/stage-start-times?offset=...&limit=...
 
 POST /api/v1/dev/node/{id}/auto-reg
 POST /api/v1/dev/node/{id}/simulation/registration
@@ -524,6 +526,7 @@ a bounded `registrations` array:
   "uniqueCount": 2,
   "lastMutationSeq": 43,
   "lastRevokeSeq": 0,
+  "stageStartRevision": 12,
   "nextAfter": null,
   "registrations": [
     {
@@ -545,6 +548,50 @@ reconstructing stage timing from LogBook and RaceData.
 
 This is a compatible additive v1 response field. As required by the common compatibility
 rules, existing v1 clients tolerate response members they do not yet consume.
+
+## Development-v1 applied StageStartTimes projection
+
+Metadata:
+
+```text
+GET /api/v1/node/{id}/stage-start-times
+```
+
+Example:
+
+```json
+{
+  "count": 2,
+  "revision": 12
+}
+```
+
+A bounded page uses zero-based `offset` and `limit` (1..1000):
+
+```text
+GET /api/v1/node/{id}/stage-start-times?offset=0&limit=128
+```
+
+```json
+{
+  "count": 2,
+  "revision": 12,
+  "nextOffset": null,
+  "startTimes": [
+    {"regId":"A0001","start":"19:00:00"},
+    {"regId":"A0002","start":"19:00:30"}
+  ]
+}
+```
+
+Rows are sorted by canonical RegistrationId. `revision` changes whenever applied
+StageStartTime state changes. A client that observes a revision/count change while paging
+shall restart the bounded read. These values describe SI-01's applied RaceData state;
+they are not read from Central and are not reconstructed from LogBook records.
+
+The active `/registrations` projection exposes the same value as
+`stageStartRevision`. A change in that value invalidates cached elapsed/rank rows even
+when registration `count`, `lastMutationSeq` and `lastRevokeSeq` are unchanged.
 
 ## IF03-OP-009 — Current application configuration
 
