@@ -1,5 +1,7 @@
 # Changelog
 
+- Define current runtime status as the authority for Central routing: SI-02 consumes IF-03 STATUS_SNAPSHOT/STATUS_CHANGED for OPEN/CLOSED + LocationId, while NODE_OPEN/NODE_CLOSE in TIMING_DATA remain historical LogBook facts and cannot restore OPEN state after SI-01 restart.
+
 - Define reconnect synchronization for normal downstream delivery: SI-01 announces its retained RECV position on every upstream connection, where 0 requests full current state and positive N lets a restarted Central continue with DN_PACKET N+1 without resetting TimingNode-owned protocol state.
 
 - Define the current stage/location relationship as Stage N ending at LocationId N; keep StageId as Central authoring/routing context rather than adding it to IF-06, correct StageStartTimes to RegistrationId scope, and define SI-02 bulk stage-start authoring by RegistrationId range with optional interval.
