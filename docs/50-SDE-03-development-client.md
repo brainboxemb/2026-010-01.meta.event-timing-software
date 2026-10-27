@@ -226,7 +226,11 @@ client/application services rather than JavaFX event handlers or docking objects
 A connected timing system is modelled as an **instance-scoped client context**, not as
 global UI state. The current workbench presents one primary system, while the same
 boundary allows the Lua adapter and later multi-system engineering workflows to reuse
-client/application services without automating JavaFX controls.
+client/application services without automating JavaFX controls. Scripts are a generic
+tool beside Terminal rather than a Node Controls tab. They may reset the SI-02 client,
+connect/disconnect Events or the Central upstream role, inspect boundary state and wait
+for a bounded state transition. An intentional disconnect never cancels the script that
+requested it.
 
 ## Component architecture
 
