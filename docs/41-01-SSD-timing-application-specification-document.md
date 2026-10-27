@@ -876,6 +876,28 @@ If the write fails or remains incomplete, the commit shall fail and the record
 shall not be treated as committed.
 :::
 
+:::{req} Engineering backup and clear of persisted TimingData
+:id: SI01-REQ-088
+:status: D
+:depends_on: SI01-REQ-045, SI01-REQ-046, SI01-REQ-047, SI01-REQ-048
+
+SI-01 shall provide node-scoped engineering maintenance to create a consistent
+backup of the configured persisted TimingData and to clear that persisted stream
+without allowing the running LogBook's committed sequence/projection state to
+diverge from the physical file.
+
+A clear shall require the addressed TimingNode to be CLOSED, shall preserve the
+pre-clear persisted stream in a backup, and shall take effect only between runtime
+instances after the old runtime can no longer append and before the replacement
+runtime performs startup recovery. After a successful clear, the replacement
+runtime shall observe an empty persisted stream and allocate its next committed
+sequence from 1.
+
+If a requested clear cannot complete before process interruption, the request
+shall remain recoverable so a later startup can complete the maintenance rather
+than silently resuming from an ambiguous partial state.
+:::
+
 #### Transport semantics, network exposure and compatibility
 
 :::{req} Equivalent status semantics across interfaces  
@@ -952,6 +974,7 @@ The first registration baseline uses the following TimingNode lifecycle semantic
 | SI01-REQ-042/044 | UC-003/009/011 | LogBook/TimingData event + IF-03 bounded history/event delivery |
 | SI01-REQ-045 | UC-011 + IF05-REQ-001..007 + 33-05-IDD | reference TimingData codec/persistence boundary |
 | SI01-REQ-046 | UC-003/012 | local TimingData commit ordering |
+| SI01-REQ-088 | engineering maintenance + SI01-REQ-045..048 | consistent TimingData backup and restart-boundary clear |
 | SI01-REQ-047 | UC-013 + IF05-REQ-002/003/007 | startup TimingData recovery |
 | SI01-REQ-048 | UC-013 + 33-05-IDD | reference-store recovery validation |
 | SI01-REQ-049 | UC-020 + SI01-REQ-021/022 | recovery-failure containment without redefining TimingNode current state |

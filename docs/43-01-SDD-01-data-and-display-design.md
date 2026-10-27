@@ -495,6 +495,37 @@ problem so support/operator tooling can see it.
 If a cached sequence-counter file is introduced for faster startup, it is only a
 cache. The committed TimingData file remains the source used to check/rebuild it.
 
+### Engineering backup and clear maintenance
+
+Technical maintenance never truncates the TimingData file underneath a live
+LogBook. A point-in-time **backup** is serialized with physical append so the copy
+ends on a complete record boundary.
+
+A **clear** follows a restart-boundary protocol:
+
+1. the addressed TimingNode must currently be CLOSED;
+2. the terminal creates a durable node/file-scoped clear request and asks the
+   application to perform its normal controlled restart;
+3. normal runtime deactivation stops Presentation, upstream and node execution so
+   no further LogBook append can occur;
+4. before the replacement runtime is composed, process startup sees the durable
+   request, copies the final persisted TimingData to the reserved timestamped
+   backup and only then removes the active TimingData file;
+5. the durable request is removed only after backup + clear succeeds;
+6. the replacement runtime loads the now-empty stream and therefore starts its
+   next committed sequence at 1.
+
+The marker makes the operation restart/crash tolerant. If the process stops after
+the request is recorded but before maintenance runs, the next cold startup applies
+it. If the backup was already created but the process stops before the marker is
+removed, startup reuses that reserved backup identity and completes the clear.
+No in-memory LogBook reset is attempted inside the old runtime.
+
+The shared terminal exposes this as node-scoped `lb backup` and `lb clear`;
+multi-node strict addressing continues to use `lb:<NodeId> ...`. `lb clear`
+implicitly performs the required application restart; it is not an ordinary
+LogBook mutation.
+
 ### Persistence roles
 
 TimingData has the strongest rule:

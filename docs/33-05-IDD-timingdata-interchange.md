@@ -399,3 +399,9 @@ using another representation version's semantics.
 JSON Lines completion rules, unknown-member handling, integer `v`, the v1
 `seqNr` limit and optional `recTime` are concrete representation-design
 choices. They are intentionally not additional IF-05 requirements.
+
+Engineering backup files are byte-preserving snapshots of this same JSON Lines
+representation; they do not define another record format or source stream. A
+maintenance clear removes the active persisted stream only at the SI-01
+restart boundary defined by SI01-REQ-088/SDD-01. The replacement stream then
+starts again at sequence 1.
