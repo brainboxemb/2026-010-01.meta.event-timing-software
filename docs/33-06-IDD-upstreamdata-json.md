@@ -98,7 +98,8 @@ The semantic message object reserves:
 - `TIMING_DATA`;
 - `TIMING_DATA_REQ`;
 - `SEQ` (REQ, ANS and NTF);
-- `RACE_DATA`;
+- `TEAM_ASSIGNMENTS`;
+- `STAGE_STARTS`;
 - `RECV`;
 - `PING` (REQ and ANS);
 - `STATUS`.
@@ -214,7 +215,7 @@ The same family works in either direction. SI-01's sequence value is its current
 LogBook/IF-05 head. Central's sequence value is the highest contiguous TIMING_DATA
 sequence it has accepted/processed. `seq=0` means no position yet.
 
-A SEQ message never refers to RACE_DATA.
+A SEQ message never refers to TEAM_ASSIGNMENTS or STAGE_STARTS.
 
 On a fresh or re-established upstream session, SI-01 may notify its current source head
 with SEQ NTF. Central compares that value with its highest contiguous processed position.
@@ -224,10 +225,10 @@ positions; it does not itself pause or resume proactive live TIMING_DATA forward
 A real TIMING_DATA_REQ temporarily pauses live forwarding while its captured replay range
 is served, after which live forwarding resumes from the next sequence.
 
-### RACE_DATA
+### TEAM_ASSIGNMENTS
 
-RACE_DATA travels in a normal DN_PACKET. It has no independent `seq`; delivery numbering
-comes from the containing packet.
+TEAM_ASSIGNMENTS travels in a normal DN_PACKET and carries current live
+RegistrationId-to-TeamId assignment changes for the addressed TimingNode.
 
 ```json
 {
@@ -236,37 +237,58 @@ comes from the containing packet.
   "nodeId": "A",
   "pckNr": 43,
   "msg": {
-    "type": "RACE_DATA",
-    "locationId": 7,
-    "data": {
-      "teamAssignments": [
-        {
-          "op": "SET",
-          "regId": "R0001",
-          "teamId": "0042"
-        }
-      ],
-      "stageStartTimes": [
-        {
-          "op": "SET",
-          "regId": "R0001",
-          "start": "23:59:50.00"
-        }
-      ]
-    }
+    "type": "TEAM_ASSIGNMENTS",
+    "data": [
+      {
+        "op": "SET",
+        "regId": "R0001",
+        "teamId": "0042"
+      }
+    ]
   }
 }
 ```
 
-One RACE_DATA message carries at most 16 changes total across all supported sections.
-StageId is not serialized in this representation. Under the current event mapping,
-Central sends authored Stage N start definitions in RACE_DATA with `locationId = N`,
-because Stage N finishes at LocationId N. A resent DN_PACKET is identified by the same
-pckNr and must not cause the same RACE_DATA changes to be applied twice.
+One TEAM_ASSIGNMENTS message carries **1..16** SET/DEL changes. The message has no
+LocationId: an assignment is node-scoped current state keyed by RegistrationId, not by
+the currently open WP.
 
-RACE_DATA is current-state delivery, not retained source-history synchronization.
-Central therefore need not retain old RACE_DATA packets after confirmation. It keeps
-the current race state plus the exact outstanding packet required for retry.
+TEAM_ASSIGNMENTS is current-state delivery, not retained source-history synchronization.
+Central therefore need not retain old assignment packets after confirmation. It keeps the
+current assignment state plus the exact outstanding packet required for retry.
+
+### STAGE_STARTS
+
+STAGE_STARTS travels in a normal DN_PACKET and carries current RegistrationId-scoped
+stage-start definitions for the addressed TimingNode.
+
+```json
+{
+  "v": 1,
+  "type": "DN_PACKET",
+  "nodeId": "A",
+  "pckNr": 44,
+  "msg": {
+    "type": "STAGE_STARTS",
+    "data": [
+      {
+        "op": "SET",
+        "regId": "R0001",
+        "start": "23:59:50.00"
+      }
+    ]
+  }
+}
+```
+
+One STAGE_STARTS message carries **1..16** SET/DEL changes. It carries neither
+LocationId nor StageId. The stage start itself is current state keyed by RegistrationId.
+Which TimingNode receives that current state, and which currently open WP projection
+uses it, is application/runtime routing rather than part of the stage-start value.
+
+A resent DN_PACKET is identified by the same pckNr and must not cause the same changes
+to be applied twice. STAGE_STARTS has no independent source sequence and no historical
+replay obligation.
 
 ### RECV
 
@@ -301,7 +323,7 @@ stop-and-wait rule Central never sends packet N+1 before N is confirmed.
 
 `rcvSeqNr=0` is special: it is not acknowledgement of a normal DN_PACKET. It
 requests that Central rebuild and resend the applicable current downstream state. It
-does not request historical RACE_DATA by source sequence.
+does not request historical TEAM_ASSIGNMENTS or STAGE_STARTS by source sequence.
 
 ### PING
 
@@ -366,7 +388,7 @@ The packet-oriented default/reference writer:
 - emits one NodeId and one packetNr;
 - emits exactly one semantic `msg`;
 - uses positive pckNr for ordinary packets and pckNr 0 only for PING;
-- emits at most 16 TimingData records or 16 combined RaceData changes in one semantic message;
+- emits at most 16 TimingData records, 16 TEAM_ASSIGNMENTS changes, or 16 STAGE_STARTS changes in one semantic message;
 - does not copy transport-specific routing/session metadata into semantic message content.
 
 The reader:
@@ -470,16 +492,16 @@ format.
 | IF06-REQ-001 | v1 represents transport-independent IF-06 packet/message semantics |
 | IF06-REQ-002 | TIMING_DATA embeds IF-05-compatible TimingData values |
 | IF06-REQ-003 | pckNr remains separate from NodeId + IF-05 sequence identity |
-| IF06-REQ-004/005 | RACE_DATA carries NodeId + LocationId + current changes and is confirmed through its DN_PACKET |
+| IF06-REQ-004/005 | TEAM_ASSIGNMENTS and STAGE_STARTS carry node-scoped current changes and are confirmed through their DN_PACKET |
 | IF06-REQ-014 | positive DN_PACKET uses stop-and-wait RECV/resend |
-| IF06-REQ-015 | `teamAssignments` carries live RegistrationId -> TeamId SET/DEL changes |
-| IF06-REQ-016 | `stageStartTimes` carries RegistrationId-scoped SET/DEL changes |
+| IF06-REQ-015 | TEAM_ASSIGNMENTS carries live RegistrationId -> TeamId SET/DEL changes |
+| IF06-REQ-016 | STAGE_STARTS carries RegistrationId-scoped SET/DEL changes without LocationId |
 | IF06-REQ-006/017 | SEQ REQ/ANS/NTF exchanges only the TIMING_DATA position |
 | IF06-REQ-018 | both packet directions expose packetNr; only downstream packetNr participates in current RECV handling |
 | IF06-REQ-019 | TIMING_DATA replay reuses original TimingData identity/content |
 | IF06-REQ-020 | TIMING_DATA_REQ uses inclusive `fromSeq` |
 | IF06-REQ-021 | fresh SEQ reports TIMING_DATA positions; Central uses TIMING_DATA_REQ only for a missing suffix, and replay temporarily pauses otherwise-live forwarding; RECV 0 requests current downstream-state resend |
-| IF06-REQ-022 | TIMING_DATA is limited to 16 records/message and RACE_DATA to 16 combined changes/message |
+| IF06-REQ-022 | TIMING_DATA, TEAM_ASSIGNMENTS and STAGE_STARTS each have their own 16-item message bound |
 | IF06-REQ-007 | representation does not couple local TimingData commit to delivery |
 | IF06-REQ-008 | v1 JSON is the packet-oriented public/default representation |
 | IF06-REQ-009 | provider/codec boundary permits alternative representations |

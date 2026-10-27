@@ -108,7 +108,8 @@ The current semantic message families carried by those packets are:
 | `TIMING_DATA` | SI-01 -> Central System | transfer committed TimingData records using their existing LogBook/IF-05 sequence |
 | `TIMING_DATA_REQ` | Central System -> SI-01 | request TimingData beginning at one IF-05/LogBook sequence |
 | `SEQ` | bidirectional | request, answer or notify the current TIMING_DATA position |
-| `RACE_DATA` | Central System -> SI-01 | deliver current race-state changes; no independent replay sequence is created |
+| `TEAM_ASSIGNMENTS` | Central System -> SI-01 | deliver current RegistrationId -> TeamId assignments; no independent replay sequence is created |
+| `STAGE_STARTS` | Central System -> SI-01 | deliver current RegistrationId-scoped stage starts; no independent replay sequence is created |
 | `RECV` | SI-01 -> Central System | confirm the last successfully processed normal downstream packet or request a full downstream state resend |
 | `PING` | bidirectional | immediate REQ/ANS liveness exchange without normal RECV handling |
 | `STATUS` | bidirectional | expose upstream and connector health relevant to integration |
@@ -135,36 +136,24 @@ replay is split into multiple ordered TIMING_DATA messages; batching never creat
 another TimingData sequence.
 
 
-### RaceData relationship
+### Current reference data relationship
 
-`RACE_DATA` carries Central-owned live race-state changes for one addressed TimingNode.
-It is **not** a durable historical stream and does not have a second source sequence.
-The containing `DN_PACKET.packetNr` provides delivery numbering; it does not become a
-RaceData revision or a TimingData sequence.
+`TEAM_ASSIGNMENTS` and `STAGE_STARTS` are two independent Central-owned current-state
+message families for one addressed TimingNode. Neither is a durable historical stream and
+neither has a source sequence. The containing `DN_PACKET.packetNr` provides delivery
+numbering only.
 
-Each RACE_DATA message carries one message-level `LocationId`. The LocationId identifies
-the WP context for which Central created that message; individual team/stage-start
-changes remain keyed by RegistrationId and do not repeat LocationId.
+`TEAM_ASSIGNMENTS` carries only live RegistrationId -> TeamId changes. Stable EventData
+remains authoritative for RegistrationIds that already have a fixed TeamId mapping.
 
-Central may author current race state independently from any connected TimingNode. For
-the current event model, Stage N finishes at LocationId N. A stage-start definition
-authored for Stage N is therefore delivered in RACE_DATA whose message-level LocationId
-is N when a TimingNode is operating at that location. StageId is authoring/routing
-context and is not duplicated in the IF-06 RACE_DATA payload.
+`STAGE_STARTS` carries only RegistrationId -> stage-start changes. A stage-start value
+has no LocationId or StageId in IF-06. Which TimingNode receives the current value, and
+whether its currently open WP projection uses it, is application/runtime routing outside
+the stage-start value itself.
 
-The current RaceData payload can contain one or more incremental change sections:
-
-- `teamAssignments` changes the live RegistrationId -> TeamId assignment;
-- `stageStartTimes` changes RegistrationId-scoped stage-start definitions.
-
-Each change uses an explicit operation such as `SET` or `DEL`. One RACE_DATA message
-carries **1..16 changes total** across all supported sections. Absence of a section means
-no change to that part of RaceData.
-
-The reserve mapping is keyed by RegistrationId rather than physical TagId because stable
-EventData already resolves physical tags to the registration identity. RaceData supplies
-only the live RegistrationId -> TeamId assignment. A RegistrationId that already resolves
-to a stable TeamId through EventData shall not be remapped by RaceData.
+Each message uses explicit `SET` or `DEL` changes and carries **1..16** changes of its
+own type. The two message families are not combined into one atomic unit and do not share
+one message-size budget.
 
 Normal Central-to-node delivery uses stop-and-wait semantics. For each TimingNode, Central
 keeps at most one positive-numbered DN_PACKET outstanding. It does not send the next normal
@@ -172,22 +161,16 @@ positive-numbered DN_PACKET until the current one has been confirmed by RECV. If
 is not received, Central may resend the **same packet with the same packetNr and semantic
 content**.
 
-SI-01 applies a new RACE_DATA packet only after the complete message has validated. It
-then confirms the containing downstream packet with RECV. If that RECV is lost and the
-same DN_PACKET is received again, SI-01 must not apply the same changes twice; it repeats
-the confirmation for the already processed packet.
+SI-01 validates and applies one complete TEAM_ASSIGNMENTS or STAGE_STARTS message before
+confirming its containing downstream packet with RECV. If that RECV is lost and the same
+DN_PACKET is received again, SI-01 must not apply the same changes twice; it repeats the
+confirmation for the already processed packet.
 
-Central therefore does not need a retained history of old RACE_DATA packets. It keeps its
-current race state plus the exact outstanding downstream packet needed for retry. Changes
-to Central state while a packet is outstanding make later output dirty; they do not mutate
-the outstanding packet. After the outstanding packet is confirmed, Central can construct
-the next packet from its current state.
-
-A full downstream state resend is explicitly requested with RECV position 0. Central then
-rebuilds the applicable current downstream state rather than replaying a historical
-RACE_DATA sequence. Exact snapshot segmentation is a representation/design concern, but
-a state change during that resend must not rewrite an already sent packet.
-
+Central therefore needs no retained history of old TEAM_ASSIGNMENTS or STAGE_STARTS
+packets. It keeps current downstream state plus the exact outstanding packet needed for
+retry. A full downstream-state resend is requested with RECV position 0; Central rebuilds
+the applicable current TEAM_ASSIGNMENTS and STAGE_STARTS state rather than replaying a
+historical source sequence.
 
 ### TimingData sequence and replay
 
@@ -236,7 +219,7 @@ Loss does not require a second durable TimingData outbox. Central can request re
 TimingData again from the LogBook. Retransmission preserves the original IF-05 record
 identity and content.
 
-RACE_DATA is deliberately not synchronized by SEQ. Its recovery uses DN_PACKET delivery,
+TEAM_ASSIGNMENTS and STAGE_STARTS are deliberately not synchronized by SEQ. Their recovery uses DN_PACKET delivery,
 RECV/resend and, when the node no longer trusts its downstream state, an explicit full
 state resend request.
 
@@ -289,7 +272,8 @@ Operations use stable semantic identifiers independent from transport.
 | Operation | Direction | Meaning |
 | --- | --- | --- |
 | `IF06-OP-01 DELIVER_TIMING_DATA` | SI-01 -> Central System | deliver committed TimingData without changing IF-05 identity/order |
-| `IF06-OP-02 APPLY_RACE_DATA` | Central System -> SI-01 | validate and apply current RaceData carried by one downstream packet |
+| `IF06-OP-02 APPLY_TEAM_ASSIGNMENTS` | Central System -> SI-01 | validate and apply current RegistrationId-to-TeamId assignments carried by one downstream packet |
+| `IF06-OP-09 APPLY_STAGE_STARTS` | Central System -> SI-01 | validate and apply current RegistrationId-scoped stage starts carried by one downstream packet |
 | `IF06-OP-03 TIMING_DATA_SEQUENCE` | bidirectional | request, answer or notify the current TIMING_DATA sequence position |
 | `IF06-OP-04 STATUS` | bidirectional | exchange/observe integration status |
 | `IF06-OP-05 PING_REQUEST` | bidirectional | initiate PING with op REQ and optional HB mode |
@@ -316,24 +300,42 @@ Required behaviour:
 - permit retransmission for synchronization;
 - never imply that packet delivery rewrites local committed data.
 
-### IF06-OP-02 APPLY_RACE_DATA
+### IF06-OP-02 APPLY_TEAM_ASSIGNMENTS
 
 Input:
 
 - addressed TimingNode;
-- message-level LocationId identifying the WP context;
-- **1..16** current RaceData changes total across all change sections;
+- **1..16** RegistrationId-to-TeamId SET/DEL changes;
 - containing DN_PACKET delivery number.
 
 Outcome:
 
-- a new valid packet: apply all changes as one unit, then confirm the containing
-  downstream packet with RECV;
+- a new valid packet: validate and apply all assignment changes as one unit, then confirm
+  the containing downstream packet with RECV;
 - a resend of an already processed packet: do not apply again; repeat RECV;
 - invalid semantic content: do not advance the accepted downstream packet position and
   expose a diagnosable rejection/conflict.
 
-RACE_DATA itself has no source sequence and no historical replay obligation.
+TEAM_ASSIGNMENTS has no source sequence and no historical replay obligation.
+
+### IF06-OP-09 APPLY_STAGE_STARTS
+
+Input:
+
+- addressed TimingNode;
+- **1..16** RegistrationId-scoped stage-start SET/DEL changes;
+- containing DN_PACKET delivery number.
+
+Outcome:
+
+- a new valid packet: validate and apply all stage-start changes as one unit, then confirm
+  the containing downstream packet with RECV;
+- a resend of an already processed packet: do not apply again; repeat RECV;
+- invalid semantic content: do not advance the accepted downstream packet position and
+  expose a diagnosable rejection/conflict.
+
+STAGE_STARTS carries no LocationId or StageId. It has no source sequence and no
+historical replay obligation.
 
 ### IF06-OP-03 TIMING_DATA_SEQUENCE
 
@@ -496,20 +498,20 @@ TimingData record key or source sequence.
 :id: IF06-REQ-004  
 :status: D  
 
-IF-06 shall support Central System-to-SI-01 RACE_DATA messages with explicit NodeId,
-message-level LocationId and incremental race-state changes. LocationId supplies the WP
-context for the whole message while individual changes remain RegistrationId-scoped.
-RACE_DATA shall not create an independent historical source sequence.
+IF-06 shall support Central System-to-SI-01 TEAM_ASSIGNMENTS and STAGE_STARTS messages.
+Both are addressed to one NodeId and carry incremental RegistrationId-scoped current
+state. Neither message shall carry LocationId or create an independent historical
+source sequence.
 :::
 
 :::{ifreq} Explicit reference-data outcome  
 :id: IF06-REQ-005  
 :status: D  
 
-A RACE_DATA message shall be validated and applied before SI-01 confirms its containing
-DN_PACKET with RECV. A resend of an already processed DN_PACKET shall not apply the same
-RaceData twice. Invalid content shall not advance the accepted downstream packet
-position and shall remain diagnosable.
+A TEAM_ASSIGNMENTS or STAGE_STARTS message shall be validated and applied before SI-01
+confirms its containing DN_PACKET with RECV. A resend of an already processed DN_PACKET
+shall not apply the same current-state change twice. Invalid content shall not advance
+the accepted downstream packet position and shall remain diagnosable.
 :::
 
 :::{ifreq} Synchronization preserves source identity  
@@ -595,7 +597,7 @@ be treated as a synchronization conflict and shall not silently overwrite data.
 
 Central System shall be able to request TIMING_DATA beginning at an inclusive
 IF-05/LogBook sequence with TIMING_DATA_REQ. A request from sequence 1 means replay
-from the retained beginning of the LogBook. RACE_DATA shall not use this replay
+from the retained beginning of the LogBook. TEAM_ASSIGNMENTS or STAGE_STARTS shall not use this replay
 mechanism.
 :::
 
@@ -623,20 +625,20 @@ forwarding, capture its current LogBook head, replay through that captured head,
 resume proactive live forwarding from the next sequence only after that replay completes.
 SEQ position exchange itself shall not gate proactive live forwarding.
 
-RACE_DATA recovery shall not depend on a retained Central source sequence. When SI-01
-cannot trust its downstream state it may request a full resend of the current
-Central-owned downstream state through RECV position 0.
+TEAM_ASSIGNMENTS and STAGE_STARTS recovery shall not depend on a retained Central source
+sequence. When SI-01 cannot trust its downstream state it may request a full resend of
+the current Central-owned downstream state through RECV position 0.
 :::
 
 :::{ifreq} Bound IF-06 data-message size  
 :id: IF06-REQ-022  
 :status: D  
 
-One TIMING_DATA message shall carry at most 16 TimingData records. One RACE_DATA
-message shall carry at most 16 incremental changes total across all supported change
-sections. A producer with more retained TimingData shall split it without changing the
-underlying IF-05 sequence. Larger RaceData state delivery may require multiple confirmed
-DN_PACKET turns; it shall not create a RaceData source sequence.
+One TIMING_DATA message shall carry at most 16 TimingData records. One TEAM_ASSIGNMENTS
+message shall carry at most 16 assignment changes. One STAGE_STARTS message shall carry
+at most 16 stage-start changes. A producer with more retained TimingData shall split it
+without changing the underlying IF-05 sequence. Larger current-state delivery may require
+multiple confirmed DN_PACKET turns; it shall not create another source sequence.
 :::
 
 :::{ifreq} Confirm downstream packets with stop-and-wait delivery  
@@ -650,12 +652,12 @@ with the same packetNr and semantic content. SI-01 shall not apply a resent alre
 processed packet twice.
 :::
 
-:::{ifreq} Separate stable EventData from live RaceData  
+:::{ifreq} Separate stable EventData from live current reference data  
 :id: IF06-REQ-015  
 :status: D  
 
-RACE_DATA shall be able to carry incremental TeamAssignments changes as
-RegistrationId-to-TeamId assignments that are not stable EventData profile identity.
+TEAM_ASSIGNMENTS shall carry incremental RegistrationId-to-TeamId assignments that are
+not stable EventData profile identity.
 The semantic contract is generic and does not classify an assignment by tag type.
 It shall not redefine a stable RegistrationId-to-TeamId mapping supplied by EventData.
 Physical TagIds remain resolved to their RegistrationId by EventData.
@@ -665,15 +667,12 @@ Physical TagIds remain resolved to their RegistrationId by EventData.
 :id: IF06-REQ-016  
 :status: D  
 
-RACE_DATA shall be able to carry incremental RegistrationId-scoped stage-start-time changes.
-The message-level LocationId supplies the WP/stage-finish context in which those definitions
-are sent; the individual change remains keyed by RegistrationId. For the current event model,
-Stage N finishes at LocationId N, so Central routes the current Stage N definitions to
-LocationId N without adding StageId to the message. Such delivery is valid only for a
-currently OPEN LocationId context; retained NODE_OPEN/NODE_CLOSE TimingData alone does
-not establish current runtime state after restart. The RegistrationId is the timing-domain
+STAGE_STARTS shall carry incremental RegistrationId-scoped stage-start-time changes.
+The message carries neither LocationId nor StageId. The RegistrationId is the timing-domain
 identity whose start is being defined; consumers shall not need an intermediate TeamId lookup
-to match a registration to its stage start.
+to match a registration to its stage start. Which addressed TimingNode receives current
+stage-start state, and whether its currently open WP projection consumes that state, belongs
+to application/runtime routing rather than to the stage-start value.
 A SET shall carry one `TimingTimestamp` value containing at least local race
 time-of-day. The timestamp may also contain a local date or already be absolute
 when the source knows that information. A source that knows only time-of-day
