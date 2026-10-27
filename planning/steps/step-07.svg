@@ -1,0 +1,262 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="210mm" height="594mm" viewBox="0 0 595.28 1683.78">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<rect x="16.00" y="16.00" width="24.00" height="24.00" rx="5" fill="#f3f5f7" stroke="#8b96a1"/>
+<text x="28.00" y="32.80" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="14.00" font-weight="bold" fill="#2f3337">7</text>
+<text x="50.00" y="32.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="16.00" font-weight="bold" fill="#2f3337">Backoffice and multi-node integration</text>
+<text x="16.00" y="52.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">ACTIVE | TOTAL: orig ~7d · forecast ~8.5d | PROGRESS: spent ~0d · rem ~8.5d | forecast end 21 Dec 2026</text>
+<text x="16.00" y="68.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">GOAL</text>
+<line x1="49.11" y1="65.75" x2="579.28" y2="65.75" stroke="#d9dde1" stroke-width="1"/>
+<text x="16.00" y="85.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Run a representative multi-node SI-01 setup that consumes reference/start-time data, produces derived timing, and exchanges</text>
+<text x="16.00" y="95.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">node-scoped timing data with a reproducible backoffice test environment while preserving local operation during outages.</text>
+<text x="16.00" y="112.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">RESULT</text>
+<line x1="58.00" y1="109.75" x2="293.64" y2="109.75" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="19.00" cy="125.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="129.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Multiple TimingNodes retain independent state, sequence and</text>
+<text x="26.00" y="139.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">storage.</text>
+<circle cx="19.00" cy="148.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="152.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Node-scoped reference/start-time data can be received and</text>
+<text x="26.00" y="162.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">applied explicitly.</text>
+<circle cx="19.00" cy="171.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="175.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">TeamID interpretation and StageTiming use defined</text>
+<text x="26.00" y="185.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">reference-data ownership.</text>
+<circle cx="19.00" cy="194.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="198.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Local registration continues during upstream outage.</text>
+<circle cx="19.00" cy="207.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="211.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Pending outbound timing work resumes synchronization after</text>
+<text x="26.00" y="221.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">recovery.</text>
+<circle cx="19.00" cy="230.65" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="234.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Engineering-API and RabbitMQ transports exercise the same</text>
+<text x="26.00" y="244.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">semantic upstream contract.</text>
+<text x="301.64" y="112.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">END DEMO</text>
+<line x1="354.75" y1="109.75" x2="579.28" y2="109.75" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="304.64" cy="125.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="129.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Start a multi-node SI-01 test composition.</text>
+<circle cx="304.64" cy="138.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="142.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Load synthetic RaceData and StageStartTimes for the addressed</text>
+<text x="311.64" y="152.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">nodes.</text>
+<circle cx="304.64" cy="161.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="165.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Feed simulated registrations and inspect TeamID/StageTiming</text>
+<text x="311.64" y="175.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">results per node.</text>
+<circle cx="304.64" cy="184.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="188.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Use the SI-02 Backend pane over IF-03 to send</text>
+<text x="311.64" y="198.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">RaceData/StageStartTimes and inspect typed outbound</text>
+<text x="311.64" y="208.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">backoffice events.</text>
+<circle cx="304.64" cy="217.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="221.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Force acknowledgement delay/disconnect, continue local</text>
+<text x="311.64" y="231.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">registrations, reconnect and synchronize.</text>
+<circle cx="304.64" cy="240.65" r="1.45" fill="#6a8bb0"/>
+<text x="311.64" y="244.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Switch the SI-02 Backend Simulator to RabbitMQ transport and</text>
+<text x="311.64" y="254.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">repeat the recovery flow through the hosted broker against</text>
+<text x="311.64" y="264.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">SI-01.</text>
+<text x="16.00" y="284.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">DOCUMENTATION</text>
+<line x1="97.10" y1="281.75" x2="579.28" y2="281.75" stroke="#d9dde1" stroke-width="1"/>
+<rect x="16.00" y="293.75" width="50.50" height="15.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="41.25" y="304.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#6a4b00">30-UC R-90</text>
+<rect x="72.50" y="293.75" width="65.90" height="15.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="105.45" y="304.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#6a4b00">41-01-SSD R-85</text>
+<rect x="144.40" y="293.75" width="65.90" height="15.00" rx="5" fill="#e8f1fb" stroke="#4b78a8"/>
+<text x="177.35" y="304.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#244b73">32-06-ISD W-55</text>
+<rect x="216.30" y="293.75" width="65.90" height="15.00" rx="5" fill="#e8f1fb" stroke="#4b78a8"/>
+<text x="249.25" y="304.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#244b73">33-06-IDD W-45</text>
+<rect x="288.20" y="293.75" width="77.45" height="15.00" rx="5" fill="#e8f1fb" stroke="#4b78a8"/>
+<text x="326.93" y="304.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#244b73">43-01-SDD-03 W-70</text>
+<rect x="371.65" y="293.75" width="54.35" height="15.00" rx="5" fill="#fff4d6" stroke="#a77a19"/>
+<text x="398.83" y="304.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#6a4b00">60-SVP R-85</text>
+<text x="16.00" y="327.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">DOCUMENTATION / DECISIONS</text>
+<line x1="147.78" y1="324.75" x2="579.28" y2="324.75" stroke="#d9dde1" stroke-width="1"/>
+<rect x="16.00" y="337.75" width="182.43" height="97.25" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="352.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">D01</text>
+<rect x="163.03" y="342.75" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="176.73" y="353.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="24.00" y="375.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Promote IF-06 UpstreamData</text>
+<text x="24.00" y="387.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">semantic contract and public</text>
+<text x="24.00" y="399.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">JSON reference representation</text>
+<text x="24.00" y="413.38" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">IF-06 now defines transport-in...</text>
+<rect x="206.43" y="337.75" width="182.43" height="97.25" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="214.43" y="352.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">D02</text>
+<text x="235.26" y="352.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D01</text>
+<rect x="353.45" y="342.75" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="367.15" y="353.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="214.43" y="375.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Define reference-data,</text>
+<text x="214.43" y="387.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">TeamID, StagePassageList and</text>
+<text x="214.43" y="399.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">StageRanking</text>
+<text x="214.43" y="410.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">ownership/semantics</text>
+<text x="214.43" y="425.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">EventData owns stable profile...</text>
+<rect x="396.85" y="337.75" width="182.43" height="97.25" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="404.85" y="352.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">D03</text>
+<text x="425.69" y="352.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D01</text>
+<rect x="543.88" y="342.75" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="557.58" y="353.55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="404.85" y="375.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Define packet delivery plus</text>
+<text x="404.85" y="387.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">TIMINGDATA sequence/replay</text>
+<text x="404.85" y="399.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">semantics</text>
+<text x="404.85" y="413.38" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">TIMINGDATA is the only...</text>
+<rect x="16.00" y="443.00" width="182.43" height="97.25" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="458.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">D04</text>
+<text x="44.84" y="458.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D01 D03</text>
+<rect x="163.03" y="448.00" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="176.73" y="458.80" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="24.00" y="480.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Align backoffice transport</text>
+<text x="24.00" y="492.38" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">SDD plus Engineering API</text>
+<text x="24.00" y="504.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">connector / hosted RabbitMQ</text>
+<text x="24.00" y="516.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">verification topology</text>
+<text x="24.00" y="530.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">EngineeringApiConnector is...</text>
+<text x="16.00" y="557.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">APPLICATION / PRODUCT</text>
+<line x1="126.45" y1="554.25" x2="579.28" y2="554.25" stroke="#d9dde1" stroke-width="1"/>
+<rect x="16.00" y="567.25" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="582.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">A01</text>
+<rect x="163.03" y="572.25" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="176.73" y="583.05" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="24.00" y="604.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Adopt and qualify the</text>
+<text x="24.00" y="616.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">existing multi-node</text>
+<text x="24.00" y="628.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">composition baseline</text>
+<text x="24.00" y="642.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Adopt the existing multi-node...</text>
+<rect x="206.43" y="567.25" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="214.43" y="582.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">A02</text>
+<text x="235.26" y="582.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D01 D02 V01</text>
+<rect x="353.45" y="572.25" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="367.15" y="583.05" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="214.43" y="604.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Implement node-scoped</text>
+<text x="214.43" y="616.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">reference-data ingress and</text>
+<text x="214.43" y="628.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">TeamID interpretation</text>
+<text x="214.43" y="642.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">The Java implementation...</text>
+<rect x="396.85" y="567.25" width="182.43" height="85.38" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="404.85" y="582.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">A03</text>
+<text x="425.69" y="582.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after A02 D02</text>
+<rect x="543.88" y="572.25" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="557.58" y="583.05" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="404.85" y="604.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Implement StagePassageList</text>
+<text x="404.85" y="616.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">and StageRanking using the</text>
+<text x="404.85" y="628.50" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">promoted reference-data model</text>
+<text x="404.85" y="642.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Implement StageTiming using...</text>
+<rect x="16.00" y="660.62" width="182.43" height="109.12" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="675.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">A04</text>
+<text x="44.84" y="675.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D01 D03 V01</text>
+<rect x="163.03" y="665.62" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="176.73" y="676.42" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="24.00" y="698.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Implement</text>
+<text x="24.00" y="710.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">transport-independent</text>
+<text x="24.00" y="721.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">SEQ/TIMINGDATAREQ LogBook</text>
+<text x="24.00" y="733.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">synchronization and</text>
+<text x="24.00" y="745.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">DNPACKET/RECV delivery</text>
+<text x="24.00" y="760.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">The Java implementation...</text>
+<rect x="206.43" y="660.62" width="182.43" height="109.12" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="214.43" y="675.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">A05</text>
+<text x="235.26" y="675.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D04 A02 A04</text>
+<rect x="353.45" y="665.62" width="27.40" height="15.00" rx="7" fill="#fff4d6" stroke="#a77a19"/>
+<text x="367.15" y="676.42" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#6a4b00">NEXT</text>
+<text x="214.43" y="698.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Implement EngineeringApiBacko</text>
+<text x="214.43" y="710.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">fficeConnector plus SI-02</text>
+<text x="214.43" y="721.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Backend pane</text>
+<text x="214.43" y="736.25" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Complete the SI-02 Central...</text>
+<rect x="396.85" y="660.62" width="182.43" height="109.12" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="404.85" y="675.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">A06</text>
+<text x="425.69" y="675.62" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after D04 V02</text>
+<rect x="532.33" y="665.62" width="38.95" height="15.00" rx="7" fill="#f1f1f1" stroke="#888888"/>
+<text x="551.80" y="676.42" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#555555">PLANNED</text>
+<text x="404.85" y="698.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Implement/qualify SI-01</text>
+<text x="404.85" y="710.00" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">RabbitMQ connector plus SI-02</text>
+<text x="404.85" y="721.88" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">RabbitMQ backend-peer</text>
+<text x="404.85" y="733.75" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">transport</text>
+<text x="404.85" y="748.12" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Implement/qualify RabbitMQ on...</text>
+<line x1="16.00" y1="841.89" x2="579.28" y2="841.89" stroke="#d9dde1" stroke-width="1" stroke-dasharray="4 4"/>
+<text x="579.28" y="851.89" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">PAGE 2</text>
+<text x="16.00" y="865.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">VERIFICATION / TEST</text>
+<line x1="109.57" y1="862.89" x2="579.28" y2="862.89" stroke="#d9dde1" stroke-width="1"/>
+<rect x="16.00" y="875.89" width="182.43" height="109.12" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="24.00" y="890.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">V01</text>
+<text x="44.45" y="890.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after A01</text>
+<rect x="163.03" y="880.89" width="27.40" height="15.00" rx="7" fill="#eaf5e7" stroke="#5a8750"/>
+<text x="176.73" y="891.69" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#31582b">DONE</text>
+<text x="24.00" y="913.39" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Requalify multi-node</text>
+<text x="24.00" y="925.26" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">addressing, isolation,</text>
+<text x="24.00" y="937.14" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">persistence and recovery</text>
+<text x="24.00" y="951.51" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Requalified on Java main...</text>
+<rect x="206.43" y="875.89" width="182.43" height="109.12" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="214.43" y="890.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">V02</text>
+<text x="234.88" y="890.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after A03 A05</text>
+<rect x="341.90" y="880.89" width="38.95" height="15.00" rx="7" fill="#f1f1f1" stroke="#888888"/>
+<text x="361.38" y="891.69" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#555555">PLANNED</text>
+<text x="214.43" y="913.39" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Verify reference-data,</text>
+<text x="214.43" y="925.26" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">derived timing and</text>
+<text x="214.43" y="937.14" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">synchronization through the</text>
+<text x="214.43" y="949.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Engineering API backoffice</text>
+<text x="214.43" y="960.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">connector</text>
+<text x="214.43" y="975.26" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Use the SI-02 Backend pane...</text>
+<rect x="396.85" y="875.89" width="182.43" height="109.12" rx="5" fill="#ffffff" stroke="#b8c0c8" stroke-width="1"/>
+<text x="404.85" y="890.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#626a72">V03</text>
+<text x="425.30" y="890.89" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">after A06</text>
+<rect x="532.33" y="880.89" width="38.95" height="15.00" rx="7" fill="#f1f1f1" stroke="#888888"/>
+<text x="551.80" y="891.69" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="bold" fill="#555555">PLANNED</text>
+<text x="404.85" y="913.39" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">Verify SI-02 ↔ hosted</text>
+<text x="404.85" y="925.26" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">RabbitMQ ↔ SI-01</text>
+<text x="404.85" y="937.14" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="9.50" font-weight="bold" fill="#2f3337">routing/recovery end-to-end</text>
+<text x="404.85" y="951.51" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="7.00" font-weight="normal" fill="#626a72">Run ST-3 end-to-end as SI-02...</text>
+<text x="16.00" y="1002.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">PLANNING CHANGES</text>
+<line x1="110.00" y1="999.01" x2="579.28" y2="999.01" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="19.00" cy="1014.91" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="1019.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-25 — Simplify TIMING_DATA synchronization: proactive live forwarding is the default while the upstream session is</text>
+<text x="26.00" y="1029.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">available. SEQ reports positions but does not gate live forwarding. Only an actual TIMING_DATA_REQ pauses live forwarding for</text>
+<text x="26.00" y="1039.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">its captured replay range; caught-up Central sends no automatic response.</text>
+<circle cx="19.00" cy="1047.91" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="1052.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-25 — Refine the IF-06 replay-to-live handoff: TIMING_DATA_REQ now means missing retained data only. A caught-up</text>
+<text x="26.00" y="1062.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">reconnect completes through equal SEQ positions; SI-01 refreshes its source-head NTF if the LogBook advances while that</text>
+<text x="26.00" y="1072.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">confirmation is pending, avoiding an empty replay request without losing the handoff race.</text>
+<circle cx="19.00" cy="1080.91" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="1085.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-25 — Define optional SI-01 TIMING_DATA replay pacing as the formal IF-11 upstream.timingDataReplayPacketDelayMillis</text>
+<text x="26.00" y="1095.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">setting. Zero preserves current immediate replay; a positive value delays only between successive replay packets and must use</text>
+<text x="26.00" y="1105.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">cooperative task continuation rather than blocking a TimingNode executor. IF-06 wire semantics and live forwarding remain</text>
+<text x="26.00" y="1115.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">unchanged.</text>
+<text x="16.00" y="1135.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">PLANNING CHANGES (CONT.)</text>
+<line x1="142.44" y1="1132.01" x2="579.28" y2="1132.01" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="19.00" cy="1147.91" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="1152.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-21 — Refine D04/A05 after the upstream architecture update. ST-2 now uses one full-duplex IF-03 WebSocket at</text>
+<text x="26.00" y="1162.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">/api/v1/events?role=upstream; the temporary HTTP upstream-message injection and the old UpstreamMessageRouter/DebugConnector</text>
+<text x="26.00" y="1172.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">model are superseded. SI-01 uses UpstreamGateway plus node-scoped UpstreamStream and UpstreamConnector. SI-02 keeps one Central</text>
+<text x="26.00" y="1182.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">System Simulator semantic model; its ApiEventClient session carries ST-2 UpstreamData in both directions, while a later RabbitMQ</text>
+<text x="26.00" y="1192.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">Central-System transport reuses the same simulator for ST-3.</text>
+<circle cx="19.00" cy="1200.91" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="1205.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-13 — Complete A03 on Java main revision 006a92e65e07412cb7caf603f853c90c58b86f5e. StageTiming now derives deterministic</text>
+<text x="26.00" y="1215.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">elapsed results from committed TimingData plus current EventData/ReserveTagMap/StageStartTimes state, with explicit unresolved</text>
+<text x="26.00" y="1225.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">outcomes and an explicit ZoneId for civil-time rollover. REV/lifecycle records do not become new stage passages. Ranking remains</text>
+<text x="26.00" y="1235.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">a future query policy because no ranking/tie/grouping rule is currently specified.</text>
+<text x="16.00" y="1255.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">PLANNING CHANGES (CONT.)</text>
+<line x1="142.44" y1="1252.01" x2="579.28" y2="1252.01" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="19.00" cy="1267.91" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="1272.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-13 — Complete A02 on Java main revision 99d1d5839c7f837d19095f3b253708728952cdc1. The UpstreamData base, ordered</text>
+<text x="26.00" y="1282.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">per-node RACE_DATA sequence, ReserveTagMap and StageStartTimes SET/DEL state, apply-before-ACK semantics, gap-to-REQ behavior,</text>
+<text x="26.00" y="1292.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">node UpstreamMessagePort and application UpstreamMessageRouter are implemented and qualified by Java verification and runtime</text>
+<text x="26.00" y="1302.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">characterization.</text>
+<circle cx="19.00" cy="1310.91" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="1315.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-13 — Close A01/V01 by requalifying the existing multi-topology baseline on Java main revision</text>
+<text x="26.00" y="1325.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">7d87344725d9deb8c91bfda524b35c085b53b401. VC-ST1-007 and VC-ST1-008 both pass in the integrated -Psystem-test run, confirming</text>
+<text x="26.00" y="1335.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">independent node addressing, sequence isolation, separate LogBooks and restart recovery.</text>
+<circle cx="19.00" cy="1343.91" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="1348.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-13 — Complete D04 engineering upstream transport design. EngineeringApiUpstreamConnector reuses IF-03 POST</text>
+<text x="26.00" y="1358.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">/api/v1/dev/upstream/message and the existing SI-02 event WebSocket with role=upstream; outbound semantic messages are</text>
+<text x="26.00" y="1368.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">UPSTREAM_DATA events. No second listener port or SI-02 WebSocket lifecycle is added. SI-02 acts as the Central System Simulator</text>
+<text x="26.00" y="1378.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">and the connector enters the same UpstreamData boundary as RabbitMQ.</text>
+<text x="16.00" y="1398.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">PLANNING CHANGES (CONT.)</text>
+<line x1="142.44" y1="1395.01" x2="579.28" y2="1395.01" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="19.00" cy="1410.91" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="1415.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-13 — Complete the D02/D03 ordered-stream model before A02 implementation. TIMING_DATA keeps the existing per-node</text>
+<text x="26.00" y="1425.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">LogBook/IF-05 seqNr. Central-to-node RACE_DATA gets its own per-node source seq and carries incremental</text>
+<text x="26.00" y="1435.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">reserveTagMap/StageStartTimes changes. SI-01 ACKs RaceData only after ordered semantic application; gaps cause bidirectional REQ</text>
+<text x="26.00" y="1445.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">from the first missing sequence. SYNC advertises a stream&#x27;s source head. REQ TIMING_DATA fromSeq=1 is the semantic equivalent of</text>
+<text x="26.00" y="1455.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">the legacy receive-all/package-id 0000 request.</text>
+<circle cx="19.00" cy="1463.91" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="1468.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-13 — Complete the D01 IF-06 baseline. Use one bidirectional UpstreamData model with a public/reference JSON</text>
+<text x="26.00" y="1478.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">representation: TIMING_DATA embeds structured IF-05 records, while PING uses op=REQ/ANS with optional mode=HB and optional</text>
+<text x="26.00" y="1488.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">pingId. SI-01 sends heartbeat REQ immediately on connect/reconnect and every 30 seconds; manual PING omits mode. No</text>
+<text x="26.00" y="1498.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">unanswered-PING timeout policy is fixed yet.</text>
+<circle cx="19.00" cy="1506.91" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="1511.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-13 — Use one SI-02 Central System Simulator with two transports: IF-03 for deterministic ST-2 and RabbitMQ for hosted</text>
+<text x="26.00" y="1521.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">ST-3. Both exercise the same semantic upstream contract; deployment-specific protocol mappings remain below the UpstreamData</text>
+<text x="26.00" y="1531.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">boundary.</text>
+<text x="16.00" y="1551.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="bold" fill="#626a72">PLANNING CHANGES (CONT.)</text>
+<line x1="142.44" y1="1548.01" x2="579.28" y2="1548.01" stroke="#d9dde1" stroke-width="1"/>
+<circle cx="19.00" cy="1563.91" r="1.45" fill="#6a8bb0"/>
+<text x="26.00" y="1568.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">2026-10-13 — Activate Step 7 after Step 6 closeout and adopt the existing multi-node, node-addressing, separate-LogBook and</text>
+<text x="26.00" y="1578.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">restart-recovery implementation as the baseline instead of rebuilding that topology. Continue with reference-data,</text>
+<text x="26.00" y="1588.01" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="8.00" font-weight="normal" fill="#2f3337">synchronization and backoffice integration work from that baseline.</text>
+</svg>
