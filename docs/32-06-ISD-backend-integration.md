@@ -667,12 +667,14 @@ Physical TagIds remain resolved to their RegistrationId by EventData.
 :id: IF06-REQ-016  
 :status: D  
 
-STAGE_STARTS shall carry incremental RegistrationId-scoped stage-start-time changes.
-The message carries neither LocationId nor StageId. The RegistrationId is the timing-domain
-identity whose start is being defined; consumers shall not need an intermediate TeamId lookup
-to match a registration to its stage start. Which addressed TimingNode receives current
-stage-start state, and whether its currently open WP projection consumes that state, belongs
-to application/runtime routing rather than to the stage-start value.
+Central shall retain StageStartTimes source state by StageId and RegistrationId. STAGE_STARTS
+shall carry the routed current-stage projection as incremental RegistrationId-scoped
+stage-start-time changes. The message itself carries neither LocationId nor StageId.
+
+Under the current event mapping, Stage N finishes at LocationId N. Central uses the addressed
+TimingNode's current OPEN LocationId to select Stage N before constructing STAGE_STARTS. The
+RegistrationId is the timing-domain identity whose start is being defined; consumers shall not
+need an intermediate TeamId lookup to match a registration to its stage start.
 A SET shall carry one `TimingTimestamp` value containing at least local race
 time-of-day. The timestamp may also contain a local date or already be absolute
 when the source knows that information. A source that knows only time-of-day
