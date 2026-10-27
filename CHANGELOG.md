@@ -1,5 +1,7 @@
 # Changelog
 
+- Define node-scoped `lb backup` and safe `lb clear` maintenance for persisted TimingData: clear requires CLOSED, records a durable clear-on-restart request, backs up the final stream only after runtime deactivation, removes the active file before replacement recovery, and survives an interrupted restart without truncating a live LogBook.
+
 - Define current runtime status as the authority for Central routing: SI-02 consumes IF-03 STATUS_SNAPSHOT/STATUS_CHANGED for OPEN/CLOSED + LocationId, while NODE_OPEN/NODE_CLOSE in TIMING_DATA remain historical LogBook facts and cannot restore OPEN state after SI-01 restart.
 
 - Define reconnect synchronization for normal downstream delivery: SI-01 announces its retained RECV position on every upstream connection, where 0 requests full current state and positive N lets a restarted Central continue with DN_PACKET N+1 without resetting TimingNode-owned protocol state.
