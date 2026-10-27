@@ -56,9 +56,20 @@ SI-01 internals, AntennaManager internals or JavaFX controls directly.
 | --- | --- | --- |
 | `timing.log(text)` | String-representable value; no result. | Writes to SI-02 Scripts output only. |
 | `print(...)` | Lua values; no result. | Joins arguments with tabs and writes to Scripts output. |
+| `timing.now([offsetSeconds])` | Optional integral seconds; canonical UTC timestamp text. | Uses the Engineering Client clock; e.g. -600 means ten minutes before now. |
 | `timing.sleep(ms)` | Integral 0..60000 ms; no result. | Interruptible client-local delay. |
 | `timing.simulate(regId, profile)` | Non-empty RegistrationId; profile defaults to `normal`; true after accepted request. | Requires enabled `TAG_SCENARIO_SIMULATION`; submits one IF-03 simulation request for the captured node. |
 | `timing.batch{...}` | Repeatable batch parameters; returns submitted request count. | Client-side loop over the same `timing.simulate` request path. |
+| `central.team_set/del` | RegistrationId/team values. | Mutates global Central-owned Team Mapping state; no selected node required. |
+| `central.stage_start_set/del` | StageId, RegistrationId and timestamp. | Mutates Central-owned StageStartTimes for that StageId. |
+| `central.stage_start_range{...}` | StageId, prefix/range, start, interval. | Uses the same bulk Central state semantics as the GUI. |
+| `central.timing_data_req(fromSeq)` | Source sequence; packet result. | Node-specific IF-06 request using the TimingNode captured at Run start. |
+| `client.reset()` | No args. | Disconnects SI-02 stateful boundaries and clears Central simulator state while retaining target configuration. |
+| `client.events_connect/disconnect()` | No args. | Controls ordinary IF-03 Events. |
+| `client.central_connect/disconnect()` | No args. | Promotes/demotes the same IF-03 event session to/from upstream role. |
+| `client.api_available()` | Boolean. | Performs HTTP reachability check; IF-03 HTTP has no persistent connection. |
+| `client.status()` / connection predicates | Current booleans. | Inspects API availability and Events/Central connection state. |
+| `client.wait(boundary, expected[, timeoutMs])` | api/events/central, boolean, bounded timeout. | Polls current state without automating JavaFX controls. |
 
 `timing.batch` supports:
 
@@ -82,10 +93,10 @@ The user-facing examples and operational procedure for these calls are maintaine
   Dropping a file never starts it automatically.
 - Script execution uses one dedicated SI-02 worker and never runs on the JavaFX
   application thread or on SI-01 execution lanes.
-- A run captures the selected TimingNode/target at start.
+- A run may start without a selected TimingNode or active Events session; generic client/Central calls remain available.
+- Node-specific calls use the TimingNode captured at Run start.
 - A GUI simulation batch and a Lua simulation batch may not run concurrently.
-- **Stop**, disconnect or selected-node change stops further script execution and
-  request submission. A request already accepted by SI-01 cannot be undone by
+- **Stop** or client shutdown stops further script execution. Intentional Events/Central disconnects do not cancel a script because reconnect testing is a supported use case. A request already accepted by SI-01 cannot be undone by
   cancelling the local script.
 
 ### Capability handling
@@ -112,9 +123,9 @@ These restrictions reduce accidental misuse but are not a security sandbox.
 The supported operational model is trusted, explicitly selected engineering
 scripts.
 
-Not exposed by the current facade are multi-system connection management,
-node open/close, awaiting LIVE from Lua, state assertions, arbitrary IF-03
-dispatch or GUI automation.
+Not exposed by the current facade are multi-system orchestration, node OPEN/CLOSE,
+arbitrary IF-03 dispatch or JavaFX-control automation. Connection-state assertions are
+implemented through `client.status()` / `client.wait(...)` instead of GUI inspection.
 
 ## Failure and recovery behaviour
 
@@ -122,7 +133,7 @@ dispatch or GUI automation.
 - A locally unavailable simulation capability is rejected before IF-03
   submission and is not reported as a server rejection.
 - An actual IF-03 rejection remains distinguishable as a remote request failure.
-- Disconnect, selected-node change or **Stop** cancels further local execution.
+- **Stop** or SI-02 shutdown cancels further local execution; connection transitions initiated by the script do not.
 - Cancellation never rewrites or rolls back requests already accepted by SI-01.
 - An accepted simulation request is not treated as proof of a committed LogBook
   registration.
