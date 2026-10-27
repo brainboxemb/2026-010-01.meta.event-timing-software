@@ -108,7 +108,8 @@ The current semantic message families carried by those packets are:
 | `TIMING_DATA` | SI-01 -> Central System | transfer committed TimingData records using their existing LogBook/IF-05 sequence |
 | `TIMING_DATA_REQ` | Central System -> SI-01 | request TimingData beginning at one IF-05/LogBook sequence |
 | `SEQ` | bidirectional | request, answer or notify the current TIMING_DATA position |
-| `TEAM_ASSIGNMENTS or STAGE_STARTS` | Central System -> SI-01 | deliver current race-state changes; no independent replay sequence is created |
+| `TEAM_ASSIGNMENTS` | Central System -> SI-01 | deliver current RegistrationId -> TeamId assignments; no independent replay sequence is created |
+| `STAGE_STARTS` | Central System -> SI-01 | deliver current RegistrationId-scoped stage starts; no independent replay sequence is created |
 | `RECV` | SI-01 -> Central System | confirm the last successfully processed normal downstream packet or request a full downstream state resend |
 | `PING` | bidirectional | immediate REQ/ANS liveness exchange without normal RECV handling |
 | `STATUS` | bidirectional | expose upstream and connector health relevant to integration |
@@ -135,36 +136,24 @@ replay is split into multiple ordered TIMING_DATA messages; batching never creat
 another TimingData sequence.
 
 
-### current reference data relationship
+### Current reference data relationship
 
-`TEAM_ASSIGNMENTS or STAGE_STARTS` carries Central-owned live race-state changes for one addressed TimingNode.
-It is **not** a durable historical stream and does not have a second source sequence.
-The containing `DN_PACKET.packetNr` provides delivery numbering; it does not become a
-current reference data revision or a TimingData sequence.
+`TEAM_ASSIGNMENTS` and `STAGE_STARTS` are two independent Central-owned current-state
+message families for one addressed TimingNode. Neither is a durable historical stream and
+neither has a source sequence. The containing `DN_PACKET.packetNr` provides delivery
+numbering only.
 
-Each TEAM_ASSIGNMENTS or STAGE_STARTS message carries one message-level `LocationId`. The LocationId identifies
-the WP context for which Central created that message; individual team/stage-start
-changes remain keyed by RegistrationId and do not repeat LocationId.
+`TEAM_ASSIGNMENTS` carries only live RegistrationId -> TeamId changes. Stable EventData
+remains authoritative for RegistrationIds that already have a fixed TeamId mapping.
 
-Central may author current race state independently from any connected TimingNode. For
-the current event model, Stage N finishes at LocationId N. A stage-start definition
-authored for Stage N is therefore delivered in TEAM_ASSIGNMENTS or STAGE_STARTS whose message-level LocationId
-is N when a TimingNode is operating at that location. StageId is authoring/routing
-context and is not duplicated in the IF-06 TEAM_ASSIGNMENTS or STAGE_STARTS payload.
+`STAGE_STARTS` carries only RegistrationId -> stage-start changes. A stage-start value
+has no LocationId or StageId in IF-06. Which TimingNode receives the current value, and
+whether its currently open WP projection uses it, is application/runtime routing outside
+the stage-start value itself.
 
-The current current reference data payload can contain one or more incremental change sections:
-
-- `teamAssignments` changes the live RegistrationId -> TeamId assignment;
-- `stageStartTimes` changes RegistrationId-scoped stage-start definitions.
-
-Each change uses an explicit operation such as `SET` or `DEL`. One TEAM_ASSIGNMENTS or STAGE_STARTS message
-carries **1..16 changes total** across all supported sections. Absence of a section means
-no change to that part of current reference data.
-
-The reserve mapping is keyed by RegistrationId rather than physical TagId because stable
-EventData already resolves physical tags to the registration identity. current reference data supplies
-only the live RegistrationId -> TeamId assignment. A RegistrationId that already resolves
-to a stable TeamId through EventData shall not be remapped by current reference data.
+Each message uses explicit `SET` or `DEL` changes and carries **1..16** changes of its
+own type. The two message families are not combined into one atomic unit and do not share
+one message-size budget.
 
 Normal Central-to-node delivery uses stop-and-wait semantics. For each TimingNode, Central
 keeps at most one positive-numbered DN_PACKET outstanding. It does not send the next normal
@@ -172,22 +161,16 @@ positive-numbered DN_PACKET until the current one has been confirmed by RECV. If
 is not received, Central may resend the **same packet with the same packetNr and semantic
 content**.
 
-SI-01 applies a new TEAM_ASSIGNMENTS or STAGE_STARTS packet only after the complete message has validated. It
-then confirms the containing downstream packet with RECV. If that RECV is lost and the
-same DN_PACKET is received again, SI-01 must not apply the same changes twice; it repeats
-the confirmation for the already processed packet.
+SI-01 validates and applies one complete TEAM_ASSIGNMENTS or STAGE_STARTS message before
+confirming its containing downstream packet with RECV. If that RECV is lost and the same
+DN_PACKET is received again, SI-01 must not apply the same changes twice; it repeats the
+confirmation for the already processed packet.
 
-Central therefore does not need a retained history of old TEAM_ASSIGNMENTS or STAGE_STARTS packets. It keeps its
-current race state plus the exact outstanding downstream packet needed for retry. Changes
-to Central state while a packet is outstanding make later output dirty; they do not mutate
-the outstanding packet. After the outstanding packet is confirmed, Central can construct
-the next packet from its current state.
-
-A full downstream state resend is explicitly requested with RECV position 0. Central then
-rebuilds the applicable current downstream state rather than replaying a historical
-TEAM_ASSIGNMENTS or STAGE_STARTS sequence. Exact snapshot segmentation is a representation/design concern, but
-a state change during that resend must not rewrite an already sent packet.
-
+Central therefore needs no retained history of old TEAM_ASSIGNMENTS or STAGE_STARTS
+packets. It keeps current downstream state plus the exact outstanding packet needed for
+retry. A full downstream-state resend is requested with RECV position 0; Central rebuilds
+the applicable current TEAM_ASSIGNMENTS and STAGE_STARTS state rather than replaying a
+historical source sequence.
 
 ### TimingData sequence and replay
 
@@ -236,7 +219,7 @@ Loss does not require a second durable TimingData outbox. Central can request re
 TimingData again from the LogBook. Retransmission preserves the original IF-05 record
 identity and content.
 
-TEAM_ASSIGNMENTS or STAGE_STARTS is deliberately not synchronized by SEQ. Its recovery uses DN_PACKET delivery,
+TEAM_ASSIGNMENTS and STAGE_STARTS are deliberately not synchronized by SEQ. Their recovery uses DN_PACKET delivery,
 RECV/resend and, when the node no longer trusts its downstream state, an explicit full
 state resend request.
 
