@@ -282,9 +282,10 @@ stage-start definitions for the addressed TimingNode.
 ```
 
 One STAGE_STARTS message carries **1..16** SET/DEL changes. It carries neither
-LocationId nor StageId. The stage start itself is current state keyed by RegistrationId.
-Which TimingNode receives that current state, and which currently open WP projection
-uses it, is application/runtime routing rather than part of the stage-start value.
+LocationId nor StageId. Central source state is nevertheless StageId-scoped. Before
+constructing the message, Central selects the stage applicable to the addressed TimingNode's
+current runtime context; under the current event mapping, OPEN LocationId N selects Stage N.
+The message then carries only that stage's RegistrationId-scoped start projection.
 
 A resent DN_PACKET is identified by the same pckNr and must not cause the same changes
 to be applied twice. STAGE_STARTS has no independent source sequence and no historical
