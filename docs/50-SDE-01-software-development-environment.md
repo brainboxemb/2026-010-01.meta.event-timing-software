@@ -473,12 +473,19 @@ Concrete verification scenarios belong in the VTS; product design rationale rema
 
 ## Raspberry Pi build/deployment environment
 
-The exact Pi deployment approach is still open. When the Raspberry Pi SIP step starts,
-begin with the simplest repeatable way to install and run SI-01 on the target.
+The final SI-01 Pi deployment approach remains a Step-9 decision. Reusable project-specific
+Pi target-test infrastructure is owned separately by
+`brainboxemb/2026-010-03.raspberry-pi-test-image`.
 
-Record the chosen OS/runtime and installation procedure. Add image generation, update
-automation or rollback tooling only when it solves a demonstrated development or field
-need. Detailed scripts/tool choices belong in the implementation repository.
+That repository starts with the simplest repeatable target-test baseline: a stock supported
+base image plus versioned provisioning, pinned runtime inputs, target verification, environment
+evidence and headless artifact execution. Experiment repositories consume that environment
+rather than embedding Pi image/provisioning logic themselves.
+
+Record the qualified OS/runtime and installation procedure before treating measurements as
+target evidence. Add generated-image, update or rollback automation only when it solves a
+demonstrated repeatability, development or field need. The Event Timing SIP remains
+authoritative for final target selection and production deployment decisions.
 
 ## Public and private repository environment
 
