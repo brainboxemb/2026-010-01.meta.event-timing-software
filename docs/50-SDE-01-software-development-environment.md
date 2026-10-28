@@ -477,14 +477,18 @@ The final SI-01 Pi deployment approach remains a Step-9 decision. Reusable proje
 Pi target-test infrastructure is owned separately by
 `brainboxemb/2026-010-03.raspberry-pi-test-image`.
 
-That repository starts with the simplest repeatable target-test baseline: a stock supported
-base image plus versioned provisioning, pinned runtime inputs, target verification, environment
-evidence and headless artifact execution. Experiment repositories consume that environment
-rather than embedding Pi image/provisioning logic themselves.
+That repository owns a reproducible **generic Raspberry Pi image** built from a pinned official
+Raspberry Pi OS base image. GitHub Actions applies versioned boot/rootfs overlays and publishes the
+resulting image artifact. Device-specific credentials are deliberately excluded from the image and
+are supplied locally after flashing through first-boot cloud-init configuration.
 
-Record the qualified OS/runtime and installation procedure before treating measurements as
-target evidence. Add generated-image, update or rollback automation only when it solves a
-demonstrated repeatability, development or field need. The Event Timing SIP remains
+Experiment/application repositories consume the installed image but own their own workloads,
+benchmark execution and result evidence. The image repository must not become a generic target-test
+runner.
+
+Record the qualified OS/runtime and installation procedure before treating measurements as target
+evidence. Add update/rollback automation only when it solves a demonstrated deployment or field
+need. The Event Timing SIP remains
 authoritative for final target selection and production deployment decisions.
 
 ## Public and private repository environment
