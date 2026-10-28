@@ -58,9 +58,9 @@ Electromaker Inky pHAT/Button SHIM Pi Zero build:
 ```text
 top
   Waveshare 2.13inch e-Paper HAT+
-  extra-tall female stacking header
+  standard male Hammer Header pins
   Raspberry Pi Zero
-  Button SHIM soldered to the long header pins on the underside
+  Button SHIM flush against the underside, soldered to exposed short pin tails if fit allows
   Zero4U (future, mounted below using pogo contacts)
 bottom
 ```
