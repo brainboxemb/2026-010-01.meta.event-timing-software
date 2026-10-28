@@ -11,7 +11,10 @@ geen verantwoordelijkheid is van de Raspberry Pi image-repository.
 | --- | --- | --- | --- |
 | Waveshare 2.13inch e-Paper HAT+ (250×122, SPI) | lokaal statusdisplay + DS3231 RTC | bestellen | https://www.kiwi-electronics.com/nl/waveshare-2-13inch-e-paper-hat-plus-voor-raspberry-pi-250x122-spi-e-ink-display-20801 |
 | Pimoroni GPIO Hammer Header male | GPIO-header zonder solderen aan Pi Zero | bestellen | https://www.kiwi-electronics.com/nl/gpio-hammer-header-male-20120 |
+| 40-pin GPIO Header 2x20 Female | optionele female socket / mechanische testoptie bovenop de Hammer Header | meebestellen | https://www.kiwi-electronics.com/en/40-pin-gpio-header-2x20-female-2173?search=header%20female |
 | Raspberry Pi Debug Probe | programmer/debugger + 3,3 V USB-UART voor bootconsole | bestellen | https://www.kiwi-electronics.com/en/raspberry-pi-debug-probe-11345 |
+
+De female 2x20 header is geen vaste stack-keuze. We bestellen hem mee als goedkope test- en adapteroptie, bijvoorbeeld om bovenop de Hammer Header te passen en verschillende HAT/header-opbouwen te kunnen proberen voordat de definitieve mechanische stack wordt vastgelegd.
 
 ### RTC-batterij — vrijwel geschikt, connector nog bevestigen
 
