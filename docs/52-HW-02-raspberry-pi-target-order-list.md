@@ -40,7 +40,7 @@ de Debug Probe met tijdelijke bedrading worden gebruikt.
 | Onderdeel | Doel | Status | Opmerking |
 | --- | --- | --- | --- |
 | Raspberry Pi Zero W versie 1 | test-target | in bezit | BCM2835 / ARM11, 512 MB; target-architectuur armv6l |
-| SanDisk microSD 32 GB | boot/testmedia | in bezit | geleverd met NOOBS; voor deze test opnieuw schrijven met Raspberry Pi Imager |
+| SanDisk microSD 32 GB | boot/testmedia | in bezit | geleverd met NOOBS; opnieuw schrijven met de door GitHub gebouwde test-image (Raspberry Pi Imager alleen als writer) |
 | Raspberry Pi voeding 2,5 A | voeding test-target | in bezit | uit starterset |
 | Raspberry Pi Zero behuizing | tijdelijke behuizing | in bezit | drie deksels, waaronder GPIO-uitsparing |
 | mini-HDMI → HDMI adapter | lokale video indien nodig | in bezit | uit Zero Essentials Kit |
