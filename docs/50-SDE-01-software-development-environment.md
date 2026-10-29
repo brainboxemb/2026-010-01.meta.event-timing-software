@@ -477,7 +477,7 @@ The final SI-01 Pi deployment approach remains a Step-9 decision. Reusable proje
 Pi target-test infrastructure is owned separately by
 `brainboxemb/2026-010-03.raspberry-pi-test-image`.
 
-That repository owns a reproducible **generic Raspberry Pi image** built from a pinned official
+That repository builds **Brainbox Zero**, a reproducible generic Raspberry Pi platform image based on a pinned official
 Raspberry Pi OS base image. GitHub Actions applies versioned boot/rootfs overlays and publishes the
 resulting image artifact. Device-specific credentials are deliberately excluded from the image and
 are supplied locally after flashing through first-boot cloud-init configuration.
