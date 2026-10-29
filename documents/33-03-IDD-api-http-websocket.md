@@ -1,0 +1,986 @@
+<!-- Generated review/output copy. Edit the source document, not this copy. -->
+
+# API HTTP/WebSocket Interface Design Description (IDD)
+
+Status: draft / development-v1 realization
+
+System interface: **IF-03 — API**
+
+
+
+## Purpose
+
+This Interface Design Description maps the semantic IF-03 operations to the current
+HTTP/JSON + WebSocket development-v1 realization.
+
+The ISD owns operation and state semantics. This document owns concrete wire design:
+resource paths, HTTP methods, JSON member names, event envelopes, concrete result/error
+strings and status-code mapping.
+
+## Terms and abbreviations
+
+- **IDD** — Interface Design Description
+- **ISD** — Interface Specification Document
+- **IF** — system interface
+- **OP** — Operation defined by the ISD
+- **HTTP** — Hypertext Transfer Protocol
+
+
+## Relationship to other documents
+
+This IDD implements the concrete development-v1 realization of
+`32-03-ISD-application-control-status.md`. The ISD remains the semantic IF-03 contract;
+this document defines how that contract is represented over HTTP/JSON and WebSocket.
+Software-item design, implementation, clients and interface tests consume this design
+where the concrete v1 representation matters.
+
+## Transport baseline
+
+The development-v1 realization uses:
+
+- HTTP with UTF-8 JSON for request/response operations;
+- WebSocket for live event delivery;
+- API major version in the resource namespace `/api/v1`;
+- separately configurable HTTP and WebSocket listeners/ports;
+- normal IP networking, including loopback/same-host use during development.
+
+The default development configuration binds locally/loopback unless remote access is
+explicitly configured.
+
+## Common JSON and compatibility rules
+
+- JSON text is UTF-8.
+- Clients tolerate additional unknown response members within compatible v1 extensions.
+- Unknown live event types may be ignored/logged; clients can re-query current state.
+- Existing member/result meaning is not silently changed within v1.
+- Breaking changes require another major API namespace or an explicitly documented
+  compatible migration.
+
+## Resource summary
+
+```text
+GET  /api/v1/version
+GET  /api/v1/status
+GET  /api/v1/capabilities
+GET  /api/v1/configuration
+
+POST /api/v1/node/{id}/open
+POST /api/v1/node/{id}/close
+POST /api/v1/node/{id}/registration/manual
+POST /api/v1/node/{id}/registration/revoke
+
+GET  /api/v1/node/{id}/logbook
+GET  /api/v1/node/{id}/logbook?from=...&limit=...
+GET  /api/v1/node/{id}/logbook?last=...
+GET  /api/v1/node/{id}/registrations
+GET  /api/v1/node/{id}/registrations?after=...&limit=...
+GET  /api/v1/node/{id}/stage-start-times
+GET  /api/v1/node/{id}/stage-start-times?offset=...&limit=...
+
+POST /api/v1/dev/node/{id}/auto-reg
+POST /api/v1/dev/node/{id}/simulation/registration
+POST /api/v1/dev/upstream/message
+POST /api/v1/node/{id}/configuration/tag-processing
+
+WS   /api/v1/events
+WS   /api/v1/events?role=upstream
+```
+
+The path `{id}` is the public TimingNodeId.
+
+## IF03-OP-001 — Build/version identity
+
+HTTP mapping:
+
+```text
+GET /api/v1/version
+```
+
+Successful response:
+
+```json
+{
+  "application": "timing-application",
+  "version": "<project-version>",
+  "revision": "<source-revision>",
+  "sourceRef": "<branch-tag-or-ref>",
+  "buildOrigin": "local|github-actions",
+  "dirty": false,
+  "apiVersion": "1"
+}
+```
+
+The response is HTTP `200` with `application/json; charset=utf-8`.
+
+## IF03-OP-002 — Current status
+
+HTTP mapping:
+
+```text
+GET /api/v1/status
+```
+
+Response shape:
+
+```json
+{
+  "nodes": [
+    {
+      "id": "TN-01",
+      "locId": null,
+      "state": "CLOSED"
+    }
+  ]
+}
+```
+
+`locId` is `null` when no current location is assigned.
+`state` is `CLOSED` or `OPEN`.
+
+This status is deliberately limited to the TimingNode's current functional state.
+Startup/recovery and LogBook failures are not folded into a second TimingNode
+health-state model in this baseline. They remain observable through operation
+failures, LogBook/recovery interfaces and diagnostic logging.
+
+When the Engineering API upstream connector is configured, status may additionally
+contain this compatible v1 branch:
+
+```json
+{
+  "upstream": [
+    {
+      "id": "engineering",
+      "type": "engineering-api",
+      "state": "CONNECTED",
+      "nodes": [
+        {
+          "nodeId": "A",
+          "sync": "SYNCED",
+          "timingDataHead": 42,
+          "centralTimingDataSeq": 42,
+          "lastDnPacketNr": 123
+        }
+      ]
+    }
+  ]
+}
+```
+
+`state` is `DISCONNECTED`, `SYNCHRONIZING`, `CONNECTED` or `ERROR`.
+Node `sync` is `UNKNOWN`, `SYNCED` or `CONFLICT` and describes TIMING_DATA
+position/replay state rather than a second RACE_DATA sequence.
+`timingDataHead` is the local LogBook/IF-05 source head.
+`centralTimingDataSeq` is the highest contiguous TIMING_DATA sequence SI-01 currently
+knows Central has processed; it may be absent/unknown before a SEQ exchange.
+`lastDnPacketNr` is the last normal downstream packet SI-01 accepted and is delivery
+state, not a TimingData sequence. Socket/library diagnostics may be added separately
+without redefining these values.
+
+## IF03-OP-004 — Capabilities
+
+HTTP mapping:
+
+```text
+GET /api/v1/capabilities
+```
+
+Current response shape:
+
+```json
+{
+  "capabilities": [
+    {
+      "id": "DIRECT_REGISTRATION_SIMULATION",
+      "supported": true,
+      "enabled": true
+    },
+    {
+      "id": "TAG_SCENARIO_SIMULATION",
+      "supported": true,
+      "enabled": true
+    },
+    {
+      "id": "ENGINEERING_UPSTREAM",
+      "supported": true,
+      "enabled": true
+    }
+  ]
+}
+```
+
+`TAG_SCENARIO_SIMULATION` is enabled only for a composition that provides the
+simulated-tag control and a SimulatedAntenna source. `ENGINEERING_UPSTREAM` is enabled only when the Engineering API upstream connector is configured.
+Unknown capability IDs are compatible additions.
+
+## IF03-OP-005 — Open at a location
+
+HTTP mapping:
+
+```text
+POST /api/v1/node/{id}/open
+```
+
+Request:
+
+```json
+{
+  "locationId": 24
+}
+```
+
+The request body is required. The server decodes `locationId` as the shared positive
+LocationId value and invokes one application-level OPEN operation carrying that value.
+
+Successful response:
+
+```json
+{
+  "result": "OPENED"
+}
+```
+
+An idempotent request may return:
+
+```json
+{
+  "result": "ALREADY_OPEN"
+}
+```
+
+The ISD intentionally leaves the exact result rule for `ALREADY_OPEN` with a different
+requested LocationId open for review. This IDD shall not invent a second rule.
+
+There is no separate v1 Set Location resource. The location body of the OPEN
+request is the concrete mapping of the single `open(LocationId)` semantic operation;
+assigning the requested LocationId and changing CLOSED to OPEN are processed as one
+ordered node operation.
+
+## IF03-OP-006 — Close
+
+HTTP mapping:
+
+```text
+POST /api/v1/node/{id}/close
+```
+
+The request has no semantic body.
+
+Successful result strings are:
+
+- `CLOSED`;
+- `ALREADY_CLOSED`.
+
+## IF03-OP-007 — Direct accepted-registration simulation
+
+HTTP mapping:
+
+```text
+POST /api/v1/dev/node/{id}/auto-reg
+```
+
+Request:
+
+```json
+{
+  "id": "RT-A-0001"
+}
+```
+
+The body `id` is the resolved public RegistrationId. It is not a tag value.
+
+`time` is optional. If absent, the addressed TimingNode captures the effective
+time using its TimingSystem's composed `TimeSource` **during command execution**.
+For deterministic verification or replay, the client may instead provide:
+
+```json
+{
+  "id": "RT-A-0001",
+  "time": "2026-10-01T12:00:00Z"
+}
+```
+
+The direct API path is recorded with short provenance `tagSrc: API`; the
+effective time is recorded as `timeSrc: NODE` (implicit) or `timeSrc: API`
+(explicit). These are LogBook metadata values and do not replace `time`.
+
+Successful response:
+
+```json
+{
+  "seq": 1
+}
+```
+
+The operation is available only when
+`DIRECT_REGISTRATION_SIMULATION` is supported and enabled.
+
+This development operation represents the automatic-registration `ADD` action.
+The presentation-facing application boundary receives the action together with
+`registrationId` and optional `time`. It starts **after** antenna/tag interpretation and
+therefore does not exercise SimulatedAntenna, AntennaManager or TagProcessor.
+Registration REV uses IF03-OP-011 and is not inferred from this ADD-only
+engineering request.
+
+## IF03-OP-013 — Start simulated tag passage
+
+HTTP mapping:
+
+```text
+POST /api/v1/dev/node/{id}/simulation/registration
+```
+
+Request:
+
+```json
+{
+  "regId": "N0042",
+  "profile": "normal"
+}
+```
+
+`profile` is one of `simple`, `normal` or `edge`. The operation is
+available only when `TAG_SCENARIO_SIMULATION` is supported and enabled.
+
+A successful request means the scenario was accepted for simulated observation
+generation; it does not mean a registration has already been committed:
+
+```json
+{
+  "result": "ACCEPTED"
+}
+```
+
+The server resolves the configured EventData tags for `regId` and lets the
+selected profile publish its observation sequence through SimulatedAntenna. The
+client does not supply raw TagObservation values for this operation and the HTTP
+adapter does not call TagProcessor or TimingNode directly.
+
+The selected profile owns the observation pattern inside one passage. Batch
+orchestration such as count, RegistrationId range, ascending/random selection and
+interval between passage starts belongs to the engineering client and is composed
+from repeated IF03-OP-013 calls. A client that offers random order should make it
+seedable so a run can be repeated.
+
+## IF03-OP-011 — Registration revoke
+
+HTTP mapping:
+
+```text
+POST /api/v1/node/{id}/registration/revoke
+```
+
+Automatic-registration request:
+
+```json
+{
+  "recordType": "AUTO_REG",
+  "locationId": 24,
+  "regId": "N0001",
+  "time": "2026-10-01T12:00:00Z"
+}
+```
+
+Manual-registration request:
+
+```json
+{
+  "recordType": "MAN_REG",
+  "locationId": 24,
+  "regId": "N0003",
+  "time": "2026-10-01T11:59:58.25Z",
+  "timeSource": "MAN"
+}
+```
+
+For `MAN_REG`, `timeSource` is required and is exactly `AUTO` or `MAN`.
+For `AUTO_REG`, `timeSource` is absent. The request values describe the
+original registration; the server does not use a source-sequence reference.
+
+The application maps the request to an append-only REV TimingData commit:
+
+- `AUTO_REG` -> `code=["REV"]`;
+- `MAN_REG` + `AUTO` -> `code=["REV","AUTO"]`;
+- `MAN_REG` + `MAN` -> `code=["REV","MAN"]`.
+
+Successful response:
+
+```json
+{
+  "seq": 42
+}
+```
+
+The returned sequence is the new REV record sequence. The HTTP adapter does not
+search LogBook history to decide whether the supplied registration is currently
+active/deleted; the application/business caller owns that interpretation.
+
+## IF03-OP-012 — Manual registration add
+
+HTTP mapping:
+
+```text
+POST /api/v1/node/{id}/registration/manual
+```
+
+Request:
+
+```json
+{
+  "regId": "N0003",
+  "time": "2026-10-01T11:59:58.25Z",
+  "timeSource": "AUTO"
+}
+```
+
+`timeSource` is required and is exactly `AUTO` or `MAN`. `AUTO` means the
+client selected/captured the supplied effective time automatically. `MAN` means
+an operator entered or edited the supplied effective time manually.
+
+The client supplies `time` in both cases. The HTTP adapter does not replace an
+`AUTO`-classified time with server current time. The application maps the request
+to a normal manual-registration ADD operation; TimingNode captures the active
+LocationId and assigns the committed sequence and record-creation time.
+
+Successful response:
+
+```json
+{
+  "seq": 43
+}
+```
+
+The resulting IF-05 reference record is `MAN_REG` with `["ADD","AUTO"]` or
+`["ADD","MAN"]` according to `timeSource`. Normal TimingNode state rules apply,
+including rejection when the node is not open.
+
+## IF03-OP-008 — LogBook query
+
+Metadata:
+
+```text
+GET /api/v1/node/{id}/logbook
+```
+
+Response:
+
+```json
+{
+  "count": 12457,
+  "first": 1,
+  "last": 12457
+}
+```
+
+For an empty LogBook, `count` is `0` and `first`/`last` are `null`.
+
+Bounded source range:
+
+```text
+GET /api/v1/node/{id}/logbook?from=101&limit=100
+```
+
+Newest bounded range:
+
+```text
+GET /api/v1/node/{id}/logbook?last=100
+```
+
+Record-bearing response:
+
+```json
+{
+  "count": 12457,
+  "next": 201,
+  "records": []
+}
+```
+
+`from` is inclusive. The development-v1 bound for `limit` and `last` is 1..1000.
+`last` cannot be combined with `from` or `limit`.
+
+Each record in `records` uses the public IF-05 reference representation defined by
+`33-05-IDD-timingdata-interchange.md`.
+
+## Development-v1 active registration projection
+
+The Engineering Client may inspect the currently OPEN LocationId projection without
+reconstructing it from LogBook history.
+
+Metadata:
+
+```text
+GET /api/v1/node/{id}/registrations
+```
+
+A bounded chronological ADD page uses the original ADD sequence as cursor:
+
+```text
+GET /api/v1/node/{id}/registrations?after=100&limit=100
+```
+
+The development-v1 page response contains the same projection metadata on every page and
+a bounded `registrations` array:
+
+```json
+{
+  "locId": 24,
+  "count": 2,
+  "uniqueCount": 2,
+  "lastMutationSeq": 43,
+  "lastRevokeSeq": 0,
+  "stageStartRevision": 12,
+  "nextAfter": null,
+  "registrations": [
+    {
+      "seqNr": 42,
+      "regId": "A0042",
+      "time": "2026-10-25T10:00:00Z",
+      "elapsedMillis": 372340,
+      "valid": true
+    }
+  ]
+}
+```
+
+`elapsedMillis` is nullable. A numeric value is the SI-01-maintained elapsed stage time
+for that registration, expressed in milliseconds as registration passage time minus the
+current RegistrationId-scoped stage start. `null` means no unambiguous elapsed time is
+currently available. A consumer shall use this authoritative projection value rather than
+reconstructing stage timing from LogBook and RaceData.
+
+This is a compatible additive v1 response field. As required by the common compatibility
+rules, existing v1 clients tolerate response members they do not yet consume.
+
+## Development-v1 applied StageStartTimes projection
+
+Metadata:
+
+```text
+GET /api/v1/node/{id}/stage-start-times
+```
+
+Example:
+
+```json
+{
+  "count": 2,
+  "revision": 12
+}
+```
+
+A bounded page uses zero-based `offset` and `limit` (1..1000):
+
+```text
+GET /api/v1/node/{id}/stage-start-times?offset=0&limit=128
+```
+
+```json
+{
+  "count": 2,
+  "revision": 12,
+  "nextOffset": null,
+  "startTimes": [
+    {"regId":"A0001","start":"19:00:00"},
+    {"regId":"A0002","start":"19:00:30"}
+  ]
+}
+```
+
+Rows are sorted by canonical RegistrationId. `revision` changes whenever applied
+StageStartTime state changes. A client that observes a revision/count change while paging
+shall restart the bounded read. These values describe SI-01's applied RaceData state;
+they are not read from Central and are not reconstructed from LogBook records.
+
+The active `/registrations` projection exposes the same value as
+`stageStartRevision`. A change in that value invalidates cached elapsed/rank rows even
+when registration `count`, `lastMutationSeq` and `lastRevokeSeq` are unchanged.
+
+## IF03-OP-009 — Current application configuration
+
+HTTP mapping:
+
+```text
+GET /api/v1/configuration
+```
+
+The response is a non-secret view produced through the Application-layer
+`ConfigurationControl` boundary. Presentation does not receive or mutate the
+Runtime `ApplicationConfiguration` tree directly.
+
+Development-v1 response shape:
+
+```json
+{
+  "timingNodes": [
+    {
+      "id": "TN-01",
+      "tagProcessing": {
+        "startup": {
+          "quietTimeoutMillis": 250,
+          "maxBurstDurationMillis": 1000,
+          "duplicateWindowMillis": 15000,
+          "sweepCadenceMillis": 50,
+          "observationQueueCapacity": 256
+        },
+        "current": {
+          "quietTimeoutMillis": 250,
+          "maxBurstDurationMillis": 1000,
+          "duplicateWindowMillis": 15000,
+          "sweepCadenceMillis": 50,
+          "observationQueueCapacity": 256
+        },
+        "overridden": false,
+        "runtimeMutable": {
+          "quietTimeoutMillis": true,
+          "maxBurstDurationMillis": true,
+          "duplicateWindowMillis": true,
+          "sweepCadenceMillis": true,
+          "observationQueueCapacity": false
+        }
+      }
+    }
+  ]
+}
+```
+
+`startup` is the effective startup value after compiled defaults and IF-11
+startup overrides have been resolved. `current` is the value currently used by
+the running process. When no runtime override is active the two values are equal.
+
+The field-level `runtimeMutable` map is descriptive API metadata. It does not
+grant mutation permission by itself; normal IF-03 listener/security rules still
+apply.
+
+## IF03-OP-010 — Runtime TagProcessor configuration override
+
+HTTP mapping:
+
+```text
+POST /api/v1/node/{id}/configuration/tag-processing
+```
+
+The path `{id}` identifies the TimingNode whose Runtime configuration branch is
+targeted. The HTTP adapter maps the request to Application
+`ConfigurationControl`; it does not call TagProcessor or the Runtime tree
+directly.
+
+Set/replace request:
+
+```json
+{
+  "action": "SET",
+  "value": {
+    "quietTimeoutMillis": 300,
+    "sweepCadenceMillis": 75
+  }
+}
+```
+
+The `value` object is a **partial** TagProcessingPolicy representation. Omitted
+members retain their current value when the server constructs one complete typed
+candidate policy. The candidate is then validated/applied atomically. There is no
+partial success: if one supplied value makes the complete candidate invalid or
+restart-only, none of the supplied changes become active.
+
+Clear request:
+
+```json
+{
+  "action": "CLEAR"
+}
+```
+
+`CLEAR` removes the complete runtime override for this TagProcessing policy and
+restores its effective startup value. It does not rewrite IF-11 deployment
+configuration.
+
+The semantic response envelope is:
+
+```json
+{
+  "result": "APPLIED",
+  "tagProcessing": {
+    "startup": {},
+    "current": {},
+    "overridden": true,
+    "runtimeMutable": {}
+  }
+}
+```
+
+Stable result strings and HTTP mapping are:
+
+| Result | HTTP | Meaning |
+| --- | ---: | --- |
+| `APPLIED` | `200` | authoritative current value changed |
+| `NO_CHANGE` | `200` | request is valid but current value is unchanged |
+| `INVALID` | `400` | candidate TagProcessingPolicy is invalid |
+| `RESTART_REQUIRED` | `409` | candidate changes a startup-only field |
+
+For `INVALID` and `RESTART_REQUIRED`, the returned `tagProcessing.current`
+remains the authoritative pre-request value. This semantic result envelope is used
+for a syntactically valid configuration-update request. Malformed JSON, unknown
+members, unknown nodes and unsupported actions continue to use the common error
+envelope.
+
+Development-v1 live mutation supports the four timing/cadence fields. A changed
+`observationQueueCapacity` yields `RESTART_REQUIRED` because it sizes the
+already-composed bounded observation queue.
+
+## IF03-OP-014 — Engineering upstream UpstreamData ingress
+
+HTTP mapping:
+
+```text
+POST /api/v1/dev/upstream/message
+```
+
+The request body is exactly one public/default IF-06 UpstreamData JSON object.
+There is no opaque RabbitMQ/private frame wrapper around it.
+
+The development-v1 Engineering API upstream connector accepts Central System
+DN_PACKET messages needed for deterministic ST-2, including `RACE_DATA`, `SEQ`,
+`TIMING_DATA_REQ` and `PING`. A message family or direction not supported by IF-06
+is rejected explicitly.
+
+Examples of successful response bodies are:
+
+```json
+{"result":"ACCEPTED"}
+```
+
+for accepted protocol input, and:
+
+```json
+{"result":"APPLIED","packetNr":123}
+```
+
+after a new normal DN_PACKET carrying RACE_DATA has been applied. A resend of an
+already processed packet may return `DUPLICATE`; it is not applied a second time.
+If engineering injection presents a downstream packet gap, the operation may return
+`GAP` together with the last accepted downstream packet number; normal stop-and-wait
+delivery should prevent that situation.
+
+HTTP mapping:
+
+| Situation | HTTP | Result/error |
+| --- | ---: | --- |
+| semantic protocol input accepted | 200 | `ACCEPTED` |
+| new RACE_DATA packet applied | 200 | `APPLIED` + applied `packetNr` |
+| already-processed downstream packet | 200 | `DUPLICATE` |
+| downstream packet gap during engineering injection | 409 | `GAP` + last accepted packet number |
+| malformed/unsupported message or direction | 400 | stable error code |
+| unknown TimingNode | 404 | `UNKNOWN_NODE` |
+| semantic conflict/invalid RaceData change | 409 | `CONFLICT` |
+| no active upstream-role peer | 409 | `UPSTREAM_NOT_CONNECTED` |
+| bounded application admission unavailable | 503 | `BUSY` / `UNAVAILABLE` |
+
+The HTTP result confirms processing of the inbound operation only. IF-06 messages
+generated while processing it, such as RECV, SEQ answers or a PING answer, are emitted
+as outbound UpstreamData on the designated upstream event peer.
+
+## IF03-OP-003 — Live events
+
+WebSocket paths/roles:
+
+```text
+/api/v1/events
+/api/v1/events?role=upstream
+```
+
+Both forms use the same configured WebSocket listener/port and the same physical
+SI-02 event connection. The optional `role=upstream` marks that event client as the single active
+Central System Simulator peer for the configured Engineering API upstream connector.
+A second simultaneous upstream-role connection is rejected/closed with policy
+violation code 1008. Normal event clients without the role are unaffected.
+
+The current realization may use a dedicated configured WebSocket listener/port
+relative to HTTP, but D04 does not add another listener for upstream traffic.
+
+Event envelope:
+
+```json
+{
+  "eventType": "STATUS_SNAPSHOT",
+  "occurredAt": "2026-10-03T12:00:00Z",
+  "payload": {}
+}
+```
+
+Current event type strings:
+
+```text
+STATUS_SNAPSHOT
+STATUS_CHANGED
+TIMING_DATA_COMMITTED
+CONFIGURATION_CHANGED
+UPSTREAM_DATA
+```
+
+For `STATUS_SNAPSHOT` and `STATUS_CHANGED`, `payload` is the complete current status
+shape from `GET /api/v1/status`.
+
+For `TIMING_DATA_COMMITTED`, `payload` is one committed public IF-05 TimingData record.
+
+For `UPSTREAM_DATA`, `payload` is exactly one public/default IF-06
+UpstreamData JSON object emitted by the Engineering API upstream connector. This
+event is sent only to the designated `role=upstream` connection; other live-event
+clients do not receive upstream semantic traffic.
+
+For `CONFIGURATION_CHANGED`, `payload` identifies the changed runtime
+configuration branch and contains its resulting current view:
+
+```json
+{
+  "nodeId": "TN-01",
+  "section": "tagProcessing",
+  "configuration": {
+    "startup": {},
+    "current": {},
+    "overridden": true,
+    "runtimeMutable": {}
+  }
+}
+```
+
+The event is post-fact and is emitted only for an `APPLIED` configuration
+change. `NO_CHANGE`, `INVALID` and `RESTART_REQUIRED` do not emit it.
+
+WebSocket listener startup does not wait for TimingNode recovery. After connection
+SI-01 sends a **complete** `STATUS_SNAPSHOT` before the client relies on subsequent
+change events. For a `role=upstream` connection, the Engineering API connector is marked
+operationally connected only after that initial snapshot is successfully sent. Each
+NodeUpstream then emits its current downstream RECV position before the ordinary reconnect
+sequence, followed by the node-scoped TIMING_DATA position exchange through SEQ and the
+immediate heartbeat PING as normal `UPSTREAM_DATA` events. RECV 0 means a fresh
+downstream runtime; a positive RECV N lets a restarted Engineering Client continue with
+DN_PACKET N+1. Central may issue TIMING_DATA_REQ as required. RACE_DATA does not perform
+a separate source-head exchange.
+Closing that WebSocket marks the connector disconnected and stops its heartbeat lifecycle
+without clearing LogBook or applied RaceData state.
+
+The TimingNode snapshot contains its current functional state and LocationId even while
+persisted-data recovery is still in progress. Recovery completion or failure does not create
+a synthetic TimingNode status transition in this baseline.
+
+### Slow-client / outbound backlog policy
+
+The development-v1 Java-WebSocket realization does not add a second unbounded
+application event queue. Each connected client has one small transport-local counter that
+tracks outbound event sends while Java-WebSocket still reports buffered data.
+
+The current safety bound is **32 event sends without observing the connection's outbound
+buffer fully drain**. The 33rd event is not added to the client backlog. SI-01 requests a
+WebSocket close with code **1013 (Try Again Later)** and reason
+`IF-03 outbound backlog limit reached`.
+
+This is intentionally a conservative guard, not an exact measurement of the library's
+internal queue depth. A fully drained connection resets the counter. No event listener
+waits for socket drain, retries delivery or blocks a TimingNode/Application lane.
+
+A disconnected client recovers through the normal reconnect sequence below:
+`STATUS_SNAPSHOT` restores current status and bounded LogBook queries restore missed
+committed TimingData. Transient live events are not durably replayed.
+
+## Reconnect realization
+
+The current client-side sequence is:
+
+1. connect/reconnect to `/api/v1/events` (SI-02 uses `?role=upstream` when its Central System Simulator is the configured engineering peer);
+2. receive `STATUS_SNAPSHOT`;
+3. start buffering later live events during baseline recovery;
+4. replace cached status from the snapshot;
+5. query `GET /api/v1/configuration` for the current configuration baseline;
+6. query `GET /api/v1/node/{id}/logbook` for metadata;
+7. fetch required bounded LogBook ranges;
+8. merge buffered `STATUS_CHANGED` and `CONFIGURATION_CHANGED` events in delivery order;
+9. deduplicate buffered `TIMING_DATA_COMMITTED` records by stable TimingData record key;
+10. mark the presentation view live.
+
+No durable WebSocket replay is required across disconnected sessions.
+
+## Error envelope
+
+HTTP failures use:
+
+```json
+{
+  "error": {
+    "code": "<stable-machine-code>",
+    "message": "<human-readable-summary>"
+  }
+}
+```
+
+Current status mapping:
+
+| HTTP status | Stable code examples / meaning |
+| --- | --- |
+| `400` | `MALFORMED_REQUEST`, `INVALID_VALUE` |
+| `403` | `CAPABILITY_NOT_ENABLED` |
+| `404` | `NOT_FOUND`, `NODE_NOT_FOUND` |
+| `405` | `METHOD_NOT_ALLOWED` |
+| `409` | domain conflict such as `NODE_NOT_OPEN`, or semantic `RESTART_REQUIRED` for a valid configuration update |
+| `500` | technical execution or unexpected internal interface failure |
+
+Detailed queue, timeout, interruption and execution diagnostics are retained by SI-01 at
+the owning execution boundary rather than mirrored as a second IF-03 error-state taxonomy.
+
+## Request validation
+
+Current v1 request parsing rules include:
+
+- one JSON object where a JSON body is required;
+- required members occur exactly once;
+- unsupported request members are rejected rather than silently interpreted;
+- node IDs are path-addressed;
+- LocationId is a positive integer according to the shared LocationId contract;
+- request bodies are bounded by the implementation;
+- configuration SET bodies accept only the documented TagProcessingPolicy members;
+- configuration CLEAR bodies do not accept a `value` object;
+- manual-registration ADD requires `regId`, `time` and `timeSource`, with
+  `timeSource` exactly `AUTO` or `MAN`;
+- simulated-tag registration requires `regId` and `profile`, where `profile`
+  is exactly `simple`, `normal` or `edge`;
+- durations are represented as integral milliseconds and queue capacity as a positive integer;
+- methods other than the mapping defined above return an explicit failure.
+
+## Listener and exposure design
+
+Development configuration may assign HTTP and WebSocket different ports. This does not
+create separate semantic interfaces.
+
+The default listener scope is loopback/local. A non-loopback bind is an explicit
+deployment choice.
+
+Authentication, role authorization and browser CORS/origin policy are not part of this
+development-v1 design yet.
+
+## ISD mapping
+
+| ISD operation/requirement | Development-v1 design |
+| --- | --- |
+| IF03-OP-001 / IF03-REQ-003 | `GET /api/v1/version` |
+| IF03-OP-002 / IF03-REQ-004 | `GET /api/v1/status` |
+| IF03-OP-003 / IF03-REQ-005/006/015/016/021 | WebSocket `/api/v1/events` + bounded slow-client disconnect + LogBook recovery |
+| IF03-OP-004 / IF03-REQ-012 | `GET /api/v1/capabilities` |
+| IF03-OP-005 / IF03-REQ-011 | `POST /api/v1/node/{id}/open` with `locationId` |
+| IF03-OP-006 | `POST /api/v1/node/{id}/close` |
+| IF03-OP-007 / IF03-REQ-013 | `POST /api/v1/dev/node/{id}/auto-reg` |
+| IF03-OP-008 / IF03-REQ-014 | bounded `/api/v1/node/{id}/logbook` resources |
+| IF03-OP-009 / IF03-REQ-018 | `GET /api/v1/configuration` |
+| IF03-OP-010 / IF03-REQ-019 | `POST /api/v1/node/{id}/configuration/tag-processing` |
+| IF03-OP-011 / IF03-REQ-022 | `POST /api/v1/node/{id}/registration/revoke` |
+| IF03-OP-012 / IF03-REQ-023 | `POST /api/v1/node/{id}/registration/manual` |
+| IF03-OP-013 / IF03-REQ-024 | `POST /api/v1/dev/node/{id}/simulation/registration` |
+| IF03-OP-014 / IF03-REQ-025 | `POST /api/v1/dev/upstream/message` with structured UpstreamData |
+| IF03-OP-003 / IF03-REQ-026/027 | `/api/v1/events?role=upstream` + `UPSTREAM_DATA` + normal status events |
+| IF03-OP-003 / IF03-REQ-020 | `CONFIGURATION_CHANGED` on WebSocket `/api/v1/events` |
+
+## Open design points
+
+- exact `ALREADY_OPEN` behavior when the request carries a different LocationId;
+- production authentication/authorization;
+- browser-origin/CORS policy if browser software later consumes IF-03 directly;
+- whether high-volume diagnostics belong on the normal event stream or a separate
+  diagnostics subscription.
