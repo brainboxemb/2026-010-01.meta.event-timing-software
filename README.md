@@ -9,6 +9,8 @@ Use this repository when you need to understand **what the software should do, h
 designed, what work is active, or how that work is verified**. Java implementation lives
 in the separate
 [Timing Point Application repository](https://github.com/brainboxemb/2026-010-02.java.timing-point-application).
+The reusable **Brainbox Zero** Raspberry Pi platform-image build and installation infrastructure lives in
+[2026-010-03.raspberry-pi-test-image](https://github.com/brainboxemb/2026-010-03.raspberry-pi-test-image).
 
 ## Start here
 
